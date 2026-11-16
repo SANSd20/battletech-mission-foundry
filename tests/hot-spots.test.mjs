@@ -61,6 +61,8 @@ const pascagoula = HOT_SPOTS.find(item => item.id === "pascagoula");
 assert.equal(pascagoula.tracks[0].displayName, "Family Jewels · Objective Raid", "Pascagoula Track 1 uses the named Family Jewels brief");
 assert.equal(pascagoula.tracks[1].displayName, "The Great Ruby Robbery · Pursuit", "Pascagoula Track 2 uses the named Great Ruby Robbery brief");
 assert.ok(app.includes("MISSION_OPFOR_OVERRIDES") && app.includes("Mission-specific opposing force"), "Pascagoula uses the mission-specific OpFor override");
+assert.ok(!app.includes("hotspot-summary-side") && !app.includes("selected-side-line"), "selected side is shown only in the side selector");
+assert.ok(!app.includes("Selected side:"), "selected side is not repeated in the mission brief");
 assert.ok(HOT_SPOTS.length >= 10, "the location selector includes the Draconis Reach mission briefs currently mapped");
 const achernar = HOT_SPOTS.find(item => item.id === "achernar");
 assert.equal(achernar.tracks[1].outcomes["home-guard"].trackId, "recon", "Achernar Track 2 resolves from the previous winner");
