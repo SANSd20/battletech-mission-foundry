@@ -20,7 +20,7 @@ const state = {
   resultSelections: {},
   roleSelections: {},
   trackId: "meeting-engagement",
-  scale: 3,
+  scale: 1,
   mode: "both",
   takingOneForTeam: false,
   opforRoll: 1,

@@ -47,6 +47,8 @@ for (const term of ["option-toggle", "opfor-card", "opfor-force-grid", "opfor-ro
 }
 assert.ok(!app.includes("Math.random"), "OpFor result is selected by the player rather than generated randomly");
 assert.ok(html.indexOf('id="scale-select"') < html.indexOf('id="taking-one-for-team"'), "Force Scale appears before Taking one for the team");
+assert.match(app, /scale:\s*1,/, "application defaults to Scale 1");
+assert.match(html, /<option value="1" selected>Scale 1<\/option>/, "selector defaults to Scale 1");
 assert.ok(HOT_SPOTS.length >= 10, "the location selector includes the Draconis Reach mission briefs currently mapped");
 const achernar = HOT_SPOTS.find(item => item.id === "achernar");
 assert.equal(achernar.tracks[1].outcomes["home-guard"].trackId, "recon", "Achernar Track 2 resolves from the previous winner");
