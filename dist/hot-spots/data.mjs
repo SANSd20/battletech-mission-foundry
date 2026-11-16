@@ -1,6 +1,6 @@
 export const SOURCES = {
   primary: "Hot Spots: Draconis Reach, First Printing, pp. 167–175",
-  errata: "Hot Spots Hinterlands Errata v2.41, reviewed for applicability",
+  errata: "Hot Spots: Draconis Reach Errata pre-v1; Hot Spots Hinterlands Errata v2.41 reviewed for applicability",
   supersession: "Draconis Reach supersedes the supplied Hinterlands track text; Hinterlands track corrections are not applied to these records.",
   militaryPalette: "BattleTech Faction Colors, palettes/military-ui.yaml, verified main e3cd8c9c9899b04aebd314a2a921ad3edd4092f1",
   opposingForces: "Hot Spots: Draconis Reach, First Printing, Opposing Force Tables pp. 186–201"
