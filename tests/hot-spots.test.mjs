@@ -77,6 +77,7 @@ assert.ok(!html.includes("No contract terms"), "contract terms badge is removed"
 assert.ok(html.includes('class="control-group track-display"'), "track title uses the top display slot");
 assert.ok(css.includes("font: 400 clamp(36px, 4vw, 54px)/.95 Georgia"), "track title uses the mission heading style");
 assert.ok(css.includes("shared-rule-table"), "Scanning range table styling is present");
+assert.ok(css.includes("table-layout: fixed") && css.includes("color: var(--ink)"), "Scanning range table stays readable in narrow layouts");
 assert.ok(app.includes("renderSharedRule"), "shared rules support structured table content");
 assert.ok(!css.includes(".mission-card { overflow: auto"), "mission reference flows with the page");
 assert.ok(HOT_SPOTS.length >= 10, "the location selector includes the Draconis Reach mission briefs currently mapped");
