@@ -189,7 +189,10 @@ function modeLabel() {
   return state.mode === "both" ? "Both sides" : sideNames[state.mode] + " only";
 }
 
-function renderScaleButtons() {
+function renderControlState() {
+  const track = currentTrack();
+  const resolved = resolvedHotSpotStep();
+  $("#derived-track-title").textContent = track ? (resolved?.displayName || track.name) : "Track pending";
   Array.from(document.querySelectorAll(".scale-button")).forEach(button => {
     const active = Number(button.dataset.scale) === state.scale;
     button.classList.toggle("active", active);
@@ -301,7 +304,7 @@ function renderReference() {
 
   $("#mission-reference").innerHTML =
     '<article class="panel mission-card">' +
-      '<div class="mission-card-head"><div class="eyebrow">SELECTED TRACK · p. ' + track.page + '</div><h2>' + esc(resolved?.displayName || track.name) + '</h2><p>' + esc(track.summary) + '</p></div>' +
+      '<div class="mission-card-head"><div class="eyebrow">SELECTED TRACK · p. ' + track.page + '</div><p>' + esc(track.summary) + '</p></div>' +
       hotSpotBrief +
       '<div class="reference-section"><div class="panel-kicker">BATTLEFIELD & SETUP</div><ul class="rule-list">' + setup + "</ul></div>" +
       (setupDetails ? '<div class="reference-section"><div class="panel-kicker">DEPLOYMENT DETAILS</div><ul class="rule-list">' + setupDetails + "</ul></div>" : "") +
@@ -374,7 +377,7 @@ function renderAll() {
   syncHotSpotState();
   applyFactionTheme();
   renderHotSpotSetup();
-  renderScaleButtons();
+  renderControlState();
   renderReference();
   renderTracker();
 }
@@ -425,7 +428,7 @@ $("#scale-select").addEventListener("click", event => {
   const button = event.target.closest(".scale-button");
   if (!button) return;
   state.scale = Number(button.dataset.scale);
-  renderScaleButtons();
+  renderControlState();
   renderReference();
   renderOpFor();
 });

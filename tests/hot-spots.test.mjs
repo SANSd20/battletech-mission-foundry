@@ -67,7 +67,8 @@ assert.ok(!app.includes("hotspot-summary-side") && !app.includes("selected-side-
 assert.ok(!app.includes("Selected side:"), "selected side is not repeated in the mission brief");
 assert.ok(!html.includes('id="track-select"'), "the derived track dropdown is removed");
 assert.ok(!html.includes('id="tracker-title"'), "the duplicate tracker title is removed");
-assert.ok(app.includes("renderScaleButtons"), "scale button rendering remains active");
+assert.ok(app.includes("renderControlState") && app.includes("derived-track-title"), "track title and scale controls remain active");
+assert.ok(html.includes('id="derived-track-title"'), "derived track title replaces the unusable dropdown");
 assert.ok(HOT_SPOTS.length >= 10, "the location selector includes the Draconis Reach mission briefs currently mapped");
 const achernar = HOT_SPOTS.find(item => item.id === "achernar");
 assert.equal(achernar.tracks[1].outcomes["home-guard"].trackId, "recon", "Achernar Track 2 resolves from the previous winner");
