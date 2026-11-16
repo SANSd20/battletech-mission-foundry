@@ -187,7 +187,7 @@ function renderTrackOptions() {
   $("#track-select").innerHTML = '<option value="' + esc(state.trackId || "") + '">' + esc(derivedLabel) + "</option>";
   $("#track-select").value = state.trackId || "";
   $("#track-select").disabled = true;
-  $(".scale-button").forEach(button => {
+  Array.from(document.querySelectorAll(".scale-button")).forEach(button => {
     const active = Number(button.dataset.scale) === state.scale;
     button.classList.toggle("active", active);
     button.setAttribute("aria-pressed", String(active));

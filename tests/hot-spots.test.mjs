@@ -50,6 +50,7 @@ assert.ok(html.indexOf('id="scale-select"') < html.indexOf('id="taking-one-for-t
 assert.match(app, /scale:\s*1,/, "application defaults to Scale 1");
 assert.match(html, /data-scale="1" aria-pressed="true">1<\/button>/, "Scale 1 is selected by default");
 assert.ok(!html.includes('<select id="scale-select">'), "Force Scale uses buttons instead of a dropdown");
+assert.ok(app.includes('Array.from(document.querySelectorAll(".scale-button")).forEach'), "Scale buttons use the multi-element selector");
 assert.ok(HOT_SPOTS.length >= 10, "the location selector includes the Draconis Reach mission briefs currently mapped");
 const achernar = HOT_SPOTS.find(item => item.id === "achernar");
 assert.equal(achernar.tracks[1].outcomes["home-guard"].trackId, "recon", "Achernar Track 2 resolves from the previous winner");
