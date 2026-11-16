@@ -420,6 +420,7 @@ $("#scale-select").addEventListener("click", event => {
   const button = event.target.closest(".scale-button");
   if (!button) return;
   state.scale = Number(button.dataset.scale);
+  renderTrackOptions();
   renderReference();
   renderOpFor();
 });
