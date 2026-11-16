@@ -1162,11 +1162,11 @@ export const HOT_SPOTS = [
     source: "Draconis Reach pp. 104–106",
     sides: [factionSide("jewel-thieves", "Jewel Thieves", "Draconis Combine"), factionSide("ranger-raiders", "Ranger Raiders", "Federated Suns")],
     tracks: [
-      fixedHotSpotTrack(1, "objective-raid", "ranger-raiders", "jewel-thieves", { displayName: "Family Jewels · Objective Raid" }),
+      fixedHotSpotTrack(1, "objective-raid", "ranger-raiders", "jewel-thieves"),
       winnerDependentTrack(2, [1], {
         "jewel-thieves": { trackId: "pursuit", attacker: "jewel-thieves", defender: "ranger-raiders" },
         "ranger-raiders": { trackId: "pursuit", attacker: "ranger-raiders", defender: "jewel-thieves" }
-      }, { displayName: "The Great Ruby Robbery · Pursuit" })
+      })
     ]
   },
   {
