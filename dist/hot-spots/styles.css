@@ -198,6 +198,7 @@ body { background: color-mix(in srgb, var(--faction-color) 10%, #111821); color:
 .counter-button:hover { border-color: var(--faction-color); color: var(--faction-color); }
 .score-card { border-color: color-mix(in srgb, var(--faction-color) 38%, #b9c6c8); }
 .objective-vp { color: color-mix(in srgb, var(--faction-color) 80%, var(--orange)); }
+.hotspot-panel h2, .panel-heading h3, .section-heading.compact h2 { color: var(--ink); }
 
 @media (max-width: 1050px) {
   .hotspot-grid { grid-template-columns: 1fr 1fr; }

@@ -1,4 +1,4 @@
-import { FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, SOURCES, TRACKS } from "./data.mjs?v=fb7fe83";
+import { FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, SOURCES, TRACKS } from "./data.mjs?v=contrast-1";
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
