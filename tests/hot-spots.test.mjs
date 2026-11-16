@@ -71,7 +71,8 @@ assert.equal(pascagoula.tracks[0].trackId, "objective-raid", "Pascagoula Track 1
 assert.equal(pascagoula.tracks[1].outcomes["jewel-thieves"].trackId, "pursuit", "Pascagoula Track 2 uses Pursuit");
 assert.equal(pascagoula.tracks[0].displayName, undefined, "Pascagoula Track 1 does not expose contract naming");
 assert.equal(pascagoula.tracks[1].displayName, undefined, "Pascagoula Track 2 does not expose contract naming");
-assert.ok(app.includes("MISSION_OPFOR_OVERRIDES") && app.includes("Mission-specific opposing force"), "Pascagoula uses the mission-specific OpFor override");\nassert.ok(css.includes("flex-wrap: wrap") && css.includes("mission-scale-output"), "mission-specific OpFor result stays readable on narrow layouts");
+assert.ok(app.includes("MISSION_OPFOR_OVERRIDES") && app.includes("Mission-specific opposing force"), "Pascagoula uses the mission-specific OpFor override");
+assert.ok(css.includes("flex-wrap: wrap") && css.includes("mission-scale-output"), "mission-specific OpFor result stays readable on narrow layouts");
 assert.ok(!app.includes("hotspot-summary-side") && !app.includes("selected-side-line"), "selected side is shown only in the side selector");
 assert.ok(!app.includes("Selected side:"), "selected side is not repeated in the mission brief");
 assert.ok(!html.includes('id="track-select"'), "the derived track dropdown is removed");

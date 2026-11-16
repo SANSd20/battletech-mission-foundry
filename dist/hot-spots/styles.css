@@ -73,11 +73,14 @@ button, select { cursor: pointer; }
 .opfor-card-head .panel-kicker { color: var(--faction-color); }
 .opfor-roll-control { display: grid; gap: 4px; min-width: 145px; color: #c1cbd2; font-size: 9px; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
 .opfor-roll-control select { min-height: 36px; padding: 0 9px; border: 1px solid var(--faction-color); background: #fff; color: #10151f; font-size: 12px; font-weight: 800; letter-spacing: normal; text-transform: none; }
-.opfor-card-meta { display: flex; flex-wrap: wrap; gap: 7px 16px; padding: 10px 13px; border-bottom: 1px solid #d3dfda; background: color-mix(in srgb, var(--faction-color) 10%, #edf5f1); color: #53636b; font-size: 11px; }\n.opfor-card-meta > span { min-width: 0; overflow-wrap: anywhere; }
+.opfor-card-meta { display: flex; flex-wrap: wrap; gap: 7px 16px; padding: 10px 13px; border-bottom: 1px solid #d3dfda; background: color-mix(in srgb, var(--faction-color) 10%, #edf5f1); color: #53636b; font-size: 11px; }
+.opfor-card-meta > span { min-width: 0; overflow-wrap: anywhere; }
 .opfor-card-meta strong { color: var(--ink); }
-.opfor-result { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding: 12px 13px; border-bottom: 1px solid #d3dfda; color: #53636b; font-size: 11px; }\n.opfor-result > span:last-child { flex: 1 1 180px; min-width: 0; }
+.opfor-result { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding: 12px 13px; border-bottom: 1px solid #d3dfda; color: #53636b; font-size: 11px; }
+.opfor-result > span:last-child { flex: 1 1 180px; min-width: 0; }
 .opfor-result-label { color: var(--faction-color); font-size: 10px; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
-.opfor-result output { display: inline-grid; place-items: center; width: 29px; height: 29px; border-radius: 50%; background: var(--faction-color); color: #10151f; font-size: 14px; font-weight: 900; }\n.opfor-result output.mission-scale-output { width: auto; min-width: 84px; height: 29px; padding: 0 9px; border-radius: 2px; }
+.opfor-result output { display: inline-grid; place-items: center; width: 29px; height: 29px; border-radius: 50%; background: var(--faction-color); color: #10151f; font-size: 14px; font-weight: 900; }
+.opfor-result output.mission-scale-output { width: auto; min-width: 84px; height: 29px; padding: 0 9px; border-radius: 2px; }
 .opfor-force-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 13px; }
 .opfor-force-grid > div { padding: 10px; border-left: 3px solid var(--faction-color); background: #fff; }
 .opfor-force-grid span, .opfor-instruction span { display: block; color: var(--faction-color); font-size: 9px; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
@@ -268,7 +271,9 @@ body { background: color-mix(in srgb, var(--faction-color) 10%, #111821); color:
   .scale-choice { display: block; }
   .scale-choice .label { display: block; margin-bottom: 7px; }
 
-  .opfor-card-head { align-items: flex-start; flex-wrap: wrap; }\n  .opfor-card-head > div:first-child { min-width: 0; flex: 1 1 220px; }\n  .opfor-roll-control { min-width: 0; flex: 0 1 145px; }
+  .opfor-card-head { align-items: flex-start; flex-wrap: wrap; }
+  .opfor-card-head > div:first-child { min-width: 0; flex: 1 1 220px; }
+  .opfor-roll-control { min-width: 0; flex: 0 1 145px; }
   .opfor-force-grid { grid-template-columns: 1fr; }
   .control-status { grid-column: auto; }
   .controls > .danger { grid-column: auto; grid-row: auto; }
