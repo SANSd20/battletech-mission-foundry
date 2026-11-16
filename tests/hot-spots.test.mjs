@@ -72,6 +72,7 @@ assert.ok(html.includes('id="derived-track-title"'), "derived track title replac
 assert.ok(!html.includes("No contract terms"), "contract terms badge is removed");
 assert.ok(html.includes('class="control-group track-display"'), "track title uses the top display slot");
 assert.ok(css.includes("font: 400 clamp(36px, 4vw, 54px)/.95 Georgia"), "track title uses the mission heading style");
+assert.ok(!css.includes(".mission-card { overflow: auto"), "mission reference flows with the page");
 assert.ok(HOT_SPOTS.length >= 10, "the location selector includes the Draconis Reach mission briefs currently mapped");
 const achernar = HOT_SPOTS.find(item => item.id === "achernar");
 assert.equal(achernar.tracks[1].outcomes["home-guard"].trackId, "recon", "Achernar Track 2 resolves from the previous winner");
