@@ -61,10 +61,11 @@ assert.ok(!html.includes('<select id="scale-select">'), "Force Scale uses button
 assert.ok(app.includes('Array.from(document.querySelectorAll(".scale-button")).forEach'), "Scale buttons use the multi-element selector");
 assert.ok(app.includes("renderTrackOptions();" + String.fromCharCode(10) + "  renderReference();"), "Scale selection refreshes the selected button state");
 assert.ok(app.includes('const label = value === 1 ? "1−"') && app.includes('const label = value === 6 ? "6+"'), "OpFor roll selector uses the table boundary labels");
-assert.equal(MISSION_OPFOR_OVERRIDES.pascagoula["jewel-thieves"].scales["1"].primary, "CMA-2K Chimera (3/4)", "Pascagoula Scale 1 uses the printed Fifth Ghost roster");
-assert.equal(MISSION_OPFOR_OVERRIDES.pascagoula["jewel-thieves"].scales["2"].primary, "CMA-2K Chimera (3/4) | JR7-C2 Jenner (3/4)", "Pascagoula Scale 2 uses the printed Fifth Ghost roster");
-assert.equal(MISSION_OPFOR_OVERRIDES.pascagoula["jewel-thieves"].scales["3"].primary, "CMA-2K Chimera (3/4) | DMO-5K Daimyo (3/4) | JR7-C2 Jenner (3/4)", "Pascagoula Scale 3 uses the printed Fifth Ghost roster");
-assert.ok(!MISSION_OPFOR_OVERRIDES.pascagoula["jewel-thieves"].scales["2"].support.includes("C3"), "Pascagoula escort override does not add an unsupported C3 network");
+assert.equal(MISSION_OPFOR_OVERRIDES.pascagoula["jewel-thieves"].scales["1"].primary, "CHA-2K Chimera (3/4) | JR7-C2 Jenner (3/4)", "Pascagoula Scale 1 uses the pre-v1 Fifth Ghost roster");
+assert.equal(MISSION_OPFOR_OVERRIDES.pascagoula["jewel-thieves"].scales["2"].primary, "CHA-2K Chimera (3/4) | JR7-C2 Jenner (3/4) | DMO-5K Daimyo (3/4) | DRG-5Nr Dragon (3/4)", "Pascagoula Scale 2 uses the pre-v1 Fifth Ghost roster");
+assert.equal(MISSION_OPFOR_OVERRIDES.pascagoula["jewel-thieves"].scales["3"].primary, "CHA-2K Chimera (3/4) | JR7-C2 Jenner (3/4) | DMO-5K Daimyo (3/4) | DRG-5Nr Dragon (3/4) | Nova Cat T (3/4)", "Pascagoula Scale 3 uses the pre-v1 Fifth Ghost roster");
+assert.match(MISSION_OPFOR_OVERRIDES.pascagoula["jewel-thieves"].scales["2"].note, /C3 network/);
+assert.match(SOURCES.errata, /Draconis Reach Errata pre-v1/);
 const pascagoula = HOT_SPOTS.find(item => item.id === "pascagoula");
 assert.equal(pascagoula.tracks[0].trackId, "objective-raid", "Pascagoula Track 1 uses Objective Raid");
 assert.equal(pascagoula.tracks[1].outcomes["jewel-thieves"].trackId, "pursuit", "Pascagoula Track 2 uses Pursuit");
