@@ -323,22 +323,22 @@ export const MISSION_OPFOR_OVERRIDES = {
       "sourcePage": 105,
       "scales": {
         "1": {
+          "primary": "CMA-2K Chimera (3/4)",
+          "support": "×4 Ryu Heavy Transport WiGE (use Vedette Medium Tank asset cards)",
+          "alternate": "",
+          "note": "All Ghost MechWarriors have Gunnery 3 / Piloting 4."
+        },
+        "2": {
           "primary": "CMA-2K Chimera (3/4) | JR7-C2 Jenner (3/4)",
           "support": "×4 Ryu Heavy Transport WiGE (use Vedette Medium Tank asset cards)",
           "alternate": "",
-          "note": "The Fifth Ghost escorts use the listed units at Scale 1. All Ghost MechWarriors have Gunnery 3 / Piloting 4."
-        },
-        "2": {
-          "primary": "CMA-2K Chimera (3/4) | JR7-C2 Jenner (3/4) | DMO-5K Daimyo (3/4) | DRG-5Nr Dragon (3/4)",
-          "support": "×4 Ryu Heavy Transport WiGE (use Vedette Medium Tank asset cards) | C3 network",
-          "alternate": "",
-          "note": "Scale 2 adds the Daimyo and Dragon with a C3 network. All Ghost MechWarriors have Gunnery 3 / Piloting 4."
+          "note": "All Ghost MechWarriors have Gunnery 3 / Piloting 4."
         },
         "3": {
-          "primary": "CMA-2K Chimera (3/4) | JR7-C2 Jenner (3/4) | DMO-5K Daimyo (3/4) | DRG-5Nr Dragon (3/4) | Nova Cat T (3/4)",
-          "support": "×4 Ryu Heavy Transport WiGE (use Vedette Medium Tank asset cards) | C3 network",
+          "primary": "CMA-2K Chimera (3/4) | DMO-5K Daimyo (3/4) | JR7-C2 Jenner (3/4)",
+          "support": "×4 Ryu Heavy Transport WiGE (use Vedette Medium Tank asset cards)",
           "alternate": "",
-          "note": "Scale 3 adds the Nova Cat T. All Ghost MechWarriors have Gunnery 3 / Piloting 4."
+          "note": "All Ghost MechWarriors have Gunnery 3 / Piloting 4."
         }
       }
     }
@@ -1162,11 +1162,11 @@ export const HOT_SPOTS = [
     source: "Draconis Reach pp. 104–106",
     sides: [factionSide("jewel-thieves", "Jewel Thieves", "Draconis Combine"), factionSide("ranger-raiders", "Ranger Raiders", "Federated Suns")],
     tracks: [
-      fixedHotSpotTrack(1, "objective-raid", "ranger-raiders", "jewel-thieves", { displayName: "Objective Raid · Fifth Ghost" }),
+      fixedHotSpotTrack(1, "objective-raid", "ranger-raiders", "jewel-thieves", { displayName: "Family Jewels · Objective Raid" }),
       winnerDependentTrack(2, [1], {
         "jewel-thieves": { trackId: "pursuit", attacker: "jewel-thieves", defender: "ranger-raiders" },
         "ranger-raiders": { trackId: "pursuit", attacker: "ranger-raiders", defender: "jewel-thieves" }
-      })
+      }, { displayName: "The Great Ruby Robbery · Pursuit" })
     ]
   },
   {

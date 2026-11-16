@@ -53,9 +53,13 @@ assert.ok(!html.includes('<select id="scale-select">'), "Force Scale uses button
 assert.ok(app.includes('Array.from(document.querySelectorAll(".scale-button")).forEach'), "Scale buttons use the multi-element selector");
 assert.ok(app.includes("renderTrackOptions();" + String.fromCharCode(10) + "  renderReference();"), "Scale selection refreshes the selected button state");
 assert.ok(app.includes('const label = value === 1 ? "1−"') && app.includes('const label = value === 6 ? "6+"'), "OpFor roll selector uses the table boundary labels");
-assert.equal(MISSION_OPFOR_OVERRIDES.pascagoula["jewel-thieves"].scales["1"].primary, "CMA-2K Chimera (3/4) | JR7-C2 Jenner (3/4)", "Pascagoula Scale 1 uses the mission-specific Fifth Ghost roster");
-assert.match(MISSION_OPFOR_OVERRIDES.pascagoula["jewel-thieves"].scales["2"].primary, /DMO-5K Daimyo/);
-assert.match(MISSION_OPFOR_OVERRIDES.pascagoula["jewel-thieves"].scales["3"].primary, /Nova Cat T/);
+assert.equal(MISSION_OPFOR_OVERRIDES.pascagoula["jewel-thieves"].scales["1"].primary, "CMA-2K Chimera (3/4)", "Pascagoula Scale 1 uses the printed Fifth Ghost roster");
+assert.equal(MISSION_OPFOR_OVERRIDES.pascagoula["jewel-thieves"].scales["2"].primary, "CMA-2K Chimera (3/4) | JR7-C2 Jenner (3/4)", "Pascagoula Scale 2 uses the printed Fifth Ghost roster");
+assert.equal(MISSION_OPFOR_OVERRIDES.pascagoula["jewel-thieves"].scales["3"].primary, "CMA-2K Chimera (3/4) | DMO-5K Daimyo (3/4) | JR7-C2 Jenner (3/4)", "Pascagoula Scale 3 uses the printed Fifth Ghost roster");
+assert.ok(!MISSION_OPFOR_OVERRIDES.pascagoula["jewel-thieves"].scales["2"].support.includes("C3"), "Pascagoula escort override does not add an unsupported C3 network");
+const pascagoula = HOT_SPOTS.find(item => item.id === "pascagoula");
+assert.equal(pascagoula.tracks[0].displayName, "Family Jewels · Objective Raid", "Pascagoula Track 1 uses the named Family Jewels brief");
+assert.equal(pascagoula.tracks[1].displayName, "The Great Ruby Robbery · Pursuit", "Pascagoula Track 2 uses the named Great Ruby Robbery brief");
 assert.ok(app.includes("MISSION_OPFOR_OVERRIDES") && app.includes("Mission-specific opposing force"), "Pascagoula uses the mission-specific OpFor override");
 assert.ok(HOT_SPOTS.length >= 10, "the location selector includes the Draconis Reach mission briefs currently mapped");
 const achernar = HOT_SPOTS.find(item => item.id === "achernar");
