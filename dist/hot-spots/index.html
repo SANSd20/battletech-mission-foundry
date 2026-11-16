@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10151f">
+  <title>Mission Foundry — Hot Spots: Draconis Reach</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">BT</span>
+      <div><strong>MISSION FOUNDRY</strong><small>HOT SPOTS / DRACONIS REACH</small></div>
+    </div>
+    <div class="topbar-meta"><span class="status-dot"></span>Rules browser <span class="divider">•</span> v0.1</div>
+  </header>
+
+  <main class="shell">
+    <section class="hero">
+      <div class="eyebrow">HOT SPOTS MISSION BROWSER</div>
+      <h1>Keep the track<br><em>in view.</em></h1>
+      <p>Reference and track all eleven standard Hot Spots: Draconis Reach missions. The rules panel stays beside the objective table so play decisions and scoring remain visible together.</p>
+      <div class="source-strip">
+        <span>PRIMARY SOURCE</span><strong>Draconis Reach pp. 167–175</strong>
+        <span>ERRATA REVIEW</span><strong>Hinterlands v2.41 · superseded track text not applied</strong>
+      </div>
+    </section>
+
+    <section class="controls panel" aria-label="Mission selection">
+      <div class="control-group">
+        <label for="track-select">Mission track</label>
+        <select id="track-select"></select>
+      </div>
+      <div class="control-group">
+        <label for="scale-select">Force Scale</label>
+        <select id="scale-select">
+          <option value="1">Scale 1</option>
+          <option value="2">Scale 2</option>
+          <option value="3" selected>Scale 3</option>
+        </select>
+      </div>
+      <div class="control-group control-status">
+        <span class="label">Tracking view</span>
+        <div class="mode-switch" role="group" aria-label="Tracking view">
+          <button type="button" class="mode-button" data-mode="attacker">Attacker only</button>
+          <button type="button" class="mode-button" data-mode="defender">Defender only</button>
+          <button type="button" class="mode-button active" data-mode="both">Both sides</button>
+        </div>
+      </div>
+      <button type="button" id="reset-button" class="button danger">Reset track</button>
+    </section>
+
+    <div class="app-grid">
+      <section class="reference-column" aria-label="Mission reference">
+        <div id="mission-reference"></div>
+      </section>
+
+      <section class="tracker-column" aria-label="Objective tracker">
+        <div class="panel tracker-panel">
+          <div class="section-heading compact">
+            <div>
+              <div class="eyebrow">LIVE OBJECTIVE TRACKER</div>
+              <h2 id="tracker-title">Objective Raid</h2>
+            </div>
+            <span class="rule-chip" id="tracker-source">Draconis Reach p. 171</span>
+          </div>
+          <p class="tracker-help">Use the side controls to mark one-time objectives or adjust repeatable objectives. A dash means that objective does not apply to that side. Progress is preserved when switching views or missions.</p>
+          <div class="table-wrap">
+            <table class="objective-table">
+              <thead>
+                <tr><th scope="col">Objective</th><th scope="col" class="attacker-col">Attacker</th><th scope="col" class="defender-col">Defender</th></tr>
+              </thead>
+              <tbody id="objective-body"></tbody>
+            </table>
+          </div>
+          <div class="score-card" aria-live="polite">
+            <div class="score-summary">
+              <div><span class="side-label attacker-text">ATTACKER VP</span><strong id="attacker-score">0</strong></div>
+              <div class="difference" id="score-difference">Tie</div>
+              <div class="score-right"><span class="side-label defender-text">DEFENDER VP</span><strong id="defender-score">0</strong></div>
+            </div>
+            <div class="score-bars" aria-hidden="true">
+              <div class="bar-track"><div id="attacker-bar" class="bar attacker-bar"></div></div>
+              <div class="bar-track"><div id="defender-bar" class="bar defender-bar"></div></div>
+            </div>
+          </div>
+          <div class="score-note">Victory Points update immediately as objectives change.</div>
+        </div>
+
+        <div class="panel source-panel">
+          <div class="panel-heading">
+            <div><span class="panel-kicker">PLAY NOTES</span><h3>Record decisions outside the VP table</h3></div>
+          </div>
+          <p>The tracker records objective progress and VP only. Use the reference cards for setup, deployment, track end, salvage, and special rules such as scanning, buildings, components, or emplacement counts.</p>
+          <div class="source-flag"><strong>Source boundary</strong><span>Contracts, employers, travel, and campaign bookkeeping are intentionally excluded.</span></div>
+        </div>
+      </section>
+    </div>
+
+    <section class="errata-panel panel">
+      <div class="panel-heading">
+        <div><span class="panel-kicker">SOURCE VERIFICATION</span><h3>Printed rules and errata remain distinct</h3></div>
+      </div>
+      <p>Draconis Reach pp. 167–175 are the authoritative track text for this browser. The supplied Hot Spots Hinterlands v2.41 errata was reviewed directly. Its track-specific changes target the older Hinterlands page numbers and are not merged into the Draconis Reach records.</p>
+      <p class="reference-line">Source files: Hot Spots: Draconis Reach — First Printing; Hot Spots Hinterlands Errata v2.41; Hot Spots Hinterlands Update; Hinterlands Second Printing. Only the first two were needed for this track and errata audit.</p>
+    </section>
+  </main>
+
+  <footer class="footer"><span>MISSION FOUNDRY</span><span>Hot Spots: Draconis Reach · Local rules reference</span><span>LOCAL v0.1</span></footer>
+  <noscript>This browser requires JavaScript for mission selection and objective scoring.</noscript>
+  <script type="module" src="app.mjs"></script>
+</body>
+</html>
+

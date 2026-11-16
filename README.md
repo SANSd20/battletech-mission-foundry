@@ -1,6 +1,6 @@
 # Mission Foundry — BattleTech Core Rulebook v0.1
 
-Responsive public web application for generating two-sided Standard Missions from the BattleTech Core Rulebook. This repository contains the page-reference build only; the separate rules-included build is kept local and is not published here.
+Responsive public web application for generating two-sided Standard Missions from the BattleTech Core Rulebook, with an adjacent Hot Spots: Draconis Reach mission browser at `dist/hot-spots/`. This repository contains the page-reference build only; the separate rules-included build is kept local and is not published here.
 
 ## Preview
 
@@ -10,4 +10,5 @@ Only the public page-reference build is included in this repository. The local r
 
 ## Verification
 
-Run `node tests/mission-data.test.mjs` for the data smoke test. The app intentionally does not build forces, select physical maps, place counters on a real board, or resolve player choices left to players by the rulebook.
+Run `node tests/mission-data.test.mjs` for the Core Rulebook data smoke test and `node tests/hot-spots.test.mjs` for the Hot Spots browser data and interaction-structure smoke test. The apps intentionally do not build forces, select physical maps, place counters on a real board, or resolve player choices left to the rulebooks.
+
