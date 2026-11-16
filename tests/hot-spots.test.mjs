@@ -43,6 +43,7 @@ assert.deepEqual(recon.objectives.find(objective => objective.id === "deny").vpO
 const app = fs.readFileSync(new URL("../dist/hot-spots/app.mjs", import.meta.url), "utf8");
 const html = fs.readFileSync(new URL("../dist/hot-spots/index.html", import.meta.url), "utf8");
 const css = fs.readFileSync(new URL("../dist/hot-spots/styles.css", import.meta.url), "utf8");
+assert.ok(!app.includes("errata-note"), "player-facing errata boundary panel is removed");
 for (const term of ["progress", "vpSelections", "data-mode", "resetTrack", "window.confirm", "Attacker only", "Defender only", "Both sides"]) {
   assert.ok((app + html).includes(term), term + " tracking behavior is present");
 }
