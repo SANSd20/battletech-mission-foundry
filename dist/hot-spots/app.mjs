@@ -306,9 +306,6 @@ function renderReference() {
     return '<li><div class="reference-objective-head"><strong>' + esc(objective.name) + '</strong><span class="vp-badge">' + esc(side) + " · " + vp + " VP" + (objective.repeatable ? " each" : "") + '</span></div><p>' + esc(objective.text) + "</p></li>";
   }).join("");
   const special = track.special.map(item => "<li>" + esc(item) + "</li>").join("");
-  const errata = track.errataNote
-    ? '<div class="errata-note"><strong>Errata boundary</strong><p>' + esc(track.errataNote) + "</p></div>"
-    : '<div class="errata-note"><strong>Errata boundary</strong><p>' + esc(SOURCES.supersession) + "</p></div>";
 
   const attackerSide = sideById(resolved?.attacker);
   const defenderSide = sideById(resolved?.defender);
@@ -323,7 +320,6 @@ function renderReference() {
       '<div class="reference-section scale-section"><div class="panel-kicker">SCALE ' + esc(String(state.scale)) + ' VIEW</div><ul class="rule-list">' + scaleNotes + "</ul></div>" +
       '<div class="reference-section"><div class="panel-kicker">OBJECTIVES & VICTORY POINTS</div><ul class="objective-reference-list">' + objectives + "</ul></div>" +
       '<div class="reference-section"><div class="panel-kicker">SPECIAL RULES, TRACK END & SALVAGE</div><ul class="rule-list">' + special + "</ul></div>" +
-      errata +
       '<div class="reference-citation">Source: ' + esc(SOURCES.primary) + " · selected track p. " + track.page + "</div>" +
     "</article>" +
     '<article class="panel general-card"><div class="panel-heading"><div><span class="panel-kicker">SHARED RULES</span><h3>Track reference p. 167</h3></div></div>' +
