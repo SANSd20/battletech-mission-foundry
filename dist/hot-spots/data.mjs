@@ -335,22 +335,22 @@ export const MISSION_OPFOR_OVERRIDES = {
       "sourcePage": 105,
       "scales": {
         "1": {
-          "primary": "CMA-2K Chimera (3/4)",
+          "primary": "CHA-2K Chimera (3/4) | JR7-C2 Jenner (3/4)",
           "support": "×4 Ryu Heavy Transport WiGE (use Vedette Medium Tank asset cards)",
           "alternate": "",
           "note": "All Ghost MechWarriors have Gunnery 3 / Piloting 4."
         },
         "2": {
-          "primary": "CMA-2K Chimera (3/4) | JR7-C2 Jenner (3/4)",
+          "primary": "CHA-2K Chimera (3/4) | JR7-C2 Jenner (3/4) | DMO-5K Daimyo (3/4) | DRG-5Nr Dragon (3/4)",
           "support": "×4 Ryu Heavy Transport WiGE (use Vedette Medium Tank asset cards)",
           "alternate": "",
-          "note": "All Ghost MechWarriors have Gunnery 3 / Piloting 4."
+          "note": "All Ghost MechWarriors have Gunnery 3 / Piloting 4. The Scale 2 force uses a C3 network."
         },
         "3": {
-          "primary": "CMA-2K Chimera (3/4) | DMO-5K Daimyo (3/4) | JR7-C2 Jenner (3/4)",
+          "primary": "CHA-2K Chimera (3/4) | JR7-C2 Jenner (3/4) | DMO-5K Daimyo (3/4) | DRG-5Nr Dragon (3/4) | Nova Cat T (3/4)",
           "support": "×4 Ryu Heavy Transport WiGE (use Vedette Medium Tank asset cards)",
           "alternate": "",
-          "note": "All Ghost MechWarriors have Gunnery 3 / Piloting 4."
+          "note": "All Ghost MechWarriors have Gunnery 3 / Piloting 4. The force uses a C3 network."
         }
       }
     }
