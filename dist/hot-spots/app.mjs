@@ -1,4 +1,4 @@
-import { FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, OPPOSING_FORCE_TABLES, SOURCES, TRACKS } from "./data.mjs?v=opfor-1";
+import { FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, OPPOSING_FORCE_TABLES, SOURCES, TRACKS } from "./data.mjs?v=opfor-2";
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -56,8 +56,16 @@ function currentOpForTable() {
   return tableId ? OPPOSING_FORCE_TABLES[tableId] : null;
 }
 
+function currentMissionOpForOverride() {
+  const hotSpot = currentHotSpot();
+  const selectedSideId = state.selectedSide[hotSpot.id];
+  return MISSION_OPFOR_OVERRIDES[hotSpot.id]?.[selectedSideId] || null;
+}
+
 function currentOpForScale() {
-  return currentOpForTable()?.scales[String(Math.min(3, Math.max(1, state.scale)))] || null;
+  const override = currentMissionOpForOverride();
+  const source = override || currentOpForTable();
+  return source?.scales[String(Math.min(3, Math.max(1, state.scale)))] || null;
 }
 
 function currentOpForRow() {
@@ -203,11 +211,23 @@ function renderOpFor() {
   }
   const selected = sideById(state.selectedSide[currentHotSpot().id]);
   const table = currentOpForTable();
-  if (!selected || !table) {
+  const override = currentMissionOpForOverride();
+  if (!selected || (!table && !override)) {
     container.innerHTML = '<article class="opfor-card opfor-unavailable"><div class="panel-kicker">TAKING ONE FOR THE TEAM</div><h3>No matching OpFor table</h3><p>The selected side is <strong>' + esc(selected?.faction || "unresolved") + '</strong>. Draconis Reach provides OpFor tables for Mercenary/Pirate, Capellan Confederation, Draconis Combine, Federated Suns, and Raven Alliance forces.</p><p class="opfor-rule">Choose a supported military side if you want the generated opposing force shown here.</p></article>';
     return;
   }
   const scale = currentOpForScale();
+  if (override) {
+    const forceBody = '<div class="opfor-force-grid"><div><span>Mission force</span><ul>' + forceList(scale?.primary) + '</ul></div><div><span>Mission assets</span><ul>' + forceList(scale?.support) + '</ul></div><div><span>Special notes</span><ul>' + forceList(scale?.note) + '</ul></div></div>';
+    container.innerHTML =
+      '<article class="opfor-card"><div class="opfor-card-head"><div><span class="panel-kicker">TAKING ONE FOR THE TEAM</span><h3>Mission-specific opposing force</h3><p>' + esc(override.label) + ' · Scale ' + esc(String(state.scale)) + '</p></div><div class="opfor-roll-control"><span>Mission roster</span><strong>Fixed by Force Scale</strong></div></div>' +
+      '<div class="opfor-card-meta"><span>Military side: <strong>' + esc(selected.name) + '</strong></span><span>Mission roster: <strong>' + esc(override.label) + '</strong></span><span>Source p. ' + esc(String(scale?.sourcePage || override.sourcePage || "—")) + '</span></div>' +
+      '<div class="opfor-result"><div class="opfor-result-label">MISSION FORCE</div><output>Scale ' + esc(String(state.scale)) + '</output><span>No 1D6 table roll is used for this Pascagoula roster.</span></div>' +
+      forceBody +
+      '<p class="opfor-rule">Use the mission-specific force listed for the selected Force Scale. The generic faction OpFor roll table is not used for this exception.</p>' +
+      '<div class="reference-citation">Source: ' + esc(SOURCES.primary) + ' · Pascagoula mission brief p. ' + esc(String(override.sourcePage || "—")) + '</div></article>';
+    return;
+  }
   const row = currentOpForRow();
   const clanNote = selected.faction === "Clan Sea Fox" ? '<p class="opfor-note">The Draconis Reach OpFor chapter provides a Raven Alliance table for the Clan force at Clan Sea Fox locations.</p>' : "";
   const forceBody = row?.note

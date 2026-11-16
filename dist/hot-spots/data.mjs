@@ -316,6 +316,35 @@ export const TRACKS = [
   }
 ];
 
+export const MISSION_OPFOR_OVERRIDES = {
+  "pascagoula": {
+    "jewel-thieves": {
+      "label": "Fifth Ghost Escorts",
+      "sourcePage": 105,
+      "scales": {
+        "1": {
+          "primary": "CMA-2K Chimera (3/4) | JR7-C2 Jenner (3/4)",
+          "support": "×4 Ryu Heavy Transport WiGE (use Vedette Medium Tank asset cards)",
+          "alternate": "",
+          "note": "The Fifth Ghost escorts use the listed units at Scale 1. All Ghost MechWarriors have Gunnery 3 / Piloting 4."
+        },
+        "2": {
+          "primary": "CMA-2K Chimera (3/4) | JR7-C2 Jenner (3/4) | DMO-5K Daimyo (3/4) | DRG-5Nr Dragon (3/4)",
+          "support": "×4 Ryu Heavy Transport WiGE (use Vedette Medium Tank asset cards) | C3 network",
+          "alternate": "",
+          "note": "Scale 2 adds the Daimyo and Dragon with a C3 network. All Ghost MechWarriors have Gunnery 3 / Piloting 4."
+        },
+        "3": {
+          "primary": "CMA-2K Chimera (3/4) | JR7-C2 Jenner (3/4) | DMO-5K Daimyo (3/4) | DRG-5Nr Dragon (3/4) | Nova Cat T (3/4)",
+          "support": "×4 Ryu Heavy Transport WiGE (use Vedette Medium Tank asset cards) | C3 network",
+          "alternate": "",
+          "note": "Scale 3 adds the Nova Cat T. All Ghost MechWarriors have Gunnery 3 / Piloting 4."
+        }
+      }
+    }
+  }
+};
+
 export const OPPOSING_FORCE_TABLES = {
   "mercenary-pirate": {
     "label": "Mercenary / Pirate",

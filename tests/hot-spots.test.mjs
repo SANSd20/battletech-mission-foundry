@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, OPPOSING_FORCE_TABLES, SOURCES, TRACKS } from "../dist/hot-spots/data.mjs";
+import { FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, OPPOSING_FORCE_TABLES, SOURCES, TRACKS } from "../dist/hot-spots/data.mjs";
 
 const expected = ["Assault", "Breakthrough", "Defend", "Flank", "Meeting Engagement", "Objective Raid", "Pursuit", "Pushback", "Recon", "Retreat", "Strike"];
 assert.deepEqual(TRACKS.map(track => track.name), expected, "all eleven Draconis Reach standard tracks are present");
@@ -53,6 +53,10 @@ assert.ok(!html.includes('<select id="scale-select">'), "Force Scale uses button
 assert.ok(app.includes('Array.from(document.querySelectorAll(".scale-button")).forEach'), "Scale buttons use the multi-element selector");
 assert.ok(app.includes("renderTrackOptions();" + String.fromCharCode(10) + "  renderReference();"), "Scale selection refreshes the selected button state");
 assert.ok(app.includes('const label = value === 1 ? "1−"') && app.includes('const label = value === 6 ? "6+"'), "OpFor roll selector uses the table boundary labels");
+assert.equal(MISSION_OPFOR_OVERRIDES.pascagoula["jewel-thieves"].scales["1"].primary, "CMA-2K Chimera (3/4) | JR7-C2 Jenner (3/4)", "Pascagoula Scale 1 uses the mission-specific Fifth Ghost roster");
+assert.match(MISSION_OPFOR_OVERRIDES.pascagoula["jewel-thieves"].scales["2"].primary, /DMO-5K Daimyo/);
+assert.match(MISSION_OPFOR_OVERRIDES.pascagoula["jewel-thieves"].scales["3"].primary, /Nova Cat T/);
+assert.ok(app.includes("MISSION_OPFOR_OVERRIDES") && app.includes("Mission-specific opposing force"), "Pascagoula uses the mission-specific OpFor override");
 assert.ok(HOT_SPOTS.length >= 10, "the location selector includes the Draconis Reach mission briefs currently mapped");
 const achernar = HOT_SPOTS.find(item => item.id === "achernar");
 assert.equal(achernar.tracks[1].outcomes["home-guard"].trackId, "recon", "Achernar Track 2 resolves from the previous winner");
