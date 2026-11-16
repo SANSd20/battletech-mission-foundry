@@ -7,12 +7,11 @@ assert.deepEqual(TRACKS.map(track => track.name), expected, "all eleven Draconis
 assert.equal(new Set(TRACKS.map(track => track.id)).size, 11, "track ids are unique");
 assert.equal(GENERAL_RULES.length, 5, "shared p. 167 reference includes the five browser sections");
 const scanningRange = GENERAL_RULES.find(rule => rule.title === "Scanning range");
-assert.deepEqual(scanningRange.table.headers, ["Sensor / rule", "BattleTech", "Alpha Strike"], "Scanning range uses a three-column comparison table");
-assert.equal(scanningRange.table.rows.length, 9, "Scanning range table includes seven sensor entries plus LOS and weapon attacks");
-assert.equal(scanningRange.table.rows[7][0], "LOS");
-assert.equal(scanningRange.table.rows[8][0], "Weapon attacks");
-assert.match(scanningRange.table.rows[7][1], /probe/);
-assert.match(scanningRange.table.rows[8][2], /PRB/);
+assert.deepEqual(scanningRange.table.headers, ["Scanning Equipment", "BT Range", "AS Range", "LOS Required", "Weapon Attacks on 2nd Turn"], "Scanning range uses the five-column comparison table");
+assert.equal(scanningRange.table.rows.length, 7, "Scanning range table includes all seven scanning equipment entries");
+assert.deepEqual(scanningRange.table.rows[0], ["Default Sensors", "4", "9″", "Yes", "No"]);
+assert.deepEqual(scanningRange.table.rows[1], ["Light Active Probe (LRP)", "3", "6″", "No", "Yes"]);
+assert.deepEqual(scanningRange.table.rows[6], ["Bloodhound (BH)", "8", "12″", "No", "Yes"]);
 assert.match(scanningRange.text, /Sprinting units cannot scan/);
 assert.match(SOURCES.supersession, /supersedes/i);
 assert.match(SOURCES.militaryPalette, /military-ui\.yaml/);
