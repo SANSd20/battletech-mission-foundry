@@ -20,16 +20,39 @@
     <section class="hero">
       <div class="eyebrow">HOT SPOTS MISSION BROWSER</div>
       <h1>Keep the track<br><em>in view.</em></h1>
-      <p>Reference and track all eleven standard Hot Spots: Draconis Reach missions. The rules panel stays beside the objective table so play decisions and scoring remain visible together.</p>
+      <p>Choose the Hot Spot location, track sequence, and military side. The standard mission track and Attacker/Defender roles resolve from the source briefing while the rules panel stays beside the objective table.</p>
       <div class="source-strip">
         <span>PRIMARY SOURCE</span><strong>Draconis Reach pp. 167–175</strong>
         <span>ERRATA REVIEW</span><strong>Hinterlands v2.41 · superseded track text not applied</strong>
       </div>
     </section>
 
-    <section class="controls panel" aria-label="Mission selection">
+    <section class="hotspot-panel panel" aria-label="Hot Spot mission setup">
+      <div class="panel-heading">
+        <div><span class="panel-kicker">HOT SPOT SETUP</span><h2>Choose the location and sequence</h2></div>
+        <span class="setup-boundary">No contract terms</span>
+      </div>
+      <div class="hotspot-grid">
+        <div class="control-group">
+          <label for="hot-spot-select">Hot Spot location</label>
+          <select id="hot-spot-select"></select>
+        </div>
+        <div class="control-group">
+          <label for="hot-spot-track-select">Track sequence</label>
+          <select id="hot-spot-track-select"></select>
+        </div>
+        <div class="control-group">
+          <label for="hot-spot-side-select">Military side</label>
+          <select id="hot-spot-side-select"></select>
+        </div>
+      </div>
+      <div id="winner-controls" class="winner-controls"></div>
+      <div id="hotspot-summary" class="hotspot-summary" aria-live="polite"></div>
+    </section>
+
+    <section class="controls panel" aria-label="Mission display controls">
       <div class="control-group">
-        <label for="track-select">Mission track</label>
+        <label for="track-select">Derived mission track</label>
         <select id="track-select"></select>
       </div>
       <div class="control-group">
@@ -69,16 +92,16 @@
           <div class="table-wrap">
             <table class="objective-table">
               <thead>
-                <tr><th scope="col">Objective</th><th scope="col" class="attacker-col">Attacker</th><th scope="col" class="defender-col">Defender</th></tr>
+                <tr><th scope="col">Objective</th><th scope="col" id="attacker-heading" class="attacker-col">Attacker</th><th scope="col" id="defender-heading" class="defender-col">Defender</th></tr>
               </thead>
               <tbody id="objective-body"></tbody>
             </table>
           </div>
           <div class="score-card" aria-live="polite">
             <div class="score-summary">
-              <div><span class="side-label attacker-text">ATTACKER VP</span><strong id="attacker-score">0</strong></div>
+              <div><span id="attacker-side-label" class="side-label attacker-text">ATTACKER VP</span><strong id="attacker-score">0</strong></div>
               <div class="difference" id="score-difference">Tie</div>
-              <div class="score-right"><span class="side-label defender-text">DEFENDER VP</span><strong id="defender-score">0</strong></div>
+              <div class="score-right"><span id="defender-side-label" class="side-label defender-text">DEFENDER VP</span><strong id="defender-score">0</strong></div>
             </div>
             <div class="score-bars" aria-hidden="true">
               <div class="bar-track"><div id="attacker-bar" class="bar attacker-bar"></div></div>

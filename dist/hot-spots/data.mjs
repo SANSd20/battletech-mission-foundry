@@ -316,3 +316,245 @@ export const TRACKS = [
 
 export const TRACK_NAMES = TRACKS.map(track => track.name);
 
+// These are interface colors for the faction/side chips. They are deliberately
+// semantic UI colors, not claimed as official BattleTech heraldry specifications.
+export const FACTION_COLORS = {
+  "Federated Suns": "#3b72a5",
+  "Draconis Combine": "#b34843",
+  "Capellan Confederation": "#5c8c4d",
+  "Clan Sea Fox": "#238d92",
+  "Mercenary": "#7c6854",
+  "Corporate": "#ae6c2d",
+  "Local": "#66737d",
+  "Rebels": "#8d5f83"
+};
+
+const factionSide = (id, name, faction) => ({ id, name, faction, color: FACTION_COLORS[faction] || FACTION_COLORS.Local });
+const fixedHotSpotTrack = (sequence, trackId, attacker, defender, extra = {}) => ({
+  sequence,
+  label: "Track " + sequence,
+  trackId,
+  attacker,
+  defender,
+  ...extra
+});
+const winnerDependentTrack = (sequence, requires, outcomes, extra = {}) => ({
+  sequence,
+  label: "Track " + sequence,
+  requires,
+  outcomes,
+  ...extra
+});
+
+export const HOT_SPOTS = [
+  {
+    id: "achernar",
+    name: "Achernar",
+    region: "Capellan Confederation",
+    terrain: "Wooded",
+    source: "Draconis Reach pp. 74–77",
+    sides: [factionSide("tybalt", "Tybalt", "Mercenary"), factionSide("home-guard", "Home Guard", "Capellan Confederation")],
+    tracks: [
+      fixedHotSpotTrack(1, "meeting-engagement", "tybalt", "home-guard"),
+      winnerDependentTrack(2, [1], {
+        tybalt: { trackId: "pursuit", attacker: "tybalt", defender: "home-guard" },
+        "home-guard": { trackId: "recon", attacker: "home-guard", defender: "tybalt" }
+      }),
+      winnerDependentTrack(3, [1, 2], {
+        "tybalt|tybalt": { trackId: "strike", attacker: "tybalt", defender: "home-guard" },
+        "tybalt|home-guard": { trackId: "meeting-engagement", attacker: "home-guard", defender: "tybalt" },
+        "home-guard|tybalt": { trackId: "breakthrough", attacker: "tybalt", defender: "home-guard" },
+        "home-guard|home-guard": { trackId: "defend", attacker: "tybalt", defender: "home-guard" }
+      }),
+      fixedHotSpotTrack(4, "breakthrough", "tybalt", "home-guard"),
+      fixedHotSpotTrack(5, "retreat", "home-guard", "tybalt")
+    ]
+  },
+  {
+    id: "alta-vista",
+    name: "Alta Vista",
+    region: "Clan Sea Fox",
+    terrain: "Light Urban",
+    source: "Draconis Reach pp. 80–81",
+    note: "The source allows repeated Meeting Engagement tracks and a conditional extraction choice. The selector exposes the standard Meeting Engagement sequence; the source note remains in the reference card.",
+    sides: [factionSide("escobar", "Escobar", "Local"), factionSide("ravens", "Ravens", "Clan Sea Fox")],
+    tracks: [
+      fixedHotSpotTrack(1, "meeting-engagement", "ravens", "escobar"),
+      fixedHotSpotTrack(2, "meeting-engagement", "ravens", "escobar"),
+      fixedHotSpotTrack(3, "meeting-engagement", "ravens", "escobar", { label: "Track 3 · optional source continuation" })
+    ]
+  },
+  {
+    id: "dahar-iv",
+    name: "Dahar IV",
+    region: "Federated Suns",
+    terrain: "Desert",
+    source: "Draconis Reach pp. 84–85",
+    note: "Each track uses the source’s 1D6 table. Select the source result for the current track sequence.",
+    sides: [factionSide("garrison", "Dahar Garrison", "Federated Suns"), factionSide("raid", "Dahar Raid", "Draconis Combine")],
+    tracks: [1, 2, 3, 4, 5, 6].map(sequence => ({
+      sequence,
+      label: "Track " + sequence,
+      resultLabel: "Track result (source 1D6)",
+      results: [
+        { id: "recon", label: "1 · Recon", trackId: "recon", attacker: "raid", defender: "garrison" },
+        { id: "flank", label: "2 · Flank", trackId: "flank", attacker: "raid", defender: "garrison" },
+        { id: "strike", label: "3 · Strike", trackId: "strike", attacker: "raid", defender: "garrison" },
+        { id: "meeting", label: "4 · Meeting Engagement", trackId: "meeting-engagement", attacker: "garrison", defender: "raid" },
+        { id: "assault", label: "5 · Assault", trackId: "assault", attacker: "garrison", defender: "raid" },
+        { id: "retreat", label: "6 · Retreat", trackId: "retreat", attacker: "garrison", defender: "raid" }
+      ]
+    }))
+  },
+  {
+    id: "le-blanc",
+    name: "Le Blanc",
+    region: "Federated Suns",
+    terrain: "Desert",
+    source: "Draconis Reach pp. 88–89",
+    sides: [factionSide("draconis-combine", "Draconis Combine", "Draconis Combine"), factionSide("federated-suns", "Federated Suns", "Federated Suns")],
+    tracks: [
+      fixedHotSpotTrack(1, "objective-raid", "draconis-combine", "federated-suns", { displayName: "Objective Raid · Wreck the Place" }),
+      winnerDependentTrack(2, [1], {
+        "draconis-combine": { trackId: "strike", attacker: "draconis-combine", defender: "federated-suns" },
+        "federated-suns": { trackId: "retreat", attacker: "federated-suns", defender: "draconis-combine" }
+      })
+    ]
+  },
+  {
+    id: "lucerne",
+    name: "Lucerne / PZH2",
+    region: "Draconis Combine",
+    terrain: "Wooded",
+    source: "Draconis Reach pp. 92–93",
+    note: "The source uses a 1D6 table and may generate a second track. Select the source result for each displayed sequence.",
+    sides: [factionSide("bio-gen", "Bio-Gen", "Corporate"), factionSide("eclipse", "Eclipse Expeditions", "Mercenary")],
+    tracks: [1, 2].map(sequence => ({
+      sequence,
+      label: "Track " + sequence,
+      resultLabel: "Track result (source 1D6)",
+      results: [
+        { id: "recon", label: "1 · Recon", trackId: "recon", attacker: "eclipse", defender: "bio-gen" },
+        { id: "breakthrough", label: "2 · Breakthrough", trackId: "breakthrough", attacker: "eclipse", defender: "bio-gen" },
+        { id: "objective-raid", label: "3 · Objective Raid", trackId: "objective-raid", attacker: "eclipse", defender: "bio-gen" },
+        { id: "pushback", label: "4 · Pushback", trackId: "pushback", attacker: "bio-gen", defender: "eclipse" },
+        { id: "pursuit", label: "5 · Pursuit", trackId: "pursuit", attacker: "eclipse", defender: "bio-gen" },
+        { id: "assault", label: "6 · Assault", trackId: "assault", attacker: "eclipse", defender: "bio-gen" }
+      ]
+    }))
+  },
+  {
+    id: "melcher",
+    name: "Melcher",
+    region: "Federated Suns / Draconis Combine",
+    terrain: "Grasslands",
+    source: "Draconis Reach pp. 97–98",
+    sides: [factionSide("earwigs", "Earwigs", "Draconis Combine"), factionSide("border-collies", "Border Collies", "Federated Suns")],
+    tracks: [
+      fixedHotSpotTrack(1, "objective-raid", "earwigs", "border-collies", { displayName: "Oxen Intercept · Objective Raid rules" }),
+      fixedHotSpotTrack(2, "objective-raid", "earwigs", "border-collies", { displayName: "Objective Raid" })
+    ]
+  },
+  {
+    id: "new-ivaarsen",
+    name: "New Ivaarsen",
+    region: "Draconis Combine",
+    terrain: "Light Urban",
+    source: "Draconis Reach pp. 101–102",
+    sides: [factionSide("stephensons", "Stephensons", "Draconis Combine"), factionSide("isf", "ISF", "Federated Suns")],
+    tracks: [
+      fixedHotSpotTrack(1, "strike", "stephensons", "isf"),
+      fixedHotSpotTrack(2, "meeting-engagement", "stephensons", "isf"),
+      fixedHotSpotTrack(3, "assault", "isf", "stephensons")
+    ]
+  },
+  {
+    id: "pascagoula",
+    name: "Pascagoula",
+    region: "Draconis Combine",
+    terrain: "Mountains",
+    source: "Draconis Reach pp. 104–106",
+    sides: [factionSide("jewel-thieves", "Jewel Thieves", "Draconis Combine"), factionSide("ranger-raiders", "Ranger Raiders", "Federated Suns")],
+    tracks: [
+      fixedHotSpotTrack(1, "objective-raid", "ranger-raiders", "jewel-thieves", { displayName: "Objective Raid · Fifth Ghost" }),
+      winnerDependentTrack(2, [1], {
+        "jewel-thieves": { trackId: "pursuit", attacker: "jewel-thieves", defender: "ranger-raiders" },
+        "ranger-raiders": { trackId: "pursuit", attacker: "ranger-raiders", defender: "jewel-thieves" }
+      })
+    ]
+  },
+  {
+    id: "protection",
+    name: "Protection",
+    region: "Draconis Combine",
+    terrain: "Urban",
+    source: "Draconis Reach pp. 110–112",
+    sides: [factionSide("platinum-sands", "Platinum Sands", "Corporate"), factionSide("kanagawa-group", "Kanagawa Group", "Draconis Combine")],
+    tracks: [
+      fixedHotSpotTrack(1, "recon", "platinum-sands", "kanagawa-group"),
+      winnerDependentTrack(2, [1], {
+        "platinum-sands": { trackId: "meeting-engagement", attacker: "platinum-sands", defender: "kanagawa-group" },
+        "kanagawa-group": { trackId: "meeting-engagement", attacker: "kanagawa-group", defender: "platinum-sands" }
+      }),
+      winnerDependentTrack(3, [1, 2], {
+        "platinum-sands|platinum-sands": { trackId: "assault", attacker: "platinum-sands", defender: "kanagawa-group" },
+        "kanagawa-group|kanagawa-group": { trackId: "pushback", attacker: "kanagawa-group", defender: "platinum-sands" },
+        "platinum-sands|kanagawa-group": { trackId: "flank", roleChoice: true },
+        "kanagawa-group|platinum-sands": { trackId: "flank", roleChoice: true }
+      }, { roleChoiceLabel: "Choose the roll-off winner for the Attacker role" }),
+      fixedHotSpotTrack(4, "pursuit", "platinum-sands", "kanagawa-group")
+    ]
+  },
+  {
+    id: "sun-prairie",
+    name: "Sun Prairie",
+    region: "Federated Suns",
+    terrain: "Grasslands",
+    source: "Draconis Reach pp. 114–115",
+    note: "Each track uses the source’s 1D6 table. Result 6 produces no track for that month.",
+    sides: [factionSide("garrison", "Sun Prairie Garrison", "Federated Suns"), factionSide("raid", "Sun Prairie Raid", "Draconis Combine")],
+    tracks: [1, 2, 3, 4, 5].map(sequence => ({
+      sequence,
+      label: "Track " + sequence,
+      resultLabel: "Track result (source 1D6)",
+      results: [
+        { id: "breakthrough", label: "1 · Breakthrough", trackId: "breakthrough", attacker: "raid", defender: "garrison" },
+        { id: "objective-raid", label: "2 · Objective Raid", trackId: "objective-raid", attacker: "raid", defender: "garrison" },
+        { id: "strike", label: "3 · Strike", trackId: "strike", attacker: "raid", defender: "garrison" },
+        { id: "recon", label: "4 · Recon", trackId: "recon", attacker: "garrison", defender: "raid" },
+        { id: "meeting-engagement", label: "5 · Meeting Engagement", trackId: "meeting-engagement", attacker: "garrison", defender: "raid" },
+        { id: "none", label: "6 · No track this month", trackId: null, attacker: null, defender: null }
+      ]
+    }))
+  },
+  {
+    id: "tigress",
+    name: "Tigress",
+    region: "Capellan Confederation",
+    terrain: "Wooded / Hills",
+    source: "Draconis Reach pp. 118–119",
+    note: "Track 1 begins as a training mission using Meeting Engagement rules and then proceeds as Recon for objectives and VP.",
+    sides: [factionSide("legion-trainers", "Legion Trainers", "Capellan Confederation"), factionSide("roughriders", "Roughriders Recon", "Mercenary")],
+    tracks: [
+      fixedHotSpotTrack(1, "recon", "legion-trainers", "roughriders", { displayName: "Training Mission · Meeting Engagement → Recon" }),
+      fixedHotSpotTrack(2, "meeting-engagement", "legion-trainers", "roughriders")
+    ]
+  },
+  {
+    id: "xhosa-vii",
+    name: "Xhosa VII",
+    region: "Federated Suns",
+    terrain: "Cold / Hills",
+    source: "Draconis Reach pp. 122–123",
+    sides: [factionSide("federated-suns", "Federated Suns", "Federated Suns"), factionSide("draconis-combine", "Draconis Combine", "Draconis Combine")],
+    tracks: [
+      fixedHotSpotTrack(1, "recon", "federated-suns", "draconis-combine"),
+      fixedHotSpotTrack(2, "breakthrough", "federated-suns", "draconis-combine"),
+      winnerDependentTrack(3, [2], {
+        "federated-suns": { trackId: "assault", attacker: "federated-suns", defender: "draconis-combine" },
+        "draconis-combine": { trackId: "strike", attacker: "draconis-combine", defender: "federated-suns" }
+      })
+    ]
+  }
+];
+
