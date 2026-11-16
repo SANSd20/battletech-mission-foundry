@@ -220,7 +220,7 @@ function renderOpFor() {
     container.innerHTML =
       '<article class="opfor-card"><div class="opfor-card-head"><div><span class="panel-kicker">TAKING ONE FOR THE TEAM</span><h3>Mission-specific opposing force</h3><p>' + esc(override.label) + ' · Scale ' + esc(String(state.scale)) + '</p></div><div class="opfor-roll-control"><span>Mission roster</span><strong>Fixed by Force Scale</strong></div></div>' +
       '<div class="opfor-card-meta"><span>Military side: <strong>' + esc(selected.name) + '</strong></span><span>Mission roster: <strong>' + esc(override.label) + '</strong></span><span>Source p. ' + esc(String(scale?.sourcePage || override.sourcePage || "—")) + '</span></div>' +
-      '<div class="opfor-result"><div class="opfor-result-label">MISSION FORCE</div><output>Scale ' + esc(String(state.scale)) + '</output><span>No 1D6 table roll is used for this Pascagoula roster.</span></div>' +
+      '<div class="opfor-result"><div class="opfor-result-label">MISSION FORCE</div><output class="mission-scale-output">Scale ' + esc(String(state.scale)) + '</output><span>No 1D6 table roll is used for this Pascagoula roster.</span></div>' +
       forceBody +
       '<p class="opfor-rule">Use the mission-specific force listed for the selected Force Scale. The generic faction OpFor roll table is not used for this exception.</p>' +
       '<div class="reference-citation">Source: ' + esc(SOURCES.primary) + ' · Pascagoula mission brief p. ' + esc(String(override.sourcePage || "—")) + '</div></article>';

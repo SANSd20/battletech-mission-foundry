@@ -50,7 +50,7 @@ for (const term of ["progress", "vpSelections", "data-mode", "resetTrack", "wind
 for (const term of ["hot-spot-select", "hot-spot-track-select", "hot-spot-side-select", "winner-controls", "winnerSelections", "resultSelections", "FACTION_COLORS", "applyFactionTheme", "--faction-color", "color-mix", "taking-one-for-team", "opfor-display", "OPPOSING_FORCE_TABLES", "Your 1D6 roll", "opfor-roll", "scale-choice", "scale-buttons", "scale-button"]) {
   assert.ok((app + html + css + fs.readFileSync(new URL("../dist/hot-spots/data.mjs", import.meta.url), "utf8")).includes(term), term + " Hot Spot setup behavior is present");
 }
-for (const term of ["option-toggle", "opfor-card", "opfor-force-grid", "opfor-roll-control"]) {
+for (const term of ["option-toggle", "opfor-card", "opfor-force-grid", "opfor-roll-control", "mission-scale-output"]) {
   assert.ok(css.includes(term), term + " OpFor styling is present");
 }
 assert.ok(!app.includes("Math.random"), "OpFor result is selected by the player rather than generated randomly");
@@ -71,7 +71,7 @@ assert.equal(pascagoula.tracks[0].trackId, "objective-raid", "Pascagoula Track 1
 assert.equal(pascagoula.tracks[1].outcomes["jewel-thieves"].trackId, "pursuit", "Pascagoula Track 2 uses Pursuit");
 assert.equal(pascagoula.tracks[0].displayName, undefined, "Pascagoula Track 1 does not expose contract naming");
 assert.equal(pascagoula.tracks[1].displayName, undefined, "Pascagoula Track 2 does not expose contract naming");
-assert.ok(app.includes("MISSION_OPFOR_OVERRIDES") && app.includes("Mission-specific opposing force"), "Pascagoula uses the mission-specific OpFor override");
+assert.ok(app.includes("MISSION_OPFOR_OVERRIDES") && app.includes("Mission-specific opposing force"), "Pascagoula uses the mission-specific OpFor override");\nassert.ok(css.includes("flex-wrap: wrap") && css.includes("mission-scale-output"), "mission-specific OpFor result stays readable on narrow layouts");
 assert.ok(!app.includes("hotspot-summary-side") && !app.includes("selected-side-line"), "selected side is shown only in the side selector");
 assert.ok(!app.includes("Selected side:"), "selected side is not repeated in the mission brief");
 assert.ok(!html.includes('id="track-select"'), "the derived track dropdown is removed");
