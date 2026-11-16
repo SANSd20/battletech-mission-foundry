@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#10151f">
   <title>Mission Foundry — Hot Spots: Draconis Reach</title>
-  <link rel="stylesheet" href="styles.css?v=opfor-2">
+  <link rel="stylesheet" href="styles.css?v=opfor-3">
 </head>
 <body>
   <header class="topbar">
@@ -48,6 +48,16 @@
       </div>
       <div id="winner-controls" class="winner-controls"></div>
       <div id="hotspot-summary" class="hotspot-summary" aria-live="polite"></div>
+      <div class="scale-choice" aria-label="Force Scale selection">
+        <div class="control-group">
+          <label for="scale-select">Force Scale</label>
+          <select id="scale-select">
+            <option value="1">Scale 1</option>
+            <option value="2">Scale 2</option>
+            <option value="3" selected>Scale 3</option>
+          </select>
+        </div>
+      </div>
       <label class="option-toggle" for="taking-one-for-team">
         <input type="checkbox" id="taking-one-for-team">
         <span class="option-checkmark"></span>
@@ -60,14 +70,6 @@
       <div class="control-group">
         <label for="track-select">Derived mission track</label>
         <select id="track-select"></select>
-      </div>
-      <div class="control-group">
-        <label for="scale-select">Force Scale</label>
-        <select id="scale-select">
-          <option value="1">Scale 1</option>
-          <option value="2">Scale 2</option>
-          <option value="3" selected>Scale 3</option>
-        </select>
       </div>
       <div class="control-group control-status">
         <span class="label">Tracking view</span>
@@ -138,7 +140,7 @@
 
   <footer class="footer"><span>MISSION FOUNDRY</span><span>Hot Spots: Draconis Reach · Local rules reference</span><span>LOCAL v0.1</span></footer>
   <noscript>This browser requires JavaScript for mission selection and objective scoring.</noscript>
-  <script type="module" src="app.mjs?v=opfor-2"></script>
+  <script type="module" src="app.mjs?v=opfor-3"></script>
 </body>
 </html>
 

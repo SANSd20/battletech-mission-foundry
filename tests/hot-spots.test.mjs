@@ -39,13 +39,14 @@ const css = fs.readFileSync(new URL("../dist/hot-spots/styles.css", import.meta.
 for (const term of ["progress", "vpSelections", "data-mode", "resetTrack", "window.confirm", "Attacker only", "Defender only", "Both sides"]) {
   assert.ok((app + html).includes(term), term + " tracking behavior is present");
 }
-for (const term of ["hot-spot-select", "hot-spot-track-select", "hot-spot-side-select", "winner-controls", "winnerSelections", "resultSelections", "FACTION_COLORS", "applyFactionTheme", "--faction-color", "color-mix", "taking-one-for-team", "opfor-display", "OPPOSING_FORCE_TABLES", "Your 1D6 roll", "opfor-roll"]) {
+for (const term of ["hot-spot-select", "hot-spot-track-select", "hot-spot-side-select", "winner-controls", "winnerSelections", "resultSelections", "FACTION_COLORS", "applyFactionTheme", "--faction-color", "color-mix", "taking-one-for-team", "opfor-display", "OPPOSING_FORCE_TABLES", "Your 1D6 roll", "opfor-roll", "scale-choice"]) {
   assert.ok((app + html + css + fs.readFileSync(new URL("../dist/hot-spots/data.mjs", import.meta.url), "utf8")).includes(term), term + " Hot Spot setup behavior is present");
 }
 for (const term of ["option-toggle", "opfor-card", "opfor-force-grid", "opfor-roll-control"]) {
   assert.ok(css.includes(term), term + " OpFor styling is present");
 }
 assert.ok(!app.includes("Math.random"), "OpFor result is selected by the player rather than generated randomly");
+assert.ok(html.indexOf('id="scale-select"') < html.indexOf('id="taking-one-for-team"'), "Force Scale appears before Taking one for the team");
 assert.ok(HOT_SPOTS.length >= 10, "the location selector includes the Draconis Reach mission briefs currently mapped");
 const achernar = HOT_SPOTS.find(item => item.id === "achernar");
 assert.equal(achernar.tracks[1].outcomes["home-guard"].trackId, "recon", "Achernar Track 2 resolves from the previous winner");

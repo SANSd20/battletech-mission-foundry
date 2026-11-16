@@ -51,6 +51,9 @@ button, select { cursor: pointer; }
 .hotspot-summary-side { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 9px; }
 .hotspot-summary-resolution { grid-column: 1 / -1; padding-top: 9px; border-top: 1px solid #d1dddc; color: #42545d; font-size: 12px; }
 .hotspot-summary-note { grid-column: 1 / -1; color: #6d5d50; font-size: 11px; }
+.scale-choice { margin-top: 14px; padding: 12px 13px; border-left: 3px solid var(--faction-color); background: color-mix(in srgb, var(--faction-color) 7%, #f1f7f6); }
+.scale-choice .control-group { max-width: 220px; }
+
 .option-toggle { display: flex; align-items: flex-start; gap: 10px; margin-top: 14px; padding: 12px 13px; border: 1px solid #b9c6c8; background: #f1f7f6; color: var(--ink); cursor: pointer; }
 .option-toggle input { position: absolute; opacity: 0; }
 .option-checkmark { flex: 0 0 auto; width: 20px; height: 20px; border: 1px solid #8999a0; border-radius: 3px; background: #fff; }
@@ -90,7 +93,7 @@ button, select { cursor: pointer; }
 .side-chip-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--side-color); box-shadow: 0 0 0 3px color-mix(in srgb, var(--side-color) 14%, transparent); }
 .side-chip span:last-child { color: #5f6b73; }
 .role-summary { color: var(--teal); font-size: 10px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
-.controls { display: grid; grid-template-columns: minmax(180px, 1fr) 150px minmax(360px, 1.55fr) auto; align-items: end; gap: 18px; padding: 17px 18px; margin-bottom: 24px; }
+.controls { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(360px, 1.55fr) auto; align-items: end; gap: 18px; padding: 17px 18px; margin-bottom: 24px; }
 .control-group label, .control-status .label { display: block; margin-bottom: 7px; color: #56636e; font-size: 10px; font-weight: 850; letter-spacing: .14em; text-transform: uppercase; }
 select { width: 100%; min-height: 42px; padding: 0 12px; border: 1px solid #aeb9c2; border-radius: 2px; background: #fff; color: var(--ink); }
 .mode-switch { display: flex; flex-wrap: wrap; gap: 5px; }
@@ -259,6 +262,8 @@ body { background: color-mix(in srgb, var(--faction-color) 10%, #111821); color:
   .hotspot-summary-side { justify-content: flex-start; }
   .hotspot-summary-resolution { grid-column: auto; }
   .hotspot-summary-note { grid-column: auto; }
+  .scale-choice { display: block; }
+  .scale-choice .control-group { max-width: none; }
   .opfor-card-head { align-items: flex-start; }
   .opfor-force-grid { grid-template-columns: 1fr; }
   .control-status { grid-column: auto; }
