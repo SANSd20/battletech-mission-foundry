@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#10151f">
   <title>Mission Foundry — Hot Spots: Draconis Reach</title>
-  <link rel="stylesheet" href="styles.css?v=contrast-1">
+  <link rel="stylesheet" href="styles.css?v=opfor-1">
 </head>
 <body>
   <header class="topbar">
@@ -48,6 +48,12 @@
       </div>
       <div id="winner-controls" class="winner-controls"></div>
       <div id="hotspot-summary" class="hotspot-summary" aria-live="polite"></div>
+      <label class="option-toggle" for="taking-one-for-team">
+        <input type="checkbox" id="taking-one-for-team">
+        <span class="option-checkmark"></span>
+        <span><strong>Taking one for the team</strong><small>Show a generated opposing force using the selected military side and Force Scale.</small></span>
+      </label>
+      <div id="opfor-display"></div>
     </section>
 
     <section class="controls panel" aria-label="Mission display controls">
@@ -132,7 +138,7 @@
 
   <footer class="footer"><span>MISSION FOUNDRY</span><span>Hot Spots: Draconis Reach · Local rules reference</span><span>LOCAL v0.1</span></footer>
   <noscript>This browser requires JavaScript for mission selection and objective scoring.</noscript>
-  <script type="module" src="app.mjs?v=contrast-1"></script>
+  <script type="module" src="app.mjs?v=opfor-1"></script>
 </body>
 </html>
 

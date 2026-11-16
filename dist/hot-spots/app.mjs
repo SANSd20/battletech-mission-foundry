@@ -1,9 +1,16 @@
-import { FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, SOURCES, TRACKS } from "./data.mjs?v=contrast-1";
+import { FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, OPPOSING_FORCE_TABLES, SOURCES, TRACKS } from "./data.mjs?v=opfor-1";
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
 const esc = value => String(value).replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
 const sideNames = { attacker: "Attacker", defender: "Defender" };
+const opforTableByFaction = {
+  "Mercenary": "mercenary-pirate",
+  "Capellan Confederation": "capellan",
+  "Draconis Combine": "draconis-combine",
+  "Federated Suns": "federated-suns",
+  "Clan Sea Fox": "raven-alliance"
+};
 
 const state = {
   hotSpotId: "achernar",
@@ -15,6 +22,8 @@ const state = {
   trackId: "meeting-engagement",
   scale: 3,
   mode: "both",
+  takingOneForTeam: false,
+  opforRoll: 1,
   progress: {},
   vpSelections: {}
 };
@@ -39,6 +48,28 @@ function selectionKey(sequence) {
 
 function sideById(sideId) {
   return currentHotSpot().sides.find(side => side.id === sideId) || null;
+}
+
+function currentOpForTable() {
+  const selected = sideById(state.selectedSide[currentHotSpot().id]);
+  const tableId = opforTableByFaction[selected?.faction];
+  return tableId ? OPPOSING_FORCE_TABLES[tableId] : null;
+}
+
+function currentOpForScale() {
+  return currentOpForTable()?.scales[String(Math.min(3, Math.max(1, state.scale)))] || null;
+}
+
+function currentOpForRow() {
+  const scale = currentOpForScale();
+  if (!scale) return null;
+  const rollKey = state.opforRoll <= 1 ? "1−" : state.opforRoll >= 6 ? "6+" : String(state.opforRoll);
+  return scale.rows.find(row => row.roll === rollKey) || scale.rows[0];
+}
+
+function forceList(value) {
+  if (!value) return "<li>None listed</li>";
+  return value.split(" | ").map(item => "<li>" + esc(item) + "</li>").join("");
 }
 
 function winnerKey(sequence) {
@@ -152,6 +183,34 @@ function renderTrackOptions() {
   $("#scale-select").value = String(state.scale);
 }
 
+function renderOpFor() {
+  const container = $("#opfor-display");
+  if (!container) return;
+  if (!state.takingOneForTeam) {
+    container.innerHTML = "";
+    return;
+  }
+  const selected = sideById(state.selectedSide[currentHotSpot().id]);
+  const table = currentOpForTable();
+  if (!selected || !table) {
+    container.innerHTML = '<article class="opfor-card opfor-unavailable"><div class="panel-kicker">TAKING ONE FOR THE TEAM</div><h3>No matching OpFor table</h3><p>The selected side is <strong>' + esc(selected?.faction || "unresolved") + '</strong>. Draconis Reach provides OpFor tables for Mercenary/Pirate, Capellan Confederation, Draconis Combine, Federated Suns, and Raven Alliance forces.</p><p class="opfor-rule">Choose a supported military side if you want the generated opposing force shown here.</p></article>';
+    return;
+  }
+  const scale = currentOpForScale();
+  const row = currentOpForRow();
+  const clanNote = selected.faction === "Clan Sea Fox" ? '<p class="opfor-note">The Draconis Reach OpFor chapter provides a Raven Alliance table for the Clan force at Clan Sea Fox locations.</p>' : "";
+  const forceBody = row?.note
+    ? '<div class="opfor-instruction"><span>Source instruction for result ' + esc(row.roll) + '</span><strong>' + esc(row.note) + '</strong><small>Follow that source instruction to build the full force.</small></div>'
+    : '<div class="opfor-force-grid"><div><span>Primary force</span><ul>' + forceList(row?.primary) + '</ul></div><div><span>Support force</span><ul>' + forceList(row?.support) + '</ul></div><div><span>Alternate force</span><ul>' + forceList(row?.alternate) + '</ul></div></div>';
+  container.innerHTML =
+    '<article class="opfor-card"><div class="opfor-card-head"><div><span class="panel-kicker">TAKING ONE FOR THE TEAM</span><h3>Generated opposing force</h3><p>' + esc(table.label) + ' · Scale ' + esc(String(state.scale)) + ' · Result ' + esc(row?.roll || "—") + '</p></div><button type="button" class="button opfor-roll-button" id="opfor-roll">Roll 1D6</button></div>' +
+    '<div class="opfor-card-meta"><span>Military side: <strong>' + esc(selected.name) + '</strong></span><span>Faction table: <strong>' + esc(table.label) + '</strong></span><span>Source p. ' + esc(String(scale?.sourcePage || "—")) + '</span></div>' +
+    '<div class="opfor-result"><div class="opfor-result-label">1D6 result</div><output>' + esc(String(state.opforRoll)) + '</output><span>Roll again to generate a different result.</span></div>' +
+    clanNote + forceBody +
+    '<p class="opfor-rule">Use the Primary Force. Add the Support Force when the required Battlefield Support rules are available; otherwise use the Alternate Force for an all-’Mech force.</p>' +
+    '<div class="reference-citation">Source: ' + esc(SOURCES.opposingForces) + '</div></article>';
+}
+
 function renderHotSpotSetup() {
   const hotSpot = currentHotSpot();
   const step = currentHotSpotStep();
@@ -184,6 +243,8 @@ function renderHotSpotSetup() {
   const selectedChip = selected ? '<span class="side-chip" style="--side-color:' + esc(selected.color) + '"><span class="side-chip-dot"></span><strong>' + esc(selected.name) + '</strong><span>' + esc(selected.faction) + "</span></span>" : "";
   $("#hotspot-summary").innerHTML = '<div class="hotspot-summary-copy"><strong>' + esc(hotSpot.name) + '</strong><span>' + esc(hotSpot.region) + " · " + esc(hotSpot.terrain) + '</span><span>' + esc(step?.label || "Track") + " · " + esc(resolved?.displayName || (resolved?.trackId ? TRACKS.find(track => track.id === resolved.trackId)?.name : "Pending" ) || "Pending") + '</span></div><div class="hotspot-summary-side">' + selectedChip + '<span class="role-summary">' + esc(selectedRole) + '</span></div><div class="hotspot-summary-resolution">' + esc(roleText) + '</div>';
   if (hotSpot.note) $("#hotspot-summary").insertAdjacentHTML("beforeend", '<div class="hotspot-summary-note">' + esc(hotSpot.note) + "</div>");
+  $("#taking-one-for-team").checked = state.takingOneForTeam;
+  renderOpFor();
 }
 
 function renderReference() {
@@ -321,6 +382,17 @@ $("#hot-spot-side-select").addEventListener("change", event => {
   renderAll();
 });
 
+$("#taking-one-for-team").addEventListener("change", event => {
+  state.takingOneForTeam = event.target.checked;
+  renderAll();
+});
+
+$("#opfor-display").addEventListener("click", event => {
+  if (event.target.id !== "opfor-roll") return;
+  state.opforRoll = Math.floor(Math.random() * 6) + 1;
+  renderOpFor();
+});
+
 $("#winner-controls").addEventListener("change", event => {
   if (event.target.dataset.winnerSequence) state.winnerSelections[winnerKey(event.target.dataset.winnerSequence)] = event.target.value;
   if (event.target.dataset.resultSequence) state.resultSelections[resultKey(event.target.dataset.resultSequence)] = event.target.value;
@@ -336,6 +408,7 @@ $("#track-select").addEventListener("change", event => {
 $("#scale-select").addEventListener("change", event => {
   state.scale = Number(event.target.value);
   renderReference();
+  renderOpFor();
 });
 
 $$(".mode-button").forEach(button => button.addEventListener("click", () => {

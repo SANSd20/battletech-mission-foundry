@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, SOURCES, TRACKS } from "../dist/hot-spots/data.mjs";
+import { FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, OPPOSING_FORCE_TABLES, SOURCES, TRACKS } from "../dist/hot-spots/data.mjs";
 
 const expected = ["Assault", "Breakthrough", "Defend", "Flank", "Meeting Engagement", "Objective Raid", "Pursuit", "Pushback", "Recon", "Retreat", "Strike"];
 assert.deepEqual(TRACKS.map(track => track.name), expected, "all eleven Draconis Reach standard tracks are present");
@@ -8,7 +8,16 @@ assert.equal(new Set(TRACKS.map(track => track.id)).size, 11, "track ids are uni
 assert.equal(GENERAL_RULES.length, 5, "shared p. 167 reference includes the five browser sections");
 assert.match(SOURCES.supersession, /supersedes/i);
 assert.match(SOURCES.militaryPalette, /military-ui\.yaml/);
-assert.equal(FACTION_COLORS["Federated Suns"], "#586B31", "Federated Suns uses the authoritative military-dark-ui primary");
+assert.equal(FACTION_COLORS["Federated Suns"], "#7FA52F", "Federated Suns uses the brighter Hot Spots consumer adaptation");
+assert.deepEqual(Object.keys(OPPOSING_FORCE_TABLES).sort(), ["capellan", "draconis-combine", "federated-suns", "mercenary-pirate", "raven-alliance"], "all five Draconis Reach OpFor tables are present");
+for (const table of Object.values(OPPOSING_FORCE_TABLES)) {
+  assert.equal(Object.keys(table.scales).length, 3, table.label + " includes all three scales");
+  for (const scale of Object.values(table.scales)) {
+    assert.equal(scale.rows.length, 6, table.label + " scale has six 1D6 rows");
+    for (const row of scale.rows) assert.ok(row.roll, table.label + " OpFor row has a roll marker");
+  }
+}
+assert.match(OPPOSING_FORCE_TABLES["raven-alliance"].scales["3"].rows[5].primary, /Charger C/);
 for (const track of TRACKS) {
   assert.ok(track.page >= 168 && track.page <= 175, track.name + " has a track page");
   assert.ok(track.setup.length >= 1, track.name + " has setup");
@@ -30,8 +39,11 @@ const css = fs.readFileSync(new URL("../dist/hot-spots/styles.css", import.meta.
 for (const term of ["progress", "vpSelections", "data-mode", "resetTrack", "window.confirm", "Attacker only", "Defender only", "Both sides"]) {
   assert.ok((app + html).includes(term), term + " tracking behavior is present");
 }
-for (const term of ["hot-spot-select", "hot-spot-track-select", "hot-spot-side-select", "winner-controls", "winnerSelections", "resultSelections", "FACTION_COLORS", "applyFactionTheme", "--faction-color", "color-mix"]) {
+for (const term of ["hot-spot-select", "hot-spot-track-select", "hot-spot-side-select", "winner-controls", "winnerSelections", "resultSelections", "FACTION_COLORS", "applyFactionTheme", "--faction-color", "color-mix", "taking-one-for-team", "opfor-display", "OPPOSING_FORCE_TABLES", "Roll 1D6"]) {
   assert.ok((app + html + css + fs.readFileSync(new URL("../dist/hot-spots/data.mjs", import.meta.url), "utf8")).includes(term), term + " Hot Spot setup behavior is present");
+}
+for (const term of ["option-toggle", "opfor-card", "opfor-force-grid"]) {
+  assert.ok(css.includes(term), term + " OpFor styling is present");
 }
 assert.ok(HOT_SPOTS.length >= 10, "the location selector includes the Draconis Reach mission briefs currently mapped");
 const achernar = HOT_SPOTS.find(item => item.id === "achernar");

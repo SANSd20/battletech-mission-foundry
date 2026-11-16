@@ -2,7 +2,8 @@ export const SOURCES = {
   primary: "Hot Spots: Draconis Reach, First Printing, pp. 167–175",
   errata: "Hot Spots Hinterlands Errata v2.41, reviewed for applicability",
   supersession: "Draconis Reach supersedes the supplied Hinterlands track text; Hinterlands track corrections are not applied to these records.",
-  militaryPalette: "BattleTech Faction Colors, palettes/military-ui.yaml, verified main e3cd8c9c9899b04aebd314a2a921ad3edd4092f1"
+  militaryPalette: "BattleTech Faction Colors, palettes/military-ui.yaml, verified main e3cd8c9c9899b04aebd314a2a921ad3edd4092f1",
+  opposingForces: "Hot Spots: Draconis Reach, First Printing, Opposing Force Tables pp. 186–201"
 };
 
 export const GENERAL_RULES = [
@@ -315,21 +316,674 @@ export const TRACKS = [
   }
 ];
 
+export const OPPOSING_FORCE_TABLES = {
+  "mercenary-pirate": {
+    "label": "Mercenary / Pirate",
+    "scales": {
+      "1": {
+        "sourcePage": 187,
+        "rows": [
+          {
+            "roll": "1−",
+            "primary": "MON-96 Mongoose (3/4)",
+            "support": "×2 J. Edgar X-Pulse Veteran | ×2 Hover APC | ×2 Foot Infantry Veteran | Light Bombing",
+            "alternate": "SDR-9KA Venom (3/4) | SDR-8X Spider (3/4)"
+          },
+          {
+            "roll": "2",
+            "primary": "NX-100 Nyx (4/5)",
+            "support": "×2 H-8 Warrior | Hawk Moth II | ×2 Marten | ×2 Jump Infantry | ×2 Light Bombing",
+            "alternate": "CVR-A1 Cadaver (4/5) | LCT-7V2 Locust (4/5) | ALM-10D Fireball (4/5)"
+          },
+          {
+            "roll": "3",
+            "primary": "CMA-1S Chimera (4/5) | JVN-12N Javelin (4/5)",
+            "support": "×2 Vedette (Ultra) | Hunter | Light Airstrike | ×2 Light Air Cover",
+            "alternate": "ABS-4C Anubis (4/5) | SDR-8R Spider (4/5)"
+          },
+          {
+            "roll": "4",
+            "primary": "WVR-8K Wolverine (4/5)",
+            "support": "Hunter | Patton (Ultra) | Vedette (Ultra) | Heavy Bombing | Light Bombing",
+            "alternate": "GRM-01B Garm (4/5) | PNT-12A Panther (4/5)"
+          },
+          {
+            "roll": "5",
+            "primary": "GHR-8K Grasshopper (4/5)",
+            "support": "Manticore (HPPC) | Pike (LB-X) | GAL-100 Galleon | Light Bombing | ×2 Light Air Strike",
+            "alternate": "WHM-5L Warhammer (4/5)"
+          },
+          {
+            "roll": "6+",
+            "primary": "BZK-D1 Hollander III (3/4)",
+            "support": "Hetzer (Cell) Veteran | LRM Carrier Veteran | Heavy Airstrike | Light Airstrike | Heavy Air Cover | Light Air Cover",
+            "alternate": "BNDR-01Ar Bandersnatch (3/4)"
+          }
+        ]
+      },
+      "2": {
+        "sourcePage": 188,
+        "rows": [
+          {
+            "roll": "1−",
+            "primary": "BLD-XX Blade (3/4) | RD-1R Road Runner (3/4)",
+            "support": "×2 Scimitar Mk II Veteran | ×2 Harasser Veteran | Harasser Veteran | Maxim (BA Factory) Veteran | IS Standard BA Veteran | IS Standard BA Veteran | Sniper | Heavy Bombing | Light Bombing",
+            "alternate": "Baboon (Howler) (3/4) | V4-LNT-J3 Valiant (3/4) | HM-1 Hitman (3/4)"
+          },
+          {
+            "roll": "2",
+            "primary": "",
+            "support": "",
+            "alternate": "",
+            "note": "ROLL ×2 Scale 1"
+          },
+          {
+            "roll": "3",
+            "primary": "GRM-01B Garm (4/5) | Kit Fox (Uller) K (4/5) | VLK-QDD Valkyrie (4/5)",
+            "support": "×2 Hetzer (Cell) | ×2 Vedette (Armor) | Maxim (BA Factory) | ×2 Jump Infantry | ×2 Strafing | ×3 Light Air Cover",
+            "alternate": "BZK-D2 Hollander III (4/5) | EXR-2X Exhumer (4/5) | EYL-45A Eyleuka (4/5)"
+          },
+          {
+            "roll": "4",
+            "primary": "BJ2-OC Blackjack (4/5) | Stinger IIC (4/5) | WHM-6Rb Warhammer (4/5)",
+            "support": "Hawk Moth II | ×2 Patton (Ultra) | ×2 Pike (LB-X) | Heavy Bombing | Heavy Air Strike | Heavy Air Cover | Light Air Cover",
+            "alternate": "VND-4L Vindicator (4/5) | FLC-8R Falconer (4/5)"
+          },
+          {
+            "roll": "5",
+            "primary": "JR7-31P Rattlesnake (4/5) | RFL-8D Rifleman (4/5)",
+            "support": "×2 Manticore (XL) | Ontos (Light Gauss) | ×2 Motorized Infantry | Long Tom | Strafing | Heavy Air Cover | Light Air Cover",
+            "alternate": "GTL-4L Guillotine (4/5) | NSR-9FC Nightstar (4/5)"
+          },
+          {
+            "roll": "6+",
+            "primary": "DVS-2 Devastator (3/4)",
+            "support": "×2 LRM Carrier Veteran | ×2 Motorized Infantry Veteran | ×3 Light Emplacement Veteran | Heavy Emplacement Veteran | Heavy Air Strike | ×2 Light Airstrike",
+            "alternate": "Incubus (Vixen) 6 (3/4) | HSN-7D Hellspawn (3/4)"
+          }
+        ]
+      },
+      "3": {
+        "sourcePage": 189,
+        "rows": [
+          {
+            "roll": "1−",
+            "primary": "ABS-3T Anubis (3/4) | BLD-XL Blade (3/4) | Locust IIC 3 (3/4)",
+            "support": "×2 Condor (Ultra) Veteran | ×2 J. Edgar (Light PPC) Veteran | Maxim (BA Factory) Veteran | ×2 Marten Veteran | ×2 IS Standard BA Veteran | ×2 Jump Infantry Veteran | Long Tom | Sniper | ×4 Light Air Cover",
+            "alternate": "STL-2D Stealth (3/4) | MON-96 Mongoose (3/4) | CLN-7V Chameleon (3/4) | SDR-9KC Venom (3/4)"
+          },
+          {
+            "roll": "2",
+            "primary": "",
+            "support": "",
+            "alternate": "",
+            "note": "ROLL ×1 Scale 2 | ROLL ×1 Scale 1"
+          },
+          {
+            "roll": "3",
+            "primary": "BHKU-OC Black Hawk-KU (4/5) | HCT-7S Hatchetman (4/5) | JVN-12N Javelin (4/5) | SNT-04 Sentry (4/5)",
+            "support": "×4 Condor (Ultra) | ×4 Vedette (Armor) | ×2 Sniper | Heavy Airstrike | Light Bombing | ×2 Heavy Air Cover",
+            "alternate": "WVR-9R Wolverine (4/5) | Kit Fox (Uller) R (4/5) | TFT-L8 Thunder Fox (4/5) | OTL-8E Ostsol (4/5) | SNT-04 Sentry (4/5)"
+          },
+          {
+            "roll": "4",
+            "primary": "HEL-4A Helios | HUR-WO-R4O Huron Warrior | PNT-13K Panther",
+            "support": "×3 Manticore (XL) | Manticore (HPPC) | ×2 Patton (Ultra) | ×2 Striker | Maxim (Factory BA) | Marten | ×2 IS Standard BA | Jump Infantry | Heavy Bombing | ×2 Light Airstrike | ×2 Heavy Air Cover",
+            "alternate": "CN10-D Centurion | CPLT-C2 Catapult | ON2-M Orion | MLN-1D Merlin"
+          },
+          {
+            "roll": "5",
+            "primary": "AS8-KE Atlas (4/5) | CES-5R Caesar (4/5)",
+            "support": "×2 Behemoth (Davion) | ×2 LRM Carrier | ×2 Scimitar Mk II | ×3 Motorized Infantry | Sniper | ×2 Heavy Airstrike | Heavy Air Cover | Light Air Cover",
+            "alternate": "PTR-4D Penetrator (4/5) | BLK-NT-5H Black Knight (4/5) | CMA-2K Chimera (4/5)"
+          },
+          {
+            "roll": "6+",
+            "primary": "RJN-301-F Fujin (3/4) | Stormcrow (Ryoken) Prime (3/4)",
+            "support": "Ontos (Light Gauss) Veteran | ×2 Patton (Ultra) Veteran | ×3 Motorized Infantry Veteran | ×3 Light Emplacement Veteran | ×2 Medium Emplacement Veteran | ×2 Heavy Bombing | ×3 Heavy Air Cover",
+            "alternate": "FLS-10E Flashman | SCP-2N Scorpion (3/4)"
+          }
+        ]
+      }
+    }
+  },
+  "capellan": {
+    "label": "Capellan Confederation",
+    "scales": {
+      "1": {
+        "sourcePage": 190,
+        "rows": [
+          {
+            "roll": "1−",
+            "primary": "DOL-1A1 Dola (3/4) | WSP-8T Wasp (3/4)",
+            "support": "Hawk Moth II Veteran | Hover APC | IS Standard BA Veteran | Light Airstrike | Light Air Cover",
+            "alternate": "STG-6G Stinger (3/4) | MEB-13 Ebony (3/4))"
+          },
+          {
+            "roll": "2",
+            "primary": "FLE-21 Flea (4/5) | LCT-7V2 Locust (4/5)",
+            "support": "×2 Pegasus (Upgrade) | Hover APC | IS Standard BA | ×2 Light Bombing",
+            "alternate": "DOL-1A1 Dola (4/5) | MEB-9 Ebony (4/5)"
+          },
+          {
+            "roll": "3",
+            "primary": "D9-G10 Duan Gung (4/5)",
+            "support": "GAL-106 Galleon | Jump Infantry | Jump Infantry | Heavy Airstrike | Light Air Cover",
+            "alternate": "FLE-21 Flea (4/5) | LCT-7V Locust (4/5)"
+          },
+          {
+            "roll": "4",
+            "primary": "YHC-3E Yinghuochong (4/5)",
+            "support": "Bulldog (Plasma) | ×2 Hetzer (Cell) | Heavy Bombing | ×2 Light Bombing | ×2 Light Air Cover",
+            "alternate": "CTF-5L Cataphract (4/5)"
+          },
+          {
+            "roll": "5",
+            "primary": "RFL-7G Rifleman (4/5)",
+            "support": "×2 Schrek (XL) | Light Bombing | Heavy Bombing | Light Air Cover",
+            "alternate": "STG-6G Stinger (4/5) | SNK-2Br Snake (4/5)"
+          },
+          {
+            "roll": "6+",
+            "primary": "VND-4L Vindicator (3/4)",
+            "support": "Manticore (XL) Veteran | Light Emplacement Veteran | Heavy Emplacement Veteran | Strafing | Light Air Cover",
+            "alternate": "RD-1R Roadrunner (3/4) | STG-5T Stinger (3/4)"
+          }
+        ]
+      },
+      "2": {
+        "sourcePage": 191,
+        "rows": [
+          {
+            "roll": "1−",
+            "primary": "ASN-109 Assassin (3/4) | TR5 Wraith (3/4)",
+            "support": "×2 Hawk Moth II Veteran | Maxim (BA Factory) Veteran | ×2 IS Standard BA Veteran | Heavy Airstrike | ×2 Light Airstrike | Heavy Air Cover | Light Air Cover",
+            "alternate": "PXH-5L Phoenix Hawk (3/4) | MEB-10 Ebony (3/4)"
+          },
+          {
+            "roll": "2",
+            "primary": "",
+            "support": "",
+            "alternate": "",
+            "note": "ROLL ×2 Scale 1"
+          },
+          {
+            "roll": "3",
+            "primary": "MS1-OD Men Shen (4/5) | QKD-9M Quickdraw (4/5)",
+            "support": "×2 Hetzer (Cell) | ×2 Vedette (Cell) | ×2 Bulldog (ERLL) | Heavy Airstrike | Heavy Bombing | Sniper",
+            "alternate": "GRF-5L Griffin (4/5) | WSP-8T Wasp (4/5) | SHD-8L Shadow Hawk (4/5)"
+          },
+          {
+            "roll": "4",
+            "primary": "BNDR-01Ar Bandersnatch (4/5) | KW2-LH10 Lineholder (4/5)",
+            "support": "×2 Bulldog (ERLL) | ×2 Hawk Moth II | ×2 Vedette (Armor) | ×2 Heavy Airstrike | Light Bombing | ×3 Light Air Cover",
+            "alternate": "GN-2O Gùn (4/5) | CRD-7L Crusader (4/5) | DOL-1A2 Dola (4/5)"
+          },
+          {
+            "roll": "5",
+            "primary": "SHY-3B Shen Yi (4/5) | VND-7L Vindicator (4/5)",
+            "support": "×2 Bulldog (Plasma) | Demolisher (Cell) | ×2 LRM Carrier | Heavy Bombing | ×2 Light Airstrike | Heavy Air Cover | ×2 Light Air Cover",
+            "alternate": "AV1-OR Avatar (4/5) | CTF-5L Cataphract (4/5)"
+          },
+          {
+            "roll": "6+",
+            "primary": "TNZ-N1 Tian Zong (3/4)",
+            "support": "×2 Demolisher (Gauss) Veteran | ×2 Manticore (HPPC) Veteran | Long Tom | ×2 Heavy Air Strike | Light Air Cover",
+            "alternate": "FLE-21 Flea (3/4) | Y-H12GC Yu Huang (3/4)"
+          }
+        ]
+      },
+      "3": {
+        "sourcePage": 192,
+        "rows": [
+          {
+            "roll": "1−",
+            "primary": "DOL-1A1 Dola (3/4) | MEB-11 Ebony (3/4) | TR5 Wraith (3/4)",
+            "support": "×2 Hawk Moth II Veteran | ×2 Pegasus (Upgrade) Veteran | Maxim (BA Factory) | ×2 IS Standard BA Veteran | ×3 Thumper | ×2 Heavy Airstrike | ×2 Heavy Air Cover | Light Air Cover",
+            "alternate": "ASN-109 Assassin (3/4) | BLD-XS Blade (3/4) | YOL-4C Yao Lien (3/4) | LCT-7V Locust (3/4)"
+          },
+          {
+            "roll": "2",
+            "primary": "",
+            "support": "",
+            "alternate": "",
+            "note": "ROLL ×1 Scale 2 | ROLL ×1 Scale 1"
+          },
+          {
+            "roll": "3",
+            "primary": "LI-O Vandal (4/5) | SCP-1BR Scorpion (4/5) | YHC-3E Yinghuochong (4/5)",
+            "support": "×2 Hetzer (Cell) | ×2 Vedette (Armor) | ×2 Maxim (BA Factory) | ×2 IS Standard BA | ×2 Jump Infantry | ×3 Sniper | Heavy Air Strike | Heavy Air Cover",
+            "alternate": "HUR-WO-R4N Huron Warrior (4/5) | WVR-7H Wolverine II (4/5) | PXH-5L Phoenix Hawk (4/5) | SYU-6B Sha Yu (4/5)"
+          },
+          {
+            "roll": "4",
+            "primary": "CRD-8L Crusader (4/5) | TSG-10L Ti Ts'ang (4/5) | VND-7L Vindicator (4/5)",
+            "support": "Demolisher (Gauss) | ×2 Hawk Moth II | ×2 LRM Carrier | ×2 Manticore (HPPC) | ×3 Motorized Infantry | ×3 Light Air Strike | Heavy Air Cover | ×2 Light Air Cover",
+            "alternate": "ARC-7L Archer (4/5) | WHM-4L Warhammer (4/5) | MS-1A Mortis (4/5)"
+          },
+          {
+            "roll": "5",
+            "primary": "CPLT-C5A Catapult (4/5) | PLG-4Z Pillager (4/5)",
+            "support": "Demolisher (Cell) | ×2 Schrek (XL) | ×2 Motorized Infantry | ×2 Heavy Airstrike | Heavy Bombing | ×2 Light Air Cover",
+            "alternate": "MAD-4L Marauder II (4/5) | LHN-C5 Lightning (4/5)"
+          },
+          {
+            "roll": "6",
+            "primary": "EMP-8L Emperor (3/4) | LN-4B Lu Wei Bing (3/4)",
+            "support": "Demolisher (Cell) Veteran | ×2 Manticore (HPPC) Veteran | ×2 Light Emplacement Veteran | ×2 Medium Emplacement Veteran | ×2 Strafing | ×2 Heavy Air Cover | ×2 Light Air Cover",
+            "alternate": "THR-C4 Thunder (3/4) | HUR-WO-R4N Huron Warrior (3/4)"
+          }
+        ]
+      }
+    }
+  },
+  "draconis-combine": {
+    "label": "Draconis Combine",
+    "scales": {
+      "1": {
+        "sourcePage": 193,
+        "rows": [
+          {
+            "roll": "1−",
+            "primary": "RJN301-F Fujin (3/4)",
+            "support": "×2 Hawk Moth II Veteran | Light Bombing",
+            "alternate": "NX-80C Nyx (3/4)"
+          },
+          {
+            "roll": "2",
+            "primary": "HM-1r Hitman (4/5) | SDR-9K Venom",
+            "support": "×2 J. Edgar (Light PPC) | ×2 APC, Hover | ×2 Foot Infantry | ×2 Light Air Cover",
+            "alternate": "KBO-7A Kabuto (4/5) | JR7-N Jenner (4/5)"
+          },
+          {
+            "roll": "3",
+            "primary": "STG-3P Stinger (4/5) | WFT-2 Wolf Trap (Tora) (4/5)",
+            "support": "×2 Bulldog (ERLL) | ×2 Vedette (Ultra) | Light Bombing",
+            "alternate": "HM-1 Hitman (4/5) | RTX1-OG Raptor (4/5)"
+          },
+          {
+            "roll": "4",
+            "primary": "AVL-1O Avalanche (4/5)",
+            "support": "×2 Manticore (XL) | NK-1C Narukami | Heavy Air Strike | Light Air Cover",
+            "alternate": "NX-80 Nyx (4/5) | Arbalest (4/5)"
+          },
+          {
+            "roll": "5",
+            "primary": "SHD-3K Shadow Hawk (4/5)",
+            "support": "Tokugawa (MRM) Veteran | Saracen Mk II Veteran | Light Air Strike | ×2 Light Air Cover | Behemoth (Kurita Upgrade) Veteran",
+            "alternate": "CMA-1S Chimera (4/5) | SDR-7KC Spider (4/5)"
+          },
+          {
+            "roll": "6+",
+            "primary": "GHR-6K Grasshopper (3/4)",
+            "support": "Light Air Strike | Heavy Air Cover | Light Air Cover",
+            "alternate": "MON-96 Mongoose (3/4)"
+          }
+        ]
+      },
+      "2": {
+        "sourcePage": 194,
+        "rows": [
+          {
+            "roll": "1−",
+            "primary": "RWN-02 Cricket (3/4) | SHD-3K Shadow Hawk (3/4)",
+            "support": "×2 Saracen Mk II Veteran | Maxim (BA Factory) | ×2 IS Standard BA Veteran | IS Standard BA Veteran | ×2 Light Bombing | ×2 Light Air Cover | Heavy Air Cover",
+            "alternate": "LNX-9C Lynx (3/4) | WVR-8K Wolverine (3/4) | VLT-3E Valiant (3/4)"
+          },
+          {
+            "roll": "2",
+            "primary": "",
+            "support": "",
+            "alternate": "",
+            "note": "ROLL ×2 Scale 1"
+          },
+          {
+            "roll": "3",
+            "primary": "DRG-10K Grand Dragon (4/5) | WFT-2 Wolf Trap (Tora) (4/5)",
+            "support": "×2 Drillson (MML) | ×2 Vedette (Cell) | Maxim (BA Factory) | ×2 IS Standard BA | ×3 Heavy Air Strike | ×3 Heavy Air Cover | Light Air Cover",
+            "alternate": "AVL-1O Avalanche (4/5) | JR7-N Jenner (4/5) | GRF-5K Griffin (4/5)"
+          },
+          {
+            "roll": "4",
+            "primary": "HCT-7R Hatchetman (4/5) | MAD-9W2 Marauder (4/5)",
+            "support": "×2 Tokugawa (MRM) | ×2 Bulldog (ERLL) | Strafing | ×2 Heavy Air Strike | ×2 Light Air Cover",
+            "alternate": "ARC-9K Archer (4/5) | SH-1V Shiro (4/5)"
+          },
+          {
+            "roll": "5",
+            "primary": "AV1-OR Avatar (4/5) | PKP-1B Peacekeeper (4/5)",
+            "support": "×2 LRM Carrier | Manticore (HPPC) | Heavy Air Strike | Heavy Air Cover | Light Air Cover | Behemoth (Kurita Upgrade) Veteran",
+            "alternate": "NX-90 Nyx (4/5) | WVR-8K Wolverine (4/5)"
+          },
+          {
+            "roll": "6+",
+            "primary": "GUN-3ERD Gunslinger (3/4)",
+            "support": "Manticore (XL) Veteran | ×2 Light Emplacement Veteran | ×2 Medium | Emplacement Veteran | Strafing | ×3 Light Air Cover",
+            "alternate": "SDR-10K Spider (3/4) | HKZ-1P Hitotsume Kozo (3/4)"
+          }
+        ]
+      },
+      "3": {
+        "sourcePage": 195,
+        "rows": [
+          {
+            "roll": "1−",
+            "primary": "PXH-7K Phoenix Hawk (3/4) | MON-96 Mongoose (3/4) | SCP-12K Scorpion (3/4)",
+            "support": "×2 Drillson (MML) Veteran | ×2 J. Edgar (X-Pulse) Veteran | ×2 Pegasus (Upgrade) Veteran | ×2 APC, Hover | ×2 IS Battle Armor Veteran | ×2 Sniper | Heavy Bombing | ×2 Light Bombing | ×2 Light Air Cover",
+            "alternate": "BSN-3K Bishamon (3/4) | EXR-3P Exhumer (3/4) | PXH-11K Phoenix Hawk L (3/4)"
+          },
+          {
+            "roll": "2",
+            "primary": "",
+            "support": "",
+            "alternate": "",
+            "note": "ROLL ×1 Scale 2 | ROLL ×1 Scale 1"
+          },
+          {
+            "roll": "3",
+            "primary": "Arbalest 3 (4/5) | GRF-5K Griffin (4/5) | LNC25-09 Lancelot (4/5) | NDA-2KC No-Dachi (4/5)",
+            "support": "×2 Pegasus (Upgrade) | ×2 Vedette (Armor) | Strafing | ×2 Heavy Bombing | ×3 Light Air Strike | ×2 Heavy Air Cover | ×2 Light Air Cover",
+            "alternate": "BHKU-OC Black Hawk-KU (4/5) | PXH-7K Phoenix Hawk (4/5) | KIM-2C Komodo (4/5) | LNC25-09 Lancelot (4/5)"
+          },
+          {
+            "roll": "4",
+            "primary": "ARC-9K Archer (4/5) | GHR-8K Grasshopper (4/5) | PNT-13K Panther (4/5) | Shadow Cat III Prime (4/5)",
+            "support": "Manticore (XL) | NK-1C Narukami | ×2 Tokugawa (MRM) | ×2 Heavy Air Strike | ×2 Light Air Strike | Heavy Air Cover | Light Air Cover",
+            "alternate": "Sphinx 4 (4/5) | DRG-12K Grand Dragon (4/5)"
+          },
+          {
+            "roll": "5",
+            "primary": "HTM-30S Hatamoto-Suna (4/5) | MTR-7K Maelstrom (4/5)",
+            "support": "×2 Bulldog (ERLL) | ×2 Drillson (MML) | ×2 Schrek (XL) | ×2 Maxim (BA Factory) | ×4 IS Standard BA",
+            "alternate": "DRG-12K Grand Dragon (4/5) | WVR-8K Wolverine (4/5)"
+          },
+          {
+            "roll": "6+",
+            "primary": "MAD-9W2 Marauder (3/4) | SH-1V Shiro (3/4)",
+            "support": "×2 NK-1C Narukami Veteran | ×2 Tokugawa (MRM) Veteran | Tokugawa (MRM) Veteran | ×2 IS Standard BA | Heavy Bombing | ×3 Light Airstrike | ×2 Light Air Cover",
+            "alternate": "GUN-1ERD Gunslinger (3/4) | LNX-9Q Lynx (3/4)"
+          }
+        ]
+      }
+    }
+  },
+  "federated-suns": {
+    "label": "Federated Suns",
+    "scales": {
+      "1": {
+        "sourcePage": 196,
+        "rows": [
+          {
+            "roll": "1−",
+            "primary": "RSN-2 Rattlesnake II (3/4)",
+            "support": "H-8 Warrior Veteran | Pegasus (Upgrade) Veteran | ×2 Light Airstrike | ×2 Light Air Cover",
+            "alternate": "OSR-3D Osiris (3/4)"
+          },
+          {
+            "roll": "2",
+            "primary": "ALM-10D Fireball (4/5) | JVN-12N Javelin (4/5)",
+            "support": "×2 Fox Armored Car | Marten | IS Standard BA | Light Bombing | Light Airstrike",
+            "alternate": "PY-SR10 Preyseeker (4/5) | OSR-3D Osiris (4/5)"
+          },
+          {
+            "roll": "3",
+            "primary": "BZK-D1 Hollander III (4/5) | GRM-01A2 Garm (4/5)",
+            "support": "×2 Striker | Heavy Airstrike | Light Bombing",
+            "alternate": "CDR-1X Cuirass (4/5)"
+          },
+          {
+            "roll": "4",
+            "primary": "ENF-5R Enforcer (4/5) | SHD-6D Shadow Hawk (4/5)",
+            "support": "Striker | Light Bombing | Heavy Air Cover",
+            "alternate": "GRM-01B Garm (4/5)"
+          },
+          {
+            "roll": "5",
+            "primary": "WVR-10V2 Wolverine (4/5)",
+            "support": "Patton (XL) | Vedette (Armor) | Heavy Air Strike | Light Airstrike | ×2 Light Air Cover",
+            "alternate": "VLK-QDD Valkyrie (4/5) | WTH-3 Whitworth (4/5)"
+          },
+          {
+            "roll": "6+",
+            "primary": "HCT-7D Hatchetman (3/4)",
+            "support": "Patton (XL) Veteran | Alacorn Mk. VII Veteran | Heavy Airstrike | Heavy Air Cover",
+            "alternate": "LGB-14C2 Longbow (3/4)"
+          }
+        ]
+      },
+      "2": {
+        "sourcePage": 197,
+        "rows": [
+          {
+            "roll": "1−",
+            "primary": "LGN-2D Legionnaire (3/4) | OSR-4D Osiris (3/4)",
+            "support": "×2 Condor (Ultra) Veteran | Maxim (BA Factory) | ×2 IS Standard BA Veteran | ×4 Light Airstrike | ×2 Light Air Cover",
+            "alternate": "CDR-2X Cuirass (3/4) | UCU-F4r Scarecrow (3/4)"
+          },
+          {
+            "roll": "2",
+            "primary": "",
+            "support": "",
+            "alternate": "",
+            "note": "ROLL ×2 Scale 1"
+          },
+          {
+            "roll": "3",
+            "primary": "AGS-2D Argus (4/5) | ENF-6M Enforcer (4/5) | SNT-04 Sentry (4/5)",
+            "support": "×2 Pandion WiGE | Maxim (BA Factory) | ×2 Jump Infantry | Heavy Bombing | ×3 Light Airstrike",
+            "alternate": "RSN-2 Rattlesnake II (4/5) | HSN-10SR Hellspawn (4/5)"
+          },
+          {
+            "roll": "4",
+            "primary": "DV-11DK Dervish (4/5) | MAD-9D Marauder (4/5)",
+            "support": "Condor (Laser) | Condor (Laser) | Vedette (Armor) | Vedette (Armor) | Strafing | Heavy Airstrike | Light Airstrike | ×3 Light Air Cover",
+            "alternate": "BJ2-O Blackjack (4/5) | CN11-0D Centurion (4/5) | JVN-11B Javelin (4/5)"
+          },
+          {
+            "roll": "5",
+            "primary": "HMH-6E Hammerhands (4/5) | TNS-4T Thanatos (4/5)",
+            "support": "×2 Patton (XL) | ×2 Tracked APC | ×2 Jump Infantry | Heavy Bombing | Heavy Airstrike | Heavy Air Cover | Light Air Cover",
+            "alternate": "HSN-10SR Hellspawn (4/5) | CRD-7D Crusader (4/5)"
+          },
+          {
+            "roll": "6+",
+            "primary": "BLK-NT-4D Black Knight (3/4)",
+            "support": "Pilum (Arrow IV) Veteran | IS Standard BA Veteran | ×2 Medium | Emplacement Veteran | ×2 Heavy Airstrike",
+            "alternate": "UM-90 SuburbanMech (3/4) | DVS-10 Devastator (3/4)"
+          }
+        ]
+      },
+      "3": {
+        "sourcePage": 198,
+        "rows": [
+          {
+            "roll": "1−",
+            "primary": "FEC-3C Fennec (3/4) | LGN-2XU Legionnaire (3/4) | OSR-4D Osiris (3/4)",
+            "support": "×2 Condor (Ultra) Veteran | ×2 Fox Veteran | ×2 Pandion WiGE Veteran | ×2 IS Standard BA Veteran | ×2 Sniper | Heavy Bombing | ×3 Light Airstrike | ×2 Light Air Cover",
+            "alternate": "CH11-NG Gunsmith (3/4) | RSN-1 Rattlesnake II (3/4) | PY-SR10 Prey Seeker (3/4)"
+          },
+          {
+            "roll": "2",
+            "primary": "",
+            "support": "",
+            "alternate": "",
+            "note": "ROLL ×1 Scale 2 | ROLL ×1 Scale 1"
+          },
+          {
+            "roll": "3",
+            "primary": "ALM-10D Fireball (4/5) | CH11-NG Gunsmith (4/5) | CLN-7W Chameleon (4/5) | OTT-8J Ostscout (4/5)",
+            "support": "×2 Drillson (Streak) | ×2 Fox | ×2 J. Edgar (X-Pulse) | ×2 Maxim (BA Factory) | ×2 Jump Infantry | ×2 IS Standard BA | ×2 Heavy Bombing | Light Bombing | ×2 Heavy Air Cover | ×2 Light Air Cover",
+            "alternate": "UCU-F4r Scarecrow (4/5) | RSN-2 Rattlesnake II (4/5) | LGN-2F Legionnaire (4/5) | GSN-10G Hellspawn (4/5)"
+          },
+          {
+            "roll": "4",
+            "primary": "AGS-8DX Argus (4/5) | CN11-OA Centurion (4/5) | SHD-6D Shadow Hawk (4/5)",
+            "support": "×2 Manticore (HPPC) | ×2 Patton (XL) | ×2 Striker (Stealth) | Maxim (BA Factory) | ×2 IS Standard BA | Pilum (Arrow IV) | ×2 Heavy Bombing | ×3 Light Air Cover",
+            "alternate": "FLC-8R Falconer (4/5) | BHKU-OR Black Hawk-KU (4/5) | OTL-8E3 Ostsol (4/5)"
+          },
+          {
+            "roll": "5",
+            "primary": "AV1-O Avatar (4/5) | CES-4R Caesar (4/5) | VTR-12D Victor (4/5)",
+            "support": "Hawk Moth II | ×2 Manticore (XL) | ×2 Patton (XL) | ×3 Motorized Infantry | Heavy Airstrike | Sniper | ×3 Light Airstrike | ×3 Light Air Cover",
+            "alternate": "TLR2-O Templar III (4/5) | INF-NOB Inferno (4/5) | ENF-7D Enforcer III (4/5)"
+          },
+          {
+            "roll": "6+",
+            "primary": "DVS-11 Devastator (3/4) | MAD-9D Marauder (3/4)",
+            "support": "Alacorn Mk. VII Veteran | Pegasus (Upgrade) Veteran | Medium Emplacement Veteran | Heavy Emplacement Veteran | ×2 Sniper | ×2 Heavy Air Strike | Light Bombing | Light Air Cover",
+            "alternate": "MAD-10D Marauder II (3/4)"
+          }
+        ]
+      }
+    }
+  },
+  "raven-alliance": {
+    "label": "Raven Alliance",
+    "scales": {
+      "1": {
+        "sourcePage": 199,
+        "rows": [
+          {
+            "roll": "1−",
+            "primary": "Baboon (Howler) (3/4)",
+            "support": "×2 Enyo Veteran | ×2 Light Airstrike | Heavy Air Cover | Light Air Cover",
+            "alternate": "CVR-A1 Cadaver (3/4) | NTK-2Q Night Hawk (3/4)"
+          },
+          {
+            "roll": "2",
+            "primary": "NTK-2Q Night Hawk (4/5) | WSP-3A Wasp (4/5)",
+            "support": "×2 GAL-100 Galleon | Maxim | ×2 Jump Infantry | Light Bombing | Light Airstrike | ×2 Light Air Cover",
+            "alternate": "LCT-1V Locust (4/5) | MON-66b Mongoose (4/5) | Stinger IIC (4/5)"
+          },
+          {
+            "roll": "3",
+            "primary": "GRF-1N Griffin (4/5) | MCY-99 Mercury (4/5)",
+            "support": "×2 Vedette | Tracked APC | Foot Infantry | Heavy Airstrike | Light Airstrike | Light Air Cover",
+            "alternate": "LCT-1V Locust (4/5) | MON-66b Mongoose (4/5) | NTK-2Q Night Hawk (4/5) | Stinger IIC (4/5) | WSP-3A Wasp (4/5)"
+          },
+          {
+            "roll": "4",
+            "primary": "MLN-1D Merlin (4/5)",
+            "support": "LRM Carrier | ×2 Manticore | Sniper | Light Airstrike | Heavy Air Cover",
+            "alternate": "CVR-T1 Cadaver (4/5) | WSP-3A Wasp (4/5)"
+          },
+          {
+            "roll": "5",
+            "primary": "BMB-12D Bombardier (4/5)",
+            "support": "×2 Bulldog | LRM Carrier | Heavy Bombing | ×2 Heavy Air Cover | Light Air Cover",
+            "alternate": "Peregrine (Horned Owl) (4/5) | MLN-1D Merlin (4/5)"
+          },
+          {
+            "roll": "6+",
+            "primary": "Dark Crow 4 (3/4)",
+            "support": "×2 Manticore Veteran | ×2 Light Airstrike | Light Air Cover",
+            "alternate": "Stinger IIC (3/4) | STG-3R Stinger (3/4)"
+          }
+        ]
+      },
+      "2": {
+        "sourcePage": 200,
+        "rows": [
+          {
+            "roll": "1−",
+            "primary": "Devil (3/4) | Baboon (Howler) (3/4)",
+            "support": "×2 Condor Veteran | ×2 Maxim (BA Factory) | ×2 Elemental BA Veteran | ×2 Jump Infantry Veteran | Light Bombing | ×2 Light Airstrike",
+            "alternate": "MCY-99 Mercury (3/4) | Clint IIC (3/4) | CVR-A1 Cadaver (3/4)"
+          },
+          {
+            "roll": "2",
+            "primary": "",
+            "support": "",
+            "alternate": "",
+            "note": "ROLL ×2 Scale 1"
+          },
+          {
+            "roll": "3",
+            "primary": "Clint IIC (4/5) | GRF-1N Griffin (4/5) | OSR-2Cb Ostroc (4/5)",
+            "support": "×4 Vedette | ×2 Tracked APC | ×2 Foot Infantry",
+            "alternate": "Conjurer (Hellhound) (4/5) | MON-66b Mongoose (4/5)"
+          },
+          {
+            "roll": "4",
+            "primary": "CRD-2R Crusader (4/5) | CVR-T1 Cadaver (4/5) | MLN -1D Merlin (4/5)",
+            "support": "×2 Manticore | ×2 Rommel | Strafing | Heavy Airstrike | Heavy Air Cover | Light Air Cover",
+            "alternate": "CGR-2A2 Charger (4/5) | Dark Crow 3 (4/5)"
+          },
+          {
+            "roll": "5",
+            "primary": "Vapor Eagle (Goshawk) (4/5) | WHM-6Rb Warhammer (4/5)",
+            "support": "×2 Hunter | ×2 Rommel | ×2 Motorized Infantry | Heavy Bombing | ×2 Light Airstrike | ×2 Light Air Cover",
+            "alternate": "BMB-12D Bombardier (4/5) | MLN-1C Merlin (4/5) | LCT-1V Locust (4/5)"
+          },
+          {
+            "roll": "6+",
+            "primary": "Dark Crow (3/4) | MLN-1D Merlin (3/4)",
+            "support": "LRM Carrier C Veteran | ×2 Motorized Infantry Veteran | Foot Infantry Veteran | ×2 Light Emplacement Veteran | Medium Emplacement Veteran | Light Bombing | ×3 Light Airstrike",
+            "alternate": "Howler (Baboon) (3/4) | Devil (3/4)"
+          }
+        ]
+      },
+      "3": {
+        "sourcePage": 201,
+        "rows": [
+          {
+            "roll": "1−",
+            "primary": "Clint IIC 2 (3/4) | Goshawk II (3/4)",
+            "support": "×3 Enyo Veteran | Maxim (BA Factory) | ×2 Elemental Point Veteran | Heavy Bombing | ×3 Light Bombing | Heavy Air Cover | ×2 Light Air Cover",
+            "alternate": "Stinger IIC (3/4) | CVR-T1 Cadaver (3/4) | Dark Crow (3/4) | MCY-99 Mercury (3/4)"
+          },
+          {
+            "roll": "2",
+            "primary": "",
+            "support": "",
+            "alternate": "",
+            "note": "ROLL ×1 Scale 2 | ROLL ×1 Scale 1"
+          },
+          {
+            "roll": "3",
+            "primary": "Vapor Eagle (Goshawk) 2 (4/5) | Shadow Hawk IIC 7 (4/5) | Stinger IIC (4/5)",
+            "support": "×2 Condor | ×2 Hunter | ×4 Vedette | Maxim (BA Factory) | ×2 IS Standard BA | Long Tom | ×2 Sniper | Light Bombing | ×2 Heavy Air Cover",
+            "alternate": "Charger C (4/5) | Dark Crow 3 (4/5) | GRF-1N Griffin (4/5)"
+          },
+          {
+            "roll": "4",
+            "primary": "Merlin C (4/5) | NTK-2Q Night Hawk (4/5) | Rifleman IIC 9 (4/5)",
+            "support": "×2 Hunter | ×2 Rommel | ×2 Vedette | ×4 Motorized Infantry | Long Tom | Heavy Bombing | Light Bombing | Heavy Air Cover | Light Air Cover",
+            "alternate": "Glass Spider (Galahad) (4/5) | White Raven (4/5)"
+          },
+          {
+            "roll": "5",
+            "primary": "Deimos 2 (4/5) | Rifleman IIC 9 (4/5)",
+            "support": "×2 LRM Carrier C | ×2 Rommel | ×2 SRM Carrier C | ×2 Motorized Infantry | Sniper | Heavy Airstrike | ×2 Heavy Air Cover | ×3 Light Air Cover",
+            "alternate": "BLR-1Gb BattleMaster (4/5) | Dark Crow (4/5) | Merlin C (4/5)"
+          },
+          {
+            "roll": "6+",
+            "primary": "Charger C (3/4) | CRD-2R Crusader (3/4)",
+            "support": "×2 LRM Carrier Veteran | ×2 Rommel Veteran | ×2 Heavy Emplacement Veteran | ×3 Light Emplacement Veteran | Heavy Airstrike | ×2 Light Airstrike | ×2 Heavy Air Cover | Light Air Cover",
+            "alternate": "MLN-1D Merlin (3/4) | MCY-99 Mercury (3/4) | Devil (3/4)"
+          }
+        ]
+      }
+    }
+  }
+};
+
 export const TRACK_NAMES = TRACKS.map(track => track.name);
 
-// Consumer adaptation of the current military-dark-ui palette from
-// SANSd20/battletech-faction-colors. These are semantic UI colors, not official
+// Brighter Hot Spots consumer adaptation of the semantic military identities
+// from SANSd20/battletech-faction-colors. These are UI colors, not official
 // BattleTech paint specifications. Unsupported identities retain neutral/local
 // treatment rather than borrowing a government/faction palette.
 export const FACTION_COLORS = {
-  "Federated Suns": "#586B31",
-  "Draconis Combine": "#9E2B2B",
-  "Capellan Confederation": "#3D6D55",
-  "Clan Sea Fox": "#66737D",
-  "Mercenary": "#7c6854",
-  "Corporate": "#ae6c2d",
-  "Local": "#66737d",
-  "Rebels": "#8d5f83"
+  "Federated Suns": "#7FA52F",
+  "Draconis Combine": "#D94343",
+  "Capellan Confederation": "#2E9D68",
+  "Clan Sea Fox": "#2A9FBE",
+  "Mercenary": "#B6783D",
+  "Corporate": "#DE7C22",
+  "Local": "#7B95A5",
+  "Rebels": "#B05A9D"
 };
 
 const factionSide = (id, name, faction) => ({ id, name, faction, color: FACTION_COLORS[faction] || FACTION_COLORS.Local });

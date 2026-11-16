@@ -51,6 +51,40 @@ button, select { cursor: pointer; }
 .hotspot-summary-side { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 9px; }
 .hotspot-summary-resolution { grid-column: 1 / -1; padding-top: 9px; border-top: 1px solid #d1dddc; color: #42545d; font-size: 12px; }
 .hotspot-summary-note { grid-column: 1 / -1; color: #6d5d50; font-size: 11px; }
+.option-toggle { display: flex; align-items: flex-start; gap: 10px; margin-top: 14px; padding: 12px 13px; border: 1px solid #b9c6c8; background: #f1f7f6; color: var(--ink); cursor: pointer; }
+.option-toggle input { position: absolute; opacity: 0; }
+.option-checkmark { flex: 0 0 auto; width: 20px; height: 20px; border: 1px solid #8999a0; border-radius: 3px; background: #fff; }
+.option-toggle input:checked + .option-checkmark { border-color: var(--faction-color); background: var(--faction-color); box-shadow: inset 0 0 0 4px #fff; }
+.option-toggle strong, .option-toggle small { display: block; }
+.option-toggle strong { font-size: 13px; }
+.option-toggle small { margin-top: 2px; color: #5d6b74; font-size: 11px; }
+#opfor-display { margin-top: 14px; }
+.opfor-card { overflow: hidden; border: 1px solid color-mix(in srgb, var(--faction-color) 42%, #b9c6c8); background: #f7fbf8; }
+.opfor-card-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 16px; background: #18212b; color: #f6f4ee; }
+.opfor-card-head h3 { margin: 5px 0 2px; color: #f6f4ee; font-size: 20px; }
+.opfor-card-head p { margin: 0; color: #c1cbd2; font-size: 12px; }
+.opfor-card-head .panel-kicker { color: var(--faction-color); }
+.opfor-roll-button { min-height: 36px; border: 1px solid var(--faction-color); background: var(--faction-color); color: #10151f; white-space: nowrap; }
+.opfor-card-meta { display: flex; flex-wrap: wrap; gap: 7px 16px; padding: 10px 13px; border-bottom: 1px solid #d3dfda; background: color-mix(in srgb, var(--faction-color) 10%, #edf5f1); color: #53636b; font-size: 11px; }
+.opfor-card-meta strong { color: var(--ink); }
+.opfor-result { display: flex; align-items: center; gap: 10px; padding: 12px 13px; border-bottom: 1px solid #d3dfda; color: #53636b; font-size: 11px; }
+.opfor-result-label { color: var(--faction-color); font-size: 10px; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
+.opfor-result output { display: inline-grid; place-items: center; width: 29px; height: 29px; border-radius: 50%; background: var(--faction-color); color: #10151f; font-size: 14px; font-weight: 900; }
+.opfor-force-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 13px; }
+.opfor-force-grid > div { padding: 10px; border-left: 3px solid var(--faction-color); background: #fff; }
+.opfor-force-grid span, .opfor-instruction span { display: block; color: var(--faction-color); font-size: 9px; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
+.opfor-force-grid ul { display: grid; gap: 4px; margin: 7px 0 0; padding-left: 16px; }
+.opfor-force-grid li { color: #394650; font-size: 11px; }
+.opfor-instruction { margin: 13px; padding: 12px; border-left: 3px solid var(--faction-color); background: color-mix(in srgb, var(--faction-color) 8%, #fff8ef); }
+.opfor-instruction strong, .opfor-instruction small { display: block; }
+.opfor-instruction strong { margin-top: 4px; color: var(--ink); font-size: 14px; }
+.opfor-instruction small { margin-top: 5px; color: #5d6b74; font-size: 11px; }
+.opfor-note, .opfor-rule { margin: 0; padding: 0 13px 12px; color: #53636b; font-size: 11px; }
+.opfor-rule { padding-top: 2px; }
+.opfor-unavailable { padding: 15px; }
+.opfor-unavailable h3 { margin: 5px 0 6px; color: var(--ink); font-size: 18px; }
+.opfor-unavailable p { margin: 6px 0 0; color: #53636b; font-size: 12px; }
+.opfor-card .reference-citation { padding: 11px 13px 13px; border-top: 1px solid #d3dfda; }
 .side-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 8px; border: 1px solid color-mix(in srgb, var(--side-color) 45%, #c6ced5); background: color-mix(in srgb, var(--side-color) 10%, #fff); color: var(--ink); font-size: 11px; white-space: nowrap; }
 .side-chip-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--side-color); box-shadow: 0 0 0 3px color-mix(in srgb, var(--side-color) 14%, transparent); }
 .side-chip span:last-child { color: #5f6b73; }
@@ -224,6 +258,8 @@ body { background: color-mix(in srgb, var(--faction-color) 10%, #111821); color:
   .hotspot-summary-side { justify-content: flex-start; }
   .hotspot-summary-resolution { grid-column: auto; }
   .hotspot-summary-note { grid-column: auto; }
+  .opfor-card-head { align-items: flex-start; }
+  .opfor-force-grid { grid-template-columns: 1fr; }
   .control-status { grid-column: auto; }
   .controls > .danger { grid-column: auto; grid-row: auto; }
   .mode-switch { display: grid; grid-template-columns: 1fr; }
