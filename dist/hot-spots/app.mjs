@@ -72,6 +72,13 @@ function forceList(value) {
   return value.split(" | ").map(item => "<li>" + esc(item) + "</li>").join("");
 }
 
+function opforRollOptions() {
+  return [1, 2, 3, 4, 5, 6].map(value => {
+    const label = value === 1 ? "1 — 1−" : value === 6 ? "6 — 6+" : String(value);
+    return '<option value="' + value + '"' + (state.opforRoll === value ? " selected" : "") + ">" + label + "</option>";
+  }).join("");
+}
+
 function winnerKey(sequence) {
   return state.hotSpotId + "::winner::" + sequence;
 }
@@ -203,9 +210,9 @@ function renderOpFor() {
     ? '<div class="opfor-instruction"><span>Source instruction for result ' + esc(row.roll) + '</span><strong>' + esc(row.note) + '</strong><small>Follow that source instruction to build the full force.</small></div>'
     : '<div class="opfor-force-grid"><div><span>Primary force</span><ul>' + forceList(row?.primary) + '</ul></div><div><span>Support force</span><ul>' + forceList(row?.support) + '</ul></div><div><span>Alternate force</span><ul>' + forceList(row?.alternate) + '</ul></div></div>';
   container.innerHTML =
-    '<article class="opfor-card"><div class="opfor-card-head"><div><span class="panel-kicker">TAKING ONE FOR THE TEAM</span><h3>Generated opposing force</h3><p>' + esc(table.label) + ' · Scale ' + esc(String(state.scale)) + ' · Result ' + esc(row?.roll || "—") + '</p></div><button type="button" class="button opfor-roll-button" id="opfor-roll">Roll 1D6</button></div>' +
+    '<article class="opfor-card"><div class="opfor-card-head"><div><span class="panel-kicker">TAKING ONE FOR THE TEAM</span><h3>Generated opposing force</h3><p>' + esc(table.label) + ' · Scale ' + esc(String(state.scale)) + ' · Result ' + esc(row?.roll || "—") + '</p></div><label class="opfor-roll-control" for="opfor-roll"><span>Your 1D6 roll</span><select id="opfor-roll" aria-label="Your 1D6 roll">' + opforRollOptions() + '</select></label></div>' +
     '<div class="opfor-card-meta"><span>Military side: <strong>' + esc(selected.name) + '</strong></span><span>Faction table: <strong>' + esc(table.label) + '</strong></span><span>Source p. ' + esc(String(scale?.sourcePage || "—")) + '</span></div>' +
-    '<div class="opfor-result"><div class="opfor-result-label">1D6 result</div><output>' + esc(String(state.opforRoll)) + '</output><span>Roll again to generate a different result.</span></div>' +
+    '<div class="opfor-result"><div class="opfor-result-label">1D6 result</div><output>' + esc(String(state.opforRoll)) + '</output><span>Choose the result you rolled at the table.</span></div>' +
     clanNote + forceBody +
     '<p class="opfor-rule">Use the Primary Force. Add the Support Force when the required Battlefield Support rules are available; otherwise use the Alternate Force for an all-’Mech force.</p>' +
     '<div class="reference-citation">Source: ' + esc(SOURCES.opposingForces) + '</div></article>';
@@ -387,9 +394,9 @@ $("#taking-one-for-team").addEventListener("change", event => {
   renderAll();
 });
 
-$("#opfor-display").addEventListener("click", event => {
+$("#opfor-display").addEventListener("change", event => {
   if (event.target.id !== "opfor-roll") return;
-  state.opforRoll = Math.floor(Math.random() * 6) + 1;
+  state.opforRoll = Number(event.target.value);
   renderOpFor();
 });
 

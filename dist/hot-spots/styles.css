@@ -64,7 +64,8 @@ button, select { cursor: pointer; }
 .opfor-card-head h3 { margin: 5px 0 2px; color: #f6f4ee; font-size: 20px; }
 .opfor-card-head p { margin: 0; color: #c1cbd2; font-size: 12px; }
 .opfor-card-head .panel-kicker { color: var(--faction-color); }
-.opfor-roll-button { min-height: 36px; border: 1px solid var(--faction-color); background: var(--faction-color); color: #10151f; white-space: nowrap; }
+.opfor-roll-control { display: grid; gap: 4px; min-width: 145px; color: #c1cbd2; font-size: 9px; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
+.opfor-roll-control select { min-height: 36px; padding: 0 9px; border: 1px solid var(--faction-color); background: #fff; color: #10151f; font-size: 12px; font-weight: 800; letter-spacing: normal; text-transform: none; }
 .opfor-card-meta { display: flex; flex-wrap: wrap; gap: 7px 16px; padding: 10px 13px; border-bottom: 1px solid #d3dfda; background: color-mix(in srgb, var(--faction-color) 10%, #edf5f1); color: #53636b; font-size: 11px; }
 .opfor-card-meta strong { color: var(--ink); }
 .opfor-result { display: flex; align-items: center; gap: 10px; padding: 12px 13px; border-bottom: 1px solid #d3dfda; color: #53636b; font-size: 11px; }
