@@ -30,17 +30,15 @@ export const GENERAL_RULES = [
   {
     title: "Scanning range",
     table: {
-      headers: ["Sensor / rule", "BattleTech", "Alpha Strike"],
+      headers: ["Scanning Equipment", "BT Range", "AS Range", "LOS Required", "Weapon Attacks on 2nd Turn"],
       rows: [
-        ["Default sensors", "4 hexes", "9 inches"],
-        ["Light Active Probe", "3 hexes", "6 inches"],
-        ["Watchdog", "3 hexes", "6 inches"],
-        ["Beagle Active Probe", "4 hexes", "9 inches"],
-        ["Asset with PRB", "4 hexes", "N/A"],
-        ["Clan Active Probe", "5 hexes", "N/A"],
-        ["Bloodhound", "8 hexes", "12 inches"],
-        ["LOS", "Ignored with probe within range", "Required within 4 inches"],
-        ["Weapon attacks", "No without probe; yes with probe", "No without PRB; yes with PRB"]
+        ["Default Sensors", "4", "9″", "Yes", "No"],
+        ["Light Active Probe (LRP)", "3", "6″", "No", "Yes"],
+        ["Watchdog (WAT)", "3", "6″", "No", "Yes"],
+        ["Beagle Active Probe (BAP)", "4", "9″", "No", "Yes"],
+        ["Asset with PRB", "4", "N/A", "No", "Yes"],
+        ["Clan Active Probe", "5", "N/A", "No", "Yes"],
+        ["Bloodhound (BH)", "8", "12″", "No", "Yes"]
       ]
     },
     text: "Sprinting units cannot scan, and a Fire Control critical hit blocks scanning unless a functioning probe is present.",
