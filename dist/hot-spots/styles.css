@@ -166,12 +166,16 @@ body[data-mode="defender"] .attacker-col { display: none; }
    structure remains intact so faction color improves recognition without
    reducing contrast or changing the established layout. */
 :root { --faction-color: #66737d; }
-html { background: color-mix(in srgb, var(--faction-color) 12%, #10151f); }
-body { background: color-mix(in srgb, var(--faction-color) 5%, var(--paper)); }
+html { background: color-mix(in srgb, var(--faction-color) 16%, #0b1016); }
+body { background: color-mix(in srgb, var(--faction-color) 10%, #111821); color: #eef2f4; }
 .shell { background: color-mix(in srgb, var(--faction-color) 2%, transparent); }
 .panel { background: color-mix(in srgb, var(--faction-color) 2%, var(--panel)); }
 .reference-section.scale-section { background: color-mix(in srgb, var(--faction-color) 9%, #f2f8e4); }
 .score-card { background: color-mix(in srgb, var(--faction-color) 8%, #f4f8f7); }
+.hero h1 { color: #f4f1ea; }
+.hero p { color: #c4cdd3; }
+.source-strip { background: color-mix(in srgb, var(--faction-color) 18%, #1c2732); color: #c4cdd3; }
+.source-strip strong { color: #f1f4f5; }
 .brand-mark { background: var(--faction-color); }
 .status-dot { background: var(--faction-color); box-shadow: 0 0 0 4px color-mix(in srgb, var(--faction-color) 18%, transparent); }
 .eyebrow, .panel-kicker, .label { color: var(--faction-color); }
