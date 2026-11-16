@@ -187,7 +187,11 @@ function renderTrackOptions() {
   $("#track-select").innerHTML = '<option value="' + esc(state.trackId || "") + '">' + esc(derivedLabel) + "</option>";
   $("#track-select").value = state.trackId || "";
   $("#track-select").disabled = true;
-  $("#scale-select").value = String(state.scale);
+  $(".scale-button").forEach(button => {
+    const active = Number(button.dataset.scale) === state.scale;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
 }
 
 function renderOpFor() {
@@ -412,8 +416,10 @@ $("#track-select").addEventListener("change", event => {
   renderAll();
 });
 
-$("#scale-select").addEventListener("change", event => {
-  state.scale = Number(event.target.value);
+$("#scale-select").addEventListener("click", event => {
+  const button = event.target.closest(".scale-button");
+  if (!button) return;
+  state.scale = Number(button.dataset.scale);
   renderReference();
   renderOpFor();
 });

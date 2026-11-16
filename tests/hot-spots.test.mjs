@@ -39,7 +39,7 @@ const css = fs.readFileSync(new URL("../dist/hot-spots/styles.css", import.meta.
 for (const term of ["progress", "vpSelections", "data-mode", "resetTrack", "window.confirm", "Attacker only", "Defender only", "Both sides"]) {
   assert.ok((app + html).includes(term), term + " tracking behavior is present");
 }
-for (const term of ["hot-spot-select", "hot-spot-track-select", "hot-spot-side-select", "winner-controls", "winnerSelections", "resultSelections", "FACTION_COLORS", "applyFactionTheme", "--faction-color", "color-mix", "taking-one-for-team", "opfor-display", "OPPOSING_FORCE_TABLES", "Your 1D6 roll", "opfor-roll", "scale-choice"]) {
+for (const term of ["hot-spot-select", "hot-spot-track-select", "hot-spot-side-select", "winner-controls", "winnerSelections", "resultSelections", "FACTION_COLORS", "applyFactionTheme", "--faction-color", "color-mix", "taking-one-for-team", "opfor-display", "OPPOSING_FORCE_TABLES", "Your 1D6 roll", "opfor-roll", "scale-choice", "scale-buttons", "scale-button"]) {
   assert.ok((app + html + css + fs.readFileSync(new URL("../dist/hot-spots/data.mjs", import.meta.url), "utf8")).includes(term), term + " Hot Spot setup behavior is present");
 }
 for (const term of ["option-toggle", "opfor-card", "opfor-force-grid", "opfor-roll-control"]) {
@@ -48,7 +48,8 @@ for (const term of ["option-toggle", "opfor-card", "opfor-force-grid", "opfor-ro
 assert.ok(!app.includes("Math.random"), "OpFor result is selected by the player rather than generated randomly");
 assert.ok(html.indexOf('id="scale-select"') < html.indexOf('id="taking-one-for-team"'), "Force Scale appears before Taking one for the team");
 assert.match(app, /scale:\s*1,/, "application defaults to Scale 1");
-assert.match(html, /<option value="1" selected>Scale 1<\/option>/, "selector defaults to Scale 1");
+assert.match(html, /data-scale="1" aria-pressed="true">1<\/button>/, "Scale 1 is selected by default");
+assert.ok(!html.includes('<select id="scale-select">'), "Force Scale uses buttons instead of a dropdown");
 assert.ok(HOT_SPOTS.length >= 10, "the location selector includes the Draconis Reach mission briefs currently mapped");
 const achernar = HOT_SPOTS.find(item => item.id === "achernar");
 assert.equal(achernar.tracks[1].outcomes["home-guard"].trackId, "recon", "Achernar Track 2 resolves from the previous winner");
