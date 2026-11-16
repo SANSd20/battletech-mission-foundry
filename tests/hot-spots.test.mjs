@@ -65,6 +65,9 @@ assert.equal(pascagoula.tracks[1].displayName, undefined, "Pascagoula Track 2 do
 assert.ok(app.includes("MISSION_OPFOR_OVERRIDES") && app.includes("Mission-specific opposing force"), "Pascagoula uses the mission-specific OpFor override");
 assert.ok(!app.includes("hotspot-summary-side") && !app.includes("selected-side-line"), "selected side is shown only in the side selector");
 assert.ok(!app.includes("Selected side:"), "selected side is not repeated in the mission brief");
+assert.ok(!html.includes('id="track-select"'), "the derived track dropdown is removed");
+assert.ok(!html.includes('id="tracker-title"'), "the duplicate tracker title is removed");
+assert.ok(app.includes("renderScaleButtons"), "scale button rendering remains active");
 assert.ok(HOT_SPOTS.length >= 10, "the location selector includes the Draconis Reach mission briefs currently mapped");
 const achernar = HOT_SPOTS.find(item => item.id === "achernar");
 assert.equal(achernar.tracks[1].outcomes["home-guard"].trackId, "recon", "Achernar Track 2 resolves from the previous winner");

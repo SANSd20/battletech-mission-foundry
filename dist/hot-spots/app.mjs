@@ -189,12 +189,7 @@ function modeLabel() {
   return state.mode === "both" ? "Both sides" : sideNames[state.mode] + " only";
 }
 
-function renderTrackOptions() {
-  const derivedTrack = currentTrack();
-  const derivedLabel = derivedTrack ? (resolvedHotSpotStep()?.displayName || derivedTrack.name) + " · p. " + derivedTrack.page : "No standard track selected";
-  $("#track-select").innerHTML = '<option value="' + esc(state.trackId || "") + '">' + esc(derivedLabel) + "</option>";
-  $("#track-select").value = state.trackId || "";
-  $("#track-select").disabled = true;
+function renderScaleButtons() {
   Array.from(document.querySelectorAll(".scale-button")).forEach(button => {
     const active = Number(button.dataset.scale) === state.scale;
     button.classList.toggle("active", active);
@@ -342,7 +337,6 @@ function renderTracker() {
   const resolved = resolvedHotSpotStep();
   const attackerSide = sideById(resolved?.attacker);
   const defenderSide = sideById(resolved?.defender);
-  $("#tracker-title").textContent = track ? (resolved?.displayName || track.name) : "Track pending";
   $("#tracker-source").textContent = track ? "Draconis Reach p. " + track.page : currentHotSpot().source;
   $("#attacker-heading").innerHTML = '<span>Attacker</span><strong>' + esc(attackerSide?.name || "—") + '</strong>';
   $("#defender-heading").innerHTML = '<span>Defender</span><strong>' + esc(defenderSide?.name || "—") + '</strong>';
@@ -380,7 +374,7 @@ function renderAll() {
   syncHotSpotState();
   applyFactionTheme();
   renderHotSpotSetup();
-  renderTrackOptions();
+  renderScaleButtons();
   renderReference();
   renderTracker();
 }
@@ -427,16 +421,11 @@ $("#winner-controls").addEventListener("change", event => {
   renderAll();
 });
 
-$("#track-select").addEventListener("change", event => {
-  state.trackId = event.target.value;
-  renderAll();
-});
-
 $("#scale-select").addEventListener("click", event => {
   const button = event.target.closest(".scale-button");
   if (!button) return;
   state.scale = Number(button.dataset.scale);
-  renderTrackOptions();
+  renderScaleButtons();
   renderReference();
   renderOpFor();
 });

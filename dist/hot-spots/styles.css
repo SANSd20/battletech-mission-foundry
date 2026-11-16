@@ -97,7 +97,7 @@ button, select { cursor: pointer; }
 .side-chip-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--side-color); box-shadow: 0 0 0 3px color-mix(in srgb, var(--side-color) 14%, transparent); }
 .side-chip span:last-child { color: #5f6b73; }
 .role-summary { color: var(--teal); font-size: 10px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
-.controls { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(360px, 1.55fr) auto; align-items: end; gap: 18px; padding: 17px 18px; margin-bottom: 24px; }
+.controls { display: grid; grid-template-columns: minmax(360px, 1fr) auto; align-items: end; gap: 18px; padding: 17px 18px; margin-bottom: 24px; }
 .control-group label, .control-status .label { display: block; margin-bottom: 7px; color: #56636e; font-size: 10px; font-weight: 850; letter-spacing: .14em; text-transform: uppercase; }
 select { width: 100%; min-height: 42px; padding: 0 12px; border: 1px solid #aeb9c2; border-radius: 2px; background: #fff; color: var(--ink); }
 .mode-switch { display: flex; flex-wrap: wrap; gap: 5px; }
