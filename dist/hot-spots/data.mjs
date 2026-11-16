@@ -29,7 +29,19 @@ export const GENERAL_RULES = [
   },
   {
     title: "Scanning range",
-    text: "BattleTech / Alpha Strike: default sensors 4 hexes / 9 inches; Light Active Probe 3 / 6; Watchdog 3 / 6; Beagle Active Probe 4 / 9; asset with PRB 4 / N/A; Clan Active Probe 5 / N/A; Bloodhound 8 / 12. Sprinting units cannot scan, and a Fire Control critical hit blocks scanning unless a functioning probe is present.",
+    table: {
+      headers: ["Sensor / source", "BattleTech", "Alpha Strike"],
+      rows: [
+        ["Default sensors", "4 hexes", "9 inches"],
+        ["Light Active Probe", "3 hexes", "6 inches"],
+        ["Watchdog", "3 hexes", "6 inches"],
+        ["Beagle Active Probe", "4 hexes", "9 inches"],
+        ["Asset with PRB", "4 hexes", "N/A"],
+        ["Clan Active Probe", "5 hexes", "N/A"],
+        ["Bloodhound", "8 hexes", "12 inches"]
+      ]
+    },
+    text: "Sprinting units cannot scan, and a Fire Control critical hit blocks scanning unless a functioning probe is present.",
     ref: "Draconis Reach p. 167"
   }
 ];

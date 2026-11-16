@@ -1,4 +1,4 @@
-import { FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, OPPOSING_FORCE_TABLES, SOURCES, TRACKS } from "./data.mjs?v=opfor-4";
+import { FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, OPPOSING_FORCE_TABLES, SOURCES, TRACKS } from "./data.mjs?v=opfor-5";
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -273,6 +273,18 @@ function renderHotSpotSetup() {
   renderOpFor();
 }
 
+function renderSharedRule(rule) {
+  const body = rule.table
+    ? '<div class="shared-rule-table-wrap"><table class="shared-rule-table"><thead><tr>' +
+      rule.table.headers.map(header => '<th scope="col">' + esc(header) + '</th>').join("") +
+      '</tr></thead><tbody>' +
+      rule.table.rows.map(row => '<tr>' + row.map(cell => '<td>' + esc(cell) + '</td>').join("") + '</tr>').join("") +
+      '</tbody></table></div>' +
+      (rule.text ? '<p class="shared-rule-note">' + esc(rule.text) + '</p>' : '')
+    : '<p>' + esc(rule.text) + '</p>';
+  return '<details><summary>' + esc(rule.title) + '<span>' + esc(rule.ref) + '</span></summary>' + body + '</details>';
+}
+
 function renderReference() {
   const track = currentTrack();
   const hotSpot = currentHotSpot();
@@ -315,7 +327,7 @@ function renderReference() {
       '<div class="reference-citation">Source: ' + esc(SOURCES.primary) + " · selected track p. " + track.page + "</div>" +
     "</article>" +
     '<article class="panel general-card"><div class="panel-heading"><div><span class="panel-kicker">SHARED RULES</span><h3>Track reference p. 167</h3></div></div>' +
-      GENERAL_RULES.map(rule => '<details><summary>' + esc(rule.title) + '<span>' + esc(rule.ref) + '</span></summary><p>' + esc(rule.text) + "</p></details>").join("") +
+      GENERAL_RULES.map(renderSharedRule).join("") +
     "</article>";
 }
 
