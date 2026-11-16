@@ -335,22 +335,22 @@ export const MISSION_OPFOR_OVERRIDES = {
       "sourcePage": 105,
       "scales": {
         "1": {
-          "primary": "CHA-2K Chimera (3/4) | JR7-C2 Jenner (3/4)",
+          "primary": "Chimera CHA-2K (3/4) | Jenner JR7-C2 (3/4)",
           "support": "×4 Ryu Heavy Transport WiGE (use Vedette Medium Tank asset cards)",
           "alternate": "",
-          "note": "All Ghost MechWarriors have Gunnery 3 / Piloting 4."
+          "note": "All Ghost MechWarriors have a Gunnery Skill of 3 and a Piloting Skill of 4."
         },
         "2": {
-          "primary": "CHA-2K Chimera (3/4) | JR7-C2 Jenner (3/4) | DMO-5K Daimyo (3/4) | DRG-5Nr Dragon (3/4)",
+          "primary": "Chimera CHA-2K (3/4) | Jenner JR7-C2 (3/4) | Daimyo DMO-5K (3/4) | Dragon DRG-5Nr (3/4)",
           "support": "×4 Ryu Heavy Transport WiGE (use Vedette Medium Tank asset cards)",
           "alternate": "",
-          "note": "All Ghost MechWarriors have Gunnery 3 / Piloting 4. The Scale 2 force uses a C3 network."
+          "note": "At Scale 2, add a Daimyo DMO-5K and Dragon DRG-5Nr, with a C3 network. All Ghost MechWarriors have a Gunnery Skill of 3 and a Piloting Skill of 4."
         },
         "3": {
-          "primary": "CHA-2K Chimera (3/4) | JR7-C2 Jenner (3/4) | DMO-5K Daimyo (3/4) | DRG-5Nr Dragon (3/4) | Nova Cat T (3/4)",
+          "primary": "Chimera CHA-2K (3/4) | Jenner JR7-C2 (3/4) | Daimyo DMO-5K (3/4) | Dragon DRG-5Nr (3/4) | Nova Cat T (3/4)",
           "support": "×4 Ryu Heavy Transport WiGE (use Vedette Medium Tank asset cards)",
           "alternate": "",
-          "note": "All Ghost MechWarriors have Gunnery 3 / Piloting 4. The force uses a C3 network."
+          "note": "At Scale 3, add a Nova Cat T. The Scale 2 additions use a C3 network. All Ghost MechWarriors have a Gunnery Skill of 3 and a Piloting Skill of 4."
         }
       }
     }
