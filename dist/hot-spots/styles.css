@@ -290,4 +290,5 @@ body { background: color-mix(in srgb, var(--faction-color) 10%, #111821); color:
 
 
 
-.derived-track-title { display: flex; align-items: center; min-height: 42px; padding: 0 12px; border: 1px solid #aeb9c2; background: #fff; color: var(--ink); font-size: 14px; font-weight: 700; }
+.track-display { align-self: center; }
+.derived-track-title { display: block; min-height: 0; padding: 0; border: 0; background: transparent; color: var(--ink); font: 400 clamp(36px, 4vw, 54px)/.95 Georgia, "Times New Roman", serif; letter-spacing: -.05em; }
