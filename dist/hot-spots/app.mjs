@@ -74,7 +74,7 @@ function forceList(value) {
 
 function opforRollOptions() {
   return [1, 2, 3, 4, 5, 6].map(value => {
-    const label = value === 1 ? "1 — 1−" : value === 6 ? "6 — 6+" : String(value);
+    const label = value === 1 ? "1−" : value === 6 ? "6+" : String(value);
     return '<option value="' + value + '"' + (state.opforRoll === value ? " selected" : "") + ">" + label + "</option>";
   }).join("");
 }
