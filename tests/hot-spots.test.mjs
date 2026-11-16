@@ -24,11 +24,12 @@ const recon = TRACKS.find(track => track.id === "recon");
 assert.deepEqual(recon.objectives.find(objective => objective.id === "deny").vpOptions, [50, 100, 200, 300], "Deny retains the source's variable VP range");
 const app = fs.readFileSync(new URL("../dist/hot-spots/app.mjs", import.meta.url), "utf8");
 const html = fs.readFileSync(new URL("../dist/hot-spots/index.html", import.meta.url), "utf8");
+const css = fs.readFileSync(new URL("../dist/hot-spots/styles.css", import.meta.url), "utf8");
 for (const term of ["progress", "vpSelections", "data-mode", "resetTrack", "window.confirm", "Attacker only", "Defender only", "Both sides"]) {
   assert.ok((app + html).includes(term), term + " tracking behavior is present");
 }
-for (const term of ["hot-spot-select", "hot-spot-track-select", "hot-spot-side-select", "winner-controls", "winnerSelections", "resultSelections", "FACTION_COLORS"]) {
-  assert.ok((app + html + fs.readFileSync(new URL("../dist/hot-spots/data.mjs", import.meta.url), "utf8")).includes(term), term + " Hot Spot setup behavior is present");
+for (const term of ["hot-spot-select", "hot-spot-track-select", "hot-spot-side-select", "winner-controls", "winnerSelections", "resultSelections", "FACTION_COLORS", "applyFactionTheme", "--faction-color", "color-mix"]) {
+  assert.ok((app + html + css + fs.readFileSync(new URL("../dist/hot-spots/data.mjs", import.meta.url), "utf8")).includes(term), term + " Hot Spot setup behavior is present");
 }
 assert.ok(HOT_SPOTS.length >= 10, "the location selector includes the Draconis Reach mission briefs currently mapped");
 const achernar = HOT_SPOTS.find(item => item.id === "achernar");

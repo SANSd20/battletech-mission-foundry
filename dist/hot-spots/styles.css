@@ -162,6 +162,39 @@ select { width: 100%; min-height: 42px; padding: 0 12px; border: 1px solid #aeb9
 body[data-mode="attacker"] .defender-col { display: none; }
 body[data-mode="defender"] .attacker-col { display: none; }
 
+/* The selected military side supplies the page accent. The neutral paper/navy
+   structure remains intact so faction color improves recognition without
+   reducing contrast or changing the established layout. */
+:root { --faction-color: #66737d; }
+html { background: color-mix(in srgb, var(--faction-color) 12%, #10151f); }
+body { background: color-mix(in srgb, var(--faction-color) 5%, var(--paper)); }
+.shell { background: color-mix(in srgb, var(--faction-color) 2%, transparent); }
+.panel { background: color-mix(in srgb, var(--faction-color) 2%, var(--panel)); }
+.reference-section.scale-section { background: color-mix(in srgb, var(--faction-color) 9%, #f2f8e4); }
+.score-card { background: color-mix(in srgb, var(--faction-color) 8%, #f4f8f7); }
+.brand-mark { background: var(--faction-color); }
+.status-dot { background: var(--faction-color); box-shadow: 0 0 0 4px color-mix(in srgb, var(--faction-color) 18%, transparent); }
+.eyebrow, .panel-kicker, .label { color: var(--faction-color); }
+.hero h1 em { color: var(--faction-color); }
+.source-strip { border-left-color: var(--faction-color); background: color-mix(in srgb, var(--faction-color) 9%, transparent); }
+.source-strip span { color: var(--faction-color); }
+.hotspot-panel { border-top: 4px solid var(--faction-color); }
+.setup-boundary { border-color: color-mix(in srgb, var(--faction-color) 40%, #e1c9ac); }
+.winner-controls-grid { border-left-color: var(--faction-color); background: color-mix(in srgb, var(--faction-color) 7%, #fff8ef); }
+.hotspot-summary { border-color: color-mix(in srgb, var(--faction-color) 38%, #b9c6c8); background: color-mix(in srgb, var(--faction-color) 7%, #f1f7f6); }
+.hotspot-summary-resolution { border-top-color: color-mix(in srgb, var(--faction-color) 28%, #d1dddc); }
+.role-summary { color: var(--faction-color); }
+.mission-card-head .eyebrow { color: color-mix(in srgb, var(--faction-color) 70%, var(--accent)); }
+.hot-spot-reference { border-left: 4px solid var(--faction-color); }
+.brief-grid span { color: var(--faction-color); }
+.rule-chip { border-color: color-mix(in srgb, var(--faction-color) 38%, #b9c6c8); background: color-mix(in srgb, var(--faction-color) 8%, #eef7f6); color: var(--faction-color); }
+.tracker-help { border-left-color: var(--faction-color); background: color-mix(in srgb, var(--faction-color) 7%, #f5f7ec); }
+.mode-button.active { border-color: var(--faction-color); background: var(--faction-color); }
+.check-control input:checked + .checkmark { border-color: var(--faction-color); background: var(--faction-color); }
+.counter-button:hover { border-color: var(--faction-color); color: var(--faction-color); }
+.score-card { border-color: color-mix(in srgb, var(--faction-color) 38%, #b9c6c8); }
+.objective-vp { color: color-mix(in srgb, var(--faction-color) 80%, var(--orange)); }
+
 @media (max-width: 1050px) {
   .hotspot-grid { grid-template-columns: 1fr 1fr; }
   .hotspot-grid .control-group:last-child { grid-column: 1 / -1; }

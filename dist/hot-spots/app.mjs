@@ -92,6 +92,14 @@ function syncHotSpotState() {
   state.trackId = resolved?.unresolved ? null : (resolved?.trackId || null);
 }
 
+function applyFactionTheme() {
+  const selected = sideById(state.selectedSide[currentHotSpot().id]);
+  const color = selected?.color || FACTION_COLORS.Local;
+  document.documentElement.style.setProperty("--faction-color", color);
+  const themeColor = document.querySelector('meta[name="theme-color"]');
+  if (themeColor) themeColor.setAttribute("content", color);
+}
+
 function applies(objective, side) {
   return objective.side === "both" || objective.side === side;
 }
@@ -282,6 +290,7 @@ function renderScore() {
 
 function renderAll() {
   syncHotSpotState();
+  applyFactionTheme();
   renderHotSpotSetup();
   renderTrackOptions();
   renderReference();
