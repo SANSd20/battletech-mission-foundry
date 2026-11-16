@@ -7,6 +7,8 @@ assert.deepEqual(TRACKS.map(track => track.name), expected, "all eleven Draconis
 assert.equal(new Set(TRACKS.map(track => track.id)).size, 11, "track ids are unique");
 assert.equal(GENERAL_RULES.length, 5, "shared p. 167 reference includes the five browser sections");
 assert.match(SOURCES.supersession, /supersedes/i);
+assert.match(SOURCES.militaryPalette, /military-ui\.yaml/);
+assert.equal(FACTION_COLORS["Federated Suns"], "#586B31", "Federated Suns uses the authoritative military-dark-ui primary");
 for (const track of TRACKS) {
   assert.ok(track.page >= 168 && track.page <= 175, track.name + " has a track page");
   assert.ok(track.setup.length >= 1, track.name + " has setup");

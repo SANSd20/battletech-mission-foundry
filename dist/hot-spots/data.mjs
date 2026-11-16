@@ -1,7 +1,8 @@
 export const SOURCES = {
   primary: "Hot Spots: Draconis Reach, First Printing, pp. 167–175",
   errata: "Hot Spots Hinterlands Errata v2.41, reviewed for applicability",
-  supersession: "Draconis Reach supersedes the supplied Hinterlands track text; Hinterlands track corrections are not applied to these records."
+  supersession: "Draconis Reach supersedes the supplied Hinterlands track text; Hinterlands track corrections are not applied to these records.",
+  militaryPalette: "BattleTech Faction Colors, palettes/military-ui.yaml, verified main e3cd8c9c9899b04aebd314a2a921ad3edd4092f1"
 };
 
 export const GENERAL_RULES = [
@@ -316,13 +317,15 @@ export const TRACKS = [
 
 export const TRACK_NAMES = TRACKS.map(track => track.name);
 
-// These are interface colors for the faction/side chips. They are deliberately
-// semantic UI colors, not claimed as official BattleTech heraldry specifications.
+// Consumer adaptation of the current military-dark-ui palette from
+// SANSd20/battletech-faction-colors. These are semantic UI colors, not official
+// BattleTech paint specifications. Unsupported identities retain neutral/local
+// treatment rather than borrowing a government/faction palette.
 export const FACTION_COLORS = {
-  "Federated Suns": "#3b72a5",
-  "Draconis Combine": "#b34843",
-  "Capellan Confederation": "#5c8c4d",
-  "Clan Sea Fox": "#238d92",
+  "Federated Suns": "#586B31",
+  "Draconis Combine": "#9E2B2B",
+  "Capellan Confederation": "#3D6D55",
+  "Clan Sea Fox": "#66737D",
   "Mercenary": "#7c6854",
   "Corporate": "#ae6c2d",
   "Local": "#66737d",
