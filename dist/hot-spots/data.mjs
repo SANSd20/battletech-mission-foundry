@@ -1071,11 +1071,11 @@ const pascagoulaTrack1Variant = {
       "The four Ryus are mobile objectives and replace the standard Objective Raid buildings."
     ],
     "2": [
-      "Scale 2: Mines #1 and Mines #2; four Ryu Heavy Transport WiGEs using Vedette Medium Tank BSP asset cards; Fifth Ghost escorts Chimera CHA-2K and Jenner JR7-C2 at Gunnery 3 / Piloting 4.",
+      "Scale 2: Mines #1 and Mines #2; four Ryu Heavy Transport WiGEs using Vedette Medium Tank BSP asset cards; Fifth Ghost escorts Chimera CHA-2K, Jenner JR7-C2, Daimyo DMO-5K, and Dragon DRG-5Nr at Gunnery 3 / Piloting 4, with the Scale 2 additions using a C3 network.",
       "The four Ryus are mobile objectives and replace the standard Objective Raid buildings."
     ],
     "3": [
-      "Scale 3: Mines #1 and Mines #2 plus any additional mapsheets rolled on the Mountains Terrain table; four Ryu Heavy Transport WiGEs using Vedette Medium Tank BSP asset cards; Fifth Ghost escorts Chimera CHA-2K, Daimyo DMO-5K, and Jenner JR7-C2 at Gunnery 3 / Piloting 4.",
+      "Scale 3: Mines #1 and Mines #2 plus any additional mapsheets rolled on the Mountains Terrain table; four Ryu Heavy Transport WiGEs using Vedette Medium Tank BSP asset cards; Fifth Ghost escorts Chimera CHA-2K, Jenner JR7-C2, Daimyo DMO-5K, Dragon DRG-5Nr, and Nova Cat T at Gunnery 3 / Piloting 4, with the Scale 2 additions using a C3 network.",
       "The four Ryus are mobile objectives and replace the standard Objective Raid buildings."
     ]
   },

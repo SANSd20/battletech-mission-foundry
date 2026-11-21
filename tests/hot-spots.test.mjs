@@ -51,8 +51,8 @@ assert.match(pascagoulaVariant.setup.join(" "), /four Ryu Heavy Transport WiGEs/
 assert.match(pascagoulaVariant.setup.join(" "), /Vedette Medium Tank BSP asset cards/);
 assert.doesNotMatch(pascagoulaVariant.setup.join(" "), /two Medium objective buildings|height 1|battlefield center|indestructible/);
 assert.match(pascagoulaVariant.scaleNotesByScale["1"].join(" "), /Mines #1/);
-assert.match(pascagoulaVariant.scaleNotesByScale["2"].join(" "), /Mines #1 and Mines #2/);
-assert.match(pascagoulaVariant.scaleNotesByScale["3"].join(" "), /Mines #1 and Mines #2.*Daimyo DMO-5K/);
+assert.match(pascagoulaVariant.scaleNotesByScale["2"].join(" "), /Mines #1 and Mines #2.*Daimyo DMO-5K.*Dragon DRG-5Nr/);
+assert.match(pascagoulaVariant.scaleNotesByScale["3"].join(" "), /Mines #1 and Mines #2.*Daimyo DMO-5K.*Dragon DRG-5Nr.*Nova Cat T/);
 assert.match(pascagoulaVariant.setupDetails.join(" "), /Chimera CHA-2K and Jenner JR7-C2/);
 assert.match(pascagoulaVariant.setupDetails.join(" "), /Gunnery 3 \/ Piloting 4/);
 assert.match(pascagoulaVariant.setupDetails.join(" "), /opposite the Defender’s home edge/);
