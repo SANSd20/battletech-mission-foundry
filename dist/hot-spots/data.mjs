@@ -1,7 +1,8 @@
 export const SOURCES = {
   primary: "Hot Spots: Draconis Reach, First Printing, pp. 167–175",
-  errata: "Hot Spots: Draconis Reach Errata pre-v1; Hot Spots Hinterlands Errata v2.41 reviewed for applicability",
+  errata: "Hot Spots: Draconis Reach official master errata thread (current list reviewed 11 November 2026); Hot Spots Hinterlands Errata v2.41 reviewed for applicability",
   supersession: "Draconis Reach supersedes the supplied Hinterlands track text; Hinterlands track corrections are not applied to these records.",
+  pascagoula: "Hot Spots: Draconis Reach, First Printing, pp. 104–106; Objective Raid p. 171; campaign withdrawal and exit rules p. 31; current Draconis Reach master errata",
   militaryPalette: "BattleTech Faction Colors, palettes/military-ui.yaml, verified main e3cd8c9c9899b04aebd314a2a921ad3edd4092f1",
   opposingForces: "Hot Spots: Draconis Reach, First Printing, Opposing Force Tables pp. 186–201"
 };
@@ -1044,6 +1045,68 @@ const winnerDependentTrack = (sequence, requires, outcomes, extra = {}) => ({
   ...extra
 });
 
+const pascagoulaTrack1Variant = {
+  displayName: "Gem Convoy Raid",
+  type: "Modified Objective Raid",
+  summary: "A modified Objective Raid in which the four Ryu heavy transport WiGEs are mobile objectives carrying the convoy components.",
+  setup: [
+    "Pascagoula Track 1 uses Mines #1 at Scale 1. The four Ryu Heavy Transport WiGEs replace the standard Objective Raid buildings as mobile objectives.",
+    "Attacker: Ranger Raiders. Defender: Jewel Thieves. The Jewel Thieves control the Fifth Ghost escorts instead of their own BattleMechs.",
+    "Use Vedette Medium Tank BSP asset cards for the four Ryu transports."
+  ],
+  setupDetails: [
+    "Home edges: the Defender selects a short edge; the Attacker uses the opposite short edge.",
+    "Defender deployment: place the four Ryus up to 3 hexes (AS: 6 inches) from the Defender’s home edge. Place each Fifth Ghost escort within 4 hexes (AS: 8 inches) of a Ryu.",
+    "Attacker deployment: the Ranger Raiders enter from their home edge during the Movement Phase of Turn 1. Apply Objective Raid’s restriction against Minefield or Immobile BSP assets.",
+    "Convoy exit edge: designate the map edge opposite the Defender’s home edge as the Ryu exit edge.",
+    "Scale 1 Fifth Ghost escorts: Chimera CHA-2K and Jenner JR7-C2. All escort pilots are Gunnery 3 / Piloting 4."
+  ],
+  scaleNotes: [
+    "Scale 1: Mines #1; four Ryu Heavy Transport WiGEs using Vedette Medium Tank BSP asset cards; Fifth Ghost escorts Chimera CHA-2K and Jenner JR7-C2 at Gunnery 3 / Piloting 4.",
+    "The four Ryus are mobile objectives and replace the standard Objective Raid buildings."
+  ],
+  special: [
+    "Mobile objectives — agreed table interpretation: use the standard Objective Raid component-collection and loading rules with the four Ryus as the objective locations. For table use, each Ryu has components available as needed; this is a working interpretation, not an official errata ruling. Practical limits are available Raider units, functioning hand actuators, carrying capacity, and time before the convoy exits.",
+    "Loading and carrying: load one component per functioning hand actuator per turn. Carrying capacity is Light 1, Medium 2, Heavy 3, or Assault 4. A hand-actuator ’Mech can transfer one carried component to an adjacent unit at the end of a subsequent Movement Phase. Infantry can load one component onto an adjacent ’Mech or vehicle per turn, but cannot carry components; mechanized infantry must dismount. An asset vehicle can carry one component if assisted with loading and loses 1 MP while carrying it. Apply the p. 171 movement and jumping restrictions; carrying components does not prevent attacks.",
+    "Extraction: components score when carried off the Attacker’s home edge. A unit that exits the battlefield is removed from play and cannot return for another load.",
+    "Track End — agreed table interpretation, separate from VP scoring: Pascagoula’s special ending conditions replace Objective Raid’s generic 12-turn limit. The track ends when all surviving operational Ryus have exited the designated map edge, or when all opposing units have fled or been destroyed. Destroyed Ryus no longer count as operational convoy units required to exit. Destroying a Ryu does not itself award victory; determine victory by objective VP totals.",
+    "Salvage: use the standard Objective Raid salvage rule. The Attacker may not claim salvage; the Defender claims salvage if they successfully complete the track, otherwise all salvage returns to its owners.",
+    "Track 2 carryover reminder: damage and ammunition expenditure carry over; there are no repairs or reloading between tracks. This is a reminder only; Track 2 is not modified by this browser update."
+  ],
+  objectiveOverrides: {
+    "orders-defender": {
+      text: "Agreed table interpretation: all Defender units must stay within 3 hexes (AS: 6 inches) of one of the four mobile Ryu objectives, or closer to the Attacker’s home edge than one of the Ryus, for the first two turns, or be crippled or destroyed."
+    },
+    "grab-stuff": {
+      name: "Grab the Stuff",
+      text: "Each component successfully extracted from a Ryu and carried off the Attacker’s home edge."
+    },
+    "pay-for-that": {
+      name: "You Must Pay for That",
+      text: "Each qualifying non-asset Attacker unit crippled or destroyed."
+    }
+  },
+  commandComplications: {
+    ref: "Draconis Reach pp. 30, 106",
+    note: "The mission brief provides this table but does not specify a separate roll timing. General campaign rules state that command complications are usually determined from a table, with each player rolling separately and modifying the result by Command Rights. The browser displays the table without selecting or applying a result automatically.",
+    rows: [
+      { roll: "1", name: "No complications", text: "No complication applies." },
+      { roll: "2", name: "Shifting Sand", text: "All clear terrain is covered in shifting sand. Shifting sand affects only 40+ ton units (Alpha Strike Size 2+), adding a +1 MP cost per hex (Alpha Strike: +1 inch MV per inch) and +1 to Piloting Skill Rolls in BattleTech. It does not affect units using hover or VTOL movement." },
+      { roll: "3", name: "Ash Fall", text: "A volcanic eruption and prevailing winds cover the battlefield in falling ash. All direct and pulse energy weapon attacks receive a +1 target number modifier (Alpha Strike: +1 target number modifier to all TAG and standard weapon attacks)." },
+      { roll: "4", name: "Volcanic Geysers", text: "The player’s half of the battlefield, from the center line to their home edge, contains small geyser-like volcanic eruptions. Each turn, every unit that ends the Movement Phase in that half rolls 2D6 against a target number of 7+. Success has no effect. On a failure, the unit triggers an eruption, gains 4 heat (Alpha Strike: 1 heat), and has a +1 target number modifier to all weapon attacks made by or against it that turn while covered in steam and boiling water." },
+      { roll: "5", name: "Delayed Deployment", text: "A crevasse blocks the route to the battlefield. Only units with jump or airborne movement modes deploy as usual. All other units are delayed one turn and enter through their home edge during the Movement Phase." },
+      { roll: "6", name: "Increased Repair Costs", text: "Sand gets into everything. All repairs cost an additional 50 percent of SP after this track. The additional cost applies regardless of when repairs are made; whenever units that participated in this track are repaired, add 50 percent." }
+    ]
+  },
+  sourceRefs: [
+    "Draconis Reach pp. 104–106",
+    "Objective Raid p. 171",
+    "Campaign withdrawal and exit rules p. 31",
+    "Command complications procedure p. 30",
+    "Current Draconis Reach master errata"
+  ]
+};
+
 export const HOT_SPOTS = [
   {
     id: "achernar",
@@ -1174,7 +1237,7 @@ export const HOT_SPOTS = [
     source: "Draconis Reach pp. 104–106",
     sides: [factionSide("jewel-thieves", "Jewel Thieves", "Draconis Combine"), factionSide("ranger-raiders", "Ranger Raiders", "Federated Suns")],
     tracks: [
-      fixedHotSpotTrack(1, "objective-raid", "ranger-raiders", "jewel-thieves"),
+      fixedHotSpotTrack(1, "objective-raid", "ranger-raiders", "jewel-thieves", { variant: pascagoulaTrack1Variant }),
       winnerDependentTrack(2, [1], {
         "jewel-thieves": { trackId: "pursuit", attacker: "jewel-thieves", defender: "ranger-raiders" },
         "ranger-raiders": { trackId: "pursuit", attacker: "ranger-raiders", defender: "jewel-thieves" }
@@ -1255,4 +1318,5 @@ export const HOT_SPOTS = [
     ]
   }
 ];
+
 

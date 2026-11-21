@@ -285,6 +285,19 @@ function renderSharedRule(rule) {
   return '<details><summary>' + esc(rule.title) + '<span>' + esc(rule.ref) + '</span></summary>' + body + '</details>';
 }
 
+function displayObjective(objective, variant) {
+  const override = variant?.objectiveOverrides?.[objective.id];
+  return override ? { ...objective, ...override } : objective;
+}
+
+function renderCommandComplications(table) {
+  if (!table?.rows?.length) return "";
+  const rows = table.rows.map(row =>
+    '<tr><th scope="row"><span class="complication-roll">' + esc(row.roll) + '</span><strong>' + esc(row.name) + '</strong></th><td>' + esc(row.text) + '</td></tr>'
+  ).join("");
+  return '<div class="reference-section command-complications-section"><div class="panel-kicker">COMMAND COMPLICATIONS</div><p class="reference-copy">' + esc(table.note) + '</p><div class="shared-rule-table-wrap"><table class="shared-rule-table command-complications-table"><thead><tr><th scope="col">1D6</th><th scope="col">Complication and effect</th></tr></thead><tbody>' + rows + '</tbody></table></div><div class="reference-citation">Source: ' + esc(table.ref) + '</div></div>';
+}
+
 function renderReference() {
   const track = currentTrack();
   const hotSpot = currentHotSpot();
@@ -294,40 +307,45 @@ function renderReference() {
     $("#mission-reference").innerHTML = '<article class="panel mission-card"><div class="mission-card-head"><div class="eyebrow">HOT SPOT LOCATION · ' + esc(hotSpot.name) + '</div><h2>Track pending</h2><p>' + esc(resolved?.unresolved ? "Choose the previous track winner to resolve this mission." : "The selected source result does not produce a standard track this month.") + '</p></div><div class="reference-section"><div class="panel-kicker">LOCATION & SEQUENCE</div><ul class="rule-list"><li>' + esc(hotSpot.name + " · " + hotSpot.region + " · " + hotSpot.terrain) + '</li><li>' + esc(step?.label || "Track") + " · " + esc(hotSpot.source) + '</li></ul></div><div class="reference-section"><div class="panel-kicker">SOURCE NOTE</div><p class="reference-copy">' + esc(hotSpot.note || "Resolve the Hot Spot setup controls above before opening the standard mission reference.") + '</p></div></article>';
     return;
   }
+  const referenceTrack = resolved?.variant ? { ...track, ...resolved.variant } : track;
   const scaleLabel = state.scale === 3 ? "Scale 3+" : "Scale " + state.scale;
-  const scaleNotes = track.scaleNotes?.length
-    ? track.scaleNotes.map(note => "<li>" + esc(note) + "</li>").join("")
+  const scaleNotes = referenceTrack.scaleNotes?.length
+    ? referenceTrack.scaleNotes.map(note => "<li>" + esc(note) + "</li>").join("")
     : "<li>No additional Scale-dependent exception is recorded for this track.</li>";
-  const setup = track.setup.map(item => "<li>" + esc(item) + "</li>").join("");
-  const setupDetails = (track.setupDetails || []).map(item => "<li>" + esc(item) + "</li>").join("");
-  const objectives = track.objectives.map(objective => {
-    const side = objective.side === "both" ? "Attacker / Defender" : sideNames[objective.side];
-    const vp = objective.vpOptions ? objective.vpOptions.join(" / ") : objective.vp;
-    return '<li><div class="reference-objective-head"><strong>' + esc(objective.name) + '</strong><span class="vp-badge">' + esc(side) + " · " + vp + " VP" + (objective.repeatable ? " each" : "") + '</span></div><p>' + esc(objective.text) + "</p></li>";
+  const setup = referenceTrack.setup.map(item => "<li>" + esc(item) + "</li>").join("");
+  const setupDetails = (referenceTrack.setupDetails || []).map(item => "<li>" + esc(item) + "</li>").join("");
+  const objectives = referenceTrack.objectives.map(objective => {
+    const display = displayObjective(objective, referenceTrack);
+    const side = display.side === "both" ? "Attacker / Defender" : sideNames[display.side];
+    const vp = display.vpOptions ? display.vpOptions.join(" / ") : display.vp;
+    return '<li><div class="reference-objective-head"><strong>' + esc(display.name) + '</strong><span class="vp-badge">' + esc(side) + " · " + vp + " VP" + (display.repeatable ? " each" : "") + '</span></div><p>' + esc(display.text) + "</p></li>";
   }).join("");
-  const special = track.special.map(item => "<li>" + esc(item) + "</li>").join("");
+  const special = referenceTrack.special.map(item => "<li>" + esc(item) + "</li>").join("");
+  const commandComplications = renderCommandComplications(referenceTrack.commandComplications);
+  const sourceReferenceText = referenceTrack.sourceRefs?.join(" · ") || SOURCES.primary + " · selected track p. " + referenceTrack.page;
 
   const attackerSide = sideById(resolved?.attacker);
   const defenderSide = sideById(resolved?.defender);
-  const hotSpotBrief = '<div class="reference-section hot-spot-reference"><div class="panel-kicker">HOT SPOT MISSION BRIEF</div><div class="brief-grid"><div><span>Location</span><strong>' + esc(hotSpot.name) + '</strong><small>' + esc(hotSpot.region + " · " + hotSpot.terrain) + '</small></div><div><span>Sequence</span><strong>' + esc(step?.label || "Track") + '</strong><small>' + esc(resolved?.displayName || track.name) + '</small></div><div style="--side-color:' + esc(attackerSide?.color || FACTION_COLORS.Local) + '"><span>Attacker</span><strong>' + esc(attackerSide?.name || "Attacker") + '</strong><small>' + esc(attackerSide?.faction || "Source-defined role") + '</small></div><div style="--side-color:' + esc(defenderSide?.color || FACTION_COLORS.Local) + '"><span>Defender</span><strong>' + esc(defenderSide?.name || "Defender") + '</strong><small>' + esc(defenderSide?.faction || "Source-defined role") + '</small></div></div>' + (hotSpot.note ? '<p class="reference-note">' + esc(hotSpot.note) + '</p>' : '') + '</div>';
+  const hotSpotBrief = '<div class="reference-section hot-spot-reference"><div class="panel-kicker">HOT SPOT MISSION BRIEF</div><div class="brief-grid"><div><span>Location</span><strong>' + esc(hotSpot.name) + '</strong><small>' + esc(hotSpot.region + " · " + hotSpot.terrain) + '</small></div><div><span>Sequence</span><strong>' + esc(step?.label || "Track") + '</strong><small>' + esc(referenceTrack.displayName || resolved?.displayName || track.name) + (referenceTrack.type ? " · " + esc(referenceTrack.type) : "") + '</small></div><div style="--side-color:' + esc(attackerSide?.color || FACTION_COLORS.Local) + '"><span>Attacker</span><strong>' + esc(attackerSide?.name || "Attacker") + '</strong><small>' + esc(attackerSide?.faction || "Source-defined role") + '</small></div><div style="--side-color:' + esc(defenderSide?.color || FACTION_COLORS.Local) + '"><span>Defender</span><strong>' + esc(defenderSide?.name || "Defender") + '</strong><small>' + esc(defenderSide?.faction || "Source-defined role") + '</small></div></div>' + (hotSpot.note ? '<p class="reference-note">' + esc(hotSpot.note) + '</p>' : '') + '</div>';
 
   $("#mission-reference").innerHTML =
     '<article class="panel mission-card">' +
-      '<div class="mission-card-head"><div class="eyebrow">SELECTED TRACK · p. ' + track.page + '</div><p>' + esc(track.summary) + '</p></div>' +
+      '<div class="mission-card-head"><div class="eyebrow">SELECTED TRACK · p. ' + referenceTrack.page + (referenceTrack.type ? " · " + esc(referenceTrack.type) : "") + '</div><h2>' + esc(referenceTrack.displayName || resolved?.displayName || track.name) + '</h2><p>' + esc(referenceTrack.summary) + '</p></div>' +
       hotSpotBrief +
       '<div class="reference-section"><div class="panel-kicker">BATTLEFIELD & SETUP</div><ul class="rule-list">' + setup + "</ul></div>" +
       (setupDetails ? '<div class="reference-section"><div class="panel-kicker">DEPLOYMENT DETAILS</div><ul class="rule-list">' + setupDetails + "</ul></div>" : "") +
       '<div class="reference-section scale-section"><div class="panel-kicker">SCALE ' + esc(String(state.scale)) + ' VIEW</div><ul class="rule-list">' + scaleNotes + "</ul></div>" +
       '<div class="reference-section"><div class="panel-kicker">OBJECTIVES & VICTORY POINTS</div><ul class="objective-reference-list">' + objectives + "</ul></div>" +
       '<div class="reference-section"><div class="panel-kicker">SPECIAL RULES, TRACK END & SALVAGE</div><ul class="rule-list">' + special + "</ul></div>" +
-      '<div class="reference-citation">Source: ' + esc(SOURCES.primary) + " · selected track p. " + track.page + "</div>" +
+      commandComplications +
+      '<div class="reference-citation">Sources: ' + esc(sourceReferenceText) + '</div>' +
     "</article>" +
     '<article class="panel general-card"><div class="panel-heading"><div><span class="panel-kicker">SHARED RULES</span><h3>Track reference p. 167</h3></div></div>' +
       GENERAL_RULES.map(renderSharedRule).join("") +
     "</article>";
 }
 
-function objectiveControl(objective, side) {
+function objectiveControl(objective, side, display = objective) {
   if (!applies(objective, side)) return '<span class="not-applicable" aria-label="Not applicable">—</span>';
   const progress = getProgress(objective, side);
   const vpControl = objective.vpOptions
@@ -336,8 +354,8 @@ function objectiveControl(objective, side) {
       "</select>"
     : '<span class="vp-badge">' + objective.vp + " VP" + (objective.repeatable ? " each" : "") + "</span>";
   if (objective.repeatable) {
-    return '<div class="counter-control"><button type="button" class="counter-button" data-action="decrement" data-objective="' + esc(objective.id) + '" data-side="' + side + '" aria-label="Decrease ' + esc(objective.name) + '">−</button>' +
-      '<output>' + progress + '</output><button type="button" class="counter-button" data-action="increment" data-objective="' + esc(objective.id) + '" data-side="' + side + '" aria-label="Increase ' + esc(objective.name) + '">+</button>' +
+    return '<div class="counter-control"><button type="button" class="counter-button" data-action="decrement" data-objective="' + esc(objective.id) + '" data-side="' + side + '" aria-label="Decrease ' + esc(display.name) + '">−</button>' +
+      '<output>' + progress + '</output><button type="button" class="counter-button" data-action="increment" data-objective="' + esc(objective.id) + '" data-side="' + side + '" aria-label="Increase ' + esc(display.name) + '">+</button>' +
       '<span class="counter-label">completed</span></div>' + vpControl;
   }
   return '<label class="check-control"><input type="checkbox" data-action="toggle" data-objective="' + esc(objective.id) + '" data-side="' + side + '"' + (progress ? " checked" : "") + '><span class="checkmark"></span><span class="control-copy">' + (progress ? "Complete" : "Open") + "</span></label>" + vpControl;
@@ -346,9 +364,10 @@ function objectiveControl(objective, side) {
 function renderTracker() {
   const track = currentTrack();
   const resolved = resolvedHotSpotStep();
+  const variant = resolved?.variant;
   const attackerSide = sideById(resolved?.attacker);
   const defenderSide = sideById(resolved?.defender);
-  $("#tracker-source").textContent = track ? "Draconis Reach p. " + track.page : currentHotSpot().source;
+  $("#tracker-source").textContent = track ? (resolved?.variant ? "Draconis Reach p. 171 · Pascagoula pp. 104–106" : "Draconis Reach p. " + track.page) : currentHotSpot().source;
   $("#attacker-heading").innerHTML = '<span>Attacker</span><strong>' + esc(attackerSide?.name || "—") + '</strong>';
   $("#defender-heading").innerHTML = '<span>Defender</span><strong>' + esc(defenderSide?.name || "—") + '</strong>';
   $("#attacker-heading").style.setProperty("--side-color", attackerSide?.color || FACTION_COLORS.Local);
@@ -361,11 +380,13 @@ function renderTracker() {
   $("#defender-bar").style.background = defenderSide?.color || FACTION_COLORS.Local;
   document.body.dataset.mode = state.mode;
   $$(".mode-button").forEach(button => button.classList.toggle("active", button.dataset.mode === state.mode));
-  $("#objective-body").innerHTML = track ? track.objectives.map(objective =>
-    '<tr><th scope="row"><div class="objective-title">' + esc(objective.name) + '</div><div class="objective-rule">' + esc(objective.text) + '</div><div class="objective-vp">' + (objective.vpOptions ? objective.vpOptions.join(" / ") + " VP (select value)" : objective.vp + " VP" + (objective.repeatable ? " each" : "")) + "</div></th>" +
-      '<td class="attacker-col">' + objectiveControl(objective, "attacker") + "</td>" +
-      '<td class="defender-col">' + objectiveControl(objective, "defender") + "</td></tr>"
-  ).join("") : '<tr><th scope="row" colspan="3" class="pending-track">Resolve the Hot Spot controls above to load the standard mission objectives.</th></tr>';
+  $("#objective-body").innerHTML = track ? track.objectives.map(objective => {
+    const display = displayObjective(objective, variant);
+    return '<tr><th scope="row"><div class="objective-title">' + esc(display.name) + '</div><div class="objective-rule">' + esc(display.text) + '</div><div class="objective-vp">' + (display.vpOptions ? display.vpOptions.join(" / ") + " VP (select value)" : display.vp + " VP" + (display.repeatable ? " each" : "")) + "</div></th>" +
+      '<td class="attacker-col">' + objectiveControl(objective, "attacker", display) + "</td>" +
+      '<td class="defender-col">' + objectiveControl(objective, "defender", display) + "</td></tr>";
+  }).join("") :
+    '<tr><th scope="row" colspan="3" class="pending-track">Resolve the Hot Spot controls above to load the standard mission objectives.</th></tr>';
   renderScore();
 }
 
@@ -472,4 +493,5 @@ $("#objective-body").addEventListener("change", event => {
 });
 
 renderAll();
+
 

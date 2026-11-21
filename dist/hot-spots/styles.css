@@ -307,3 +307,9 @@ body { background: color-mix(in srgb, var(--faction-color) 10%, #111821); color:
 .shared-rule-table th { background: #18212b; color: #f6f4ee; font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
 .shared-rule-table td:first-child { font-weight: 700; }
 .shared-rule-note { margin: 10px 0 0; color: #56636e; font-size: 12px; }
+.command-complications-table th:first-child, .command-complications-table td:first-child { width: 24%; }
+.command-complications-table th:last-child, .command-complications-table td:last-child { width: 76%; }
+.command-complications-table th[scope="row"] { background: #f1f5f3; color: var(--ink); font-size: 11px; letter-spacing: normal; text-transform: none; }
+.complication-roll { display: inline-grid; place-items: center; width: 21px; height: 21px; margin-right: 6px; border-radius: 50%; background: var(--teal); color: #fff; font-size: 10px; }
+.complication-roll + strong { vertical-align: middle; }
+
