@@ -285,6 +285,14 @@ function renderSharedRule(rule) {
   return '<details><summary>' + esc(rule.title) + '<span>' + esc(rule.ref) + '</span></summary>' + body + '</details>';
 }
 
+function scaleNotesFor(track, scale) {
+  const keyedNotes = track.scaleNotesByScale?.[String(scale)];
+  if (keyedNotes?.length) return keyedNotes;
+  const notes = track.scaleNotes || [];
+  if (scale === 1) return notes.filter(note => !/^\s*At Scale [23]\+/i.test(note));
+  return notes;
+}
+
 function displayObjective(objective, variant) {
   const override = variant?.objectiveOverrides?.[objective.id];
   return override ? { ...objective, ...override } : objective;
@@ -308,9 +316,9 @@ function renderReference() {
     return;
   }
   const referenceTrack = resolved?.variant ? { ...track, ...resolved.variant } : track;
-  const scaleLabel = state.scale === 3 ? "Scale 3+" : "Scale " + state.scale;
-  const scaleNotes = referenceTrack.scaleNotes?.length
-    ? referenceTrack.scaleNotes.map(note => "<li>" + esc(note) + "</li>").join("")
+  const scaleNotes = scaleNotesFor(referenceTrack, state.scale);
+  const scaleNotesMarkup = scaleNotes.length
+    ? scaleNotes.map(note => "<li>" + esc(note) + "</li>").join("")
     : "<li>No additional Scale-dependent exception is recorded for this track.</li>";
   const setup = referenceTrack.setup.map(item => "<li>" + esc(item) + "</li>").join("");
   const setupDetails = (referenceTrack.setupDetails || []).map(item => "<li>" + esc(item) + "</li>").join("");
@@ -334,7 +342,7 @@ function renderReference() {
       hotSpotBrief +
       '<div class="reference-section"><div class="panel-kicker">BATTLEFIELD & SETUP</div><ul class="rule-list">' + setup + "</ul></div>" +
       (setupDetails ? '<div class="reference-section"><div class="panel-kicker">DEPLOYMENT DETAILS</div><ul class="rule-list">' + setupDetails + "</ul></div>" : "") +
-      '<div class="reference-section scale-section"><div class="panel-kicker">SCALE ' + esc(String(state.scale)) + ' VIEW</div><ul class="rule-list">' + scaleNotes + "</ul></div>" +
+      '<div class="reference-section scale-section"><div class="panel-kicker">SCALE ' + esc(String(state.scale)) + ' VIEW</div><ul class="rule-list">' + scaleNotesMarkup + "</ul></div>" +
       '<div class="reference-section"><div class="panel-kicker">OBJECTIVES & VICTORY POINTS</div><ul class="objective-reference-list">' + objectives + "</ul></div>" +
       '<div class="reference-section"><div class="panel-kicker">SPECIAL RULES, TRACK END & SALVAGE</div><ul class="rule-list">' + special + "</ul></div>" +
       commandComplications +

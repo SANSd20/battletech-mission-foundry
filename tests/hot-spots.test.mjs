@@ -50,6 +50,9 @@ assert.match(pascagoulaVariant.setup.join(" "), /Mines #1/);
 assert.match(pascagoulaVariant.setup.join(" "), /four Ryu Heavy Transport WiGEs/);
 assert.match(pascagoulaVariant.setup.join(" "), /Vedette Medium Tank BSP asset cards/);
 assert.doesNotMatch(pascagoulaVariant.setup.join(" "), /two Medium objective buildings|height 1|battlefield center|indestructible/);
+assert.match(pascagoulaVariant.scaleNotesByScale["1"].join(" "), /Mines #1/);
+assert.match(pascagoulaVariant.scaleNotesByScale["2"].join(" "), /Mines #2/);
+assert.match(pascagoulaVariant.scaleNotesByScale["3"].join(" "), /Daimyo DMO-5K/);
 assert.match(pascagoulaVariant.setupDetails.join(" "), /Chimera CHA-2K and Jenner JR7-C2/);
 assert.match(pascagoulaVariant.setupDetails.join(" "), /Gunnery 3 \/ Piloting 4/);
 assert.match(pascagoulaVariant.setupDetails.join(" "), /opposite the Defender’s home edge/);
@@ -94,7 +97,7 @@ assert.ok(app.includes("Number(completed) * getVp(objective, side)"), "repeatabl
 assert.ok(app.includes('state.mode = button.dataset.mode') && app.includes('document.body.dataset.mode = state.mode'), "attacker/defender/both tracking views are wired");
 assert.ok(app.includes('$("#attacker-bar").style.width') && app.includes('$("#defender-bar").style.width'), "live score comparison bars update from current totals");
 assert.ok(app.includes('data-action=\"increment\"') && app.includes('data-action=\"decrement\"'), "repeatable component/VP objectives expose counters");
-for (const term of ["referenceTrack", "sourceReferenceText", "displayObjective", "renderCommandComplications", "commandComplications", "objectiveOverrides", "Gem Convoy Raid", "Modified Objective Raid", "one component per functioning hand actuator per turn", "removed from play and cannot return", "Destroying a Ryu does not itself award victory"]) {
+for (const term of ["referenceTrack", "scaleNotesFor", "scaleNotesByScale", "sourceReferenceText", "displayObjective", "renderCommandComplications", "commandComplications", "objectiveOverrides", "Gem Convoy Raid", "Modified Objective Raid", "one component per functioning hand actuator per turn", "removed from play and cannot return", "Destroying a Ryu does not itself award victory"]) {
   assert.ok((app + data).includes(term), term + " Pascagoula variant behavior is present");
 }
 assert.ok(css.includes("command-complications-table") && css.includes("complication-roll"), "Command Complications table has focused responsive styling");

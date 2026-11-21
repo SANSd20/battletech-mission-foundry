@@ -1065,6 +1065,20 @@ const pascagoulaTrack1Variant = {
     "Scale 1: Mines #1; four Ryu Heavy Transport WiGEs using Vedette Medium Tank BSP asset cards; Fifth Ghost escorts Chimera CHA-2K and Jenner JR7-C2 at Gunnery 3 / Piloting 4.",
     "The four Ryus are mobile objectives and replace the standard Objective Raid buildings."
   ],
+  scaleNotesByScale: {
+    "1": [
+      "Scale 1: Mines #1; four Ryu Heavy Transport WiGEs using Vedette Medium Tank BSP asset cards; Fifth Ghost escorts Chimera CHA-2K and Jenner JR7-C2 at Gunnery 3 / Piloting 4.",
+      "The four Ryus are mobile objectives and replace the standard Objective Raid buildings."
+    ],
+    "2": [
+      "Scale 2: Mines #2; four Ryu Heavy Transport WiGEs using Vedette Medium Tank BSP asset cards; Fifth Ghost escorts Chimera CHA-2K and Jenner JR7-C2 at Gunnery 3 / Piloting 4.",
+      "The four Ryus are mobile objectives and replace the standard Objective Raid buildings."
+    ],
+    "3": [
+      "Scale 3: Mines #2 plus any additional mapsheets rolled on the Mountains Terrain table; four Ryu Heavy Transport WiGEs using Vedette Medium Tank BSP asset cards; Fifth Ghost escorts Chimera CHA-2K, Daimyo DMO-5K, and Jenner JR7-C2 at Gunnery 3 / Piloting 4.",
+      "The four Ryus are mobile objectives and replace the standard Objective Raid buildings."
+    ]
+  },
   special: [
     "Mobile objectives — agreed table interpretation: use the standard Objective Raid component-collection and loading rules with the four Ryus as the objective locations. For table use, each Ryu has components available as needed; this is a working interpretation, not an official errata ruling. Practical limits are available Raider units, functioning hand actuators, carrying capacity, and time before the convoy exits.",
     "Loading and carrying: load one component per functioning hand actuator per turn. Carrying capacity is Light 1, Medium 2, Heavy 3, or Assault 4. A hand-actuator ’Mech can transfer one carried component to an adjacent unit at the end of a subsequent Movement Phase. Infantry can load one component onto an adjacent ’Mech or vehicle per turn, but cannot carry components; mechanized infantry must dismount. An asset vehicle can carry one component if assisted with loading and loses 1 MP while carrying it. Apply the p. 171 movement and jumping restrictions; carrying components does not prevent attacks.",
