@@ -19,6 +19,8 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    env:
+      PAGES_ARTIFACT_NAME: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -29,6 +31,11 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
+          name: ${{ env.PAGES_ARTIFACT_NAME }}
+      - name: Wait for Pages artifact metadata
+        run: sleep 5
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: ${{ env.PAGES_ARTIFACT_NAME }}
