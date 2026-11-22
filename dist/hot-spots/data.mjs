@@ -1223,6 +1223,44 @@ const protectionTrack4Variant = protectionVariant("pursuit", {
   ]
 });
 
+const sunPrairieCommandComplications = {
+  ref: "Draconis Reach p. 115",
+  note: "Official procedure: each player rolls 1D6 to determine possible complications. Add 1 for Liaison Command, 2 for House Command, or 3 for Integrated Command. The browser displays the complete table without selecting or applying a complication automatically.",
+  rows: [
+    { roll: "1", name: "Lostech cache found!", text: "If you successfully complete this track, gain an additional 100 SP from recovery of a small cache." },
+    { roll: "2–3", name: "No Complication", text: "No effect." },
+    { roll: "4–5", name: "Opportunism and rumors of treasure", text: "Mercenaries suffer a −2 penalty to Initiative rolls for the first two turns of battle." },
+    { roll: "6", name: "Uneven footing / ghost town rubble", text: "The opposing player may place 6 rubble hexes (AS: 2-inch AOE terrain templates)." },
+    { roll: "7", name: "Tinderbox conditions", text: "The opposing player may place 6 markers on a hex to mark it and adjacent hexes on fire (AS: six 6-inch AOE fire templates). Any area on fire also has light smoke. BattleTech: during the Heat Phase, a unit in a burning hex adds 5 heat, and a unit adds 2 heat for each burning hex moved through during the Movement Phase; non-heat-tracking units convert heat to damage. Alpha Strike: units entering or moving through a burning area build 1 heat during the End Phase; non-heat-tracking units convert heat to damage. Smoke: BattleTech and Alpha Strike attacks with line of sight through smoke or against a target in smoke receive a +1 target number modifier." },
+    { roll: "8+", name: "Roll twice and apply both effects", text: "Ignore and do not reroll duplicate effects." }
+  ]
+};
+
+const sunPrairieSetupDetails = [
+  "Official track selection: each month, roll two 1D6 results. The first 1D6 determines the first track that month and the second 1D6 determines the second track. Each track may be played only once; a duplicate track result produces no track for that roll. If all six rolls across the three-month contract are 1s, play only one track. If all six rolls are unique, play five tracks; a result of 6 means no track.",
+  "Official mapsheet table: roll 1D6 — 1 Open Terrain #2 (MP: Grasslands); 2 Open Terrain #3 (MP: Grasslands); 3 Rolling Hills #3 (MP: Grasslands); 4 Rolling Hills #3 (MP: Grasslands); 5 Lakes (MP: Grasslands); 6 Forward Base (MP: Grasslands)."
+];
+
+const sunPrairieSpecialRules = [
+  "Sun Prairie contract victory — official source rule: if either player successfully completes two tracks in a row, that player wins the contract. If this happens after only two tracks, there is no third-month track and that player wins. Otherwise, after the third month, the player with more successfully completed tracks wins. If the result is tied and both players have successfully completed at least one track, both are victorious; otherwise, there is no victor.",
+  "Temporary Hire — official source rule: the first time a mercenary force cannot field at least two-thirds of the maximum permissible BV/PV for its next track, a local mercenary offers services. The player may choose whether to pay that local mercenary to participate in each track.",
+  "Garrison support — official source rule: Prairie Rangers offer four Veteran motorized platoons carrying energy rifles (Gunnery 3 / Piloting 4; Alpha Strike Skill 3; 496 BV / 48 PV). If using Battlefield Support assets, use four Veteran motorized conventional Infantry, but purchase them using 496 BV instead of BSP. Prairie Rangers demand 50 SP per track participated in and an additional 50 SP for each Prairie Ranger unit destroyed.",
+  "Raid support — official source rule: Philips Wilson pilots a Dragon Fire DGR-6FC (1,858 BV / 43 PV), has four Edge tokens and the Patient Edge Ability, and uses Piloting 3 / Gunnery 3 (Alpha Strike Skill 3). He requests 100 SP per track participated in and an additional 50 SP if his ’Mech takes internal damage in more than one location (Alpha Strike: more than 1 structure damage).",
+  "Purchase Options — official campaign rule: neither employer has BattleMechs available for purchase. Each month, roll 2D6: on 7+ one ’Mech is available, and on 11+ two ’Mechs are available. Roll on the Federated Suns Purchase Options Table (p. 22) for each. If a ’Mech is available, vehicles or battle armor may also be purchased from the Federated Suns Tanker and Battle Armor Options Tables (p. 22), up to two purchases of each per month."
+];
+
+function sunPrairieVariant(trackId) {
+  const base = TRACKS.find(track => track.id === trackId);
+  return {
+    page: 114,
+    summary: "The Sun Prairie Garrison and Sun Prairie Raid briefing adds a two-roll monthly track procedure, a Grasslands mapsheet table, and a source-defined Command Complications table to the selected standard mission.",
+    setupDetails: sunPrairieSetupDetails,
+    special: [...(base?.special || []), ...sunPrairieSpecialRules],
+    commandComplications: sunPrairieCommandComplications,
+    sourceRefs: ["Draconis Reach pp. 113–115", "Current Draconis Reach master errata"]
+  };
+}
+
 export const HOT_SPOTS = [
   {
     id: "achernar",
@@ -1400,19 +1438,19 @@ export const HOT_SPOTS = [
     name: "Sun Prairie",
     region: "Federated Suns",
     terrain: "Grasslands",
-    source: "Draconis Reach pp. 114–115",
-    note: "Each track uses the source’s 1D6 table. Result 6 produces no track for that month.",
+    source: "Draconis Reach pp. 113–115",
+    note: "Sun Prairie Garrison and Sun Prairie Raid are opposing player-controlled mercenary contracts. Each month uses two 1D6 results; duplicate track results produce no track for that roll, and result 6 produces no track.",
     sides: [factionSide("garrison", "Sun Prairie Garrison", "Federated Suns"), factionSide("raid", "Sun Prairie Raid", "Draconis Combine")],
     tracks: [1, 2, 3, 4, 5].map(sequence => ({
       sequence,
       label: "Track " + sequence,
       resultLabel: "Track result (source 1D6)",
       results: [
-        { id: "breakthrough", label: "1 · Breakthrough", trackId: "breakthrough", attacker: "raid", defender: "garrison" },
-        { id: "objective-raid", label: "2 · Objective Raid", trackId: "objective-raid", attacker: "raid", defender: "garrison" },
-        { id: "strike", label: "3 · Strike", trackId: "strike", attacker: "raid", defender: "garrison" },
-        { id: "recon", label: "4 · Recon", trackId: "recon", attacker: "garrison", defender: "raid" },
-        { id: "meeting-engagement", label: "5 · Meeting Engagement", trackId: "meeting-engagement", attacker: "garrison", defender: "raid" },
+        { id: "breakthrough", label: "1 · Breakthrough", trackId: "breakthrough", attacker: "raid", defender: "garrison", variant: sunPrairieVariant("breakthrough") },
+        { id: "objective-raid", label: "2 · Objective Raid", trackId: "objective-raid", attacker: "raid", defender: "garrison", variant: sunPrairieVariant("objective-raid") },
+        { id: "strike", label: "3 · Strike", trackId: "strike", attacker: "raid", defender: "garrison", variant: sunPrairieVariant("strike") },
+        { id: "recon", label: "4 · Recon", trackId: "recon", attacker: "garrison", defender: "raid", variant: sunPrairieVariant("recon") },
+        { id: "meeting-engagement", label: "5 · Meeting Engagement", trackId: "meeting-engagement", attacker: "garrison", defender: "raid", variant: sunPrairieVariant("meeting-engagement") },
         { id: "none", label: "6 · No track this month", trackId: null, attacker: null, defender: null }
       ]
     }))

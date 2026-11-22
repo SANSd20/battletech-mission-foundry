@@ -146,7 +146,7 @@ select { width: 100%; min-height: 42px; padding: 0 12px; border: 1px solid #aeb9
 .objective-reference-subitems { display: grid; gap: 10px; padding-left: 13px; border-left: 3px solid var(--faction-color, var(--teal)); }
 .reference-objective-subitem { display: grid; gap: 0; }
 .reference-objective-subhead { display: flex; align-items: baseline; justify-content: space-between; gap: 9px; }
-.reference-objective-subhead strong { color: var(--ink); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+.reference-objective-subhead strong { color: var(--ink); font-size: 10px; text-transform: uppercase; letter-spacing: .05em; }
 .reference-objective-head { display: flex; align-items: baseline; justify-content: space-between; gap: 9px; }
 .reference-objective-head strong { color: var(--ink); }
 .reference-objective-head .vp-badge { flex: 0 0 auto; }

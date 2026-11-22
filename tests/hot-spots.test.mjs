@@ -176,6 +176,43 @@ assert.match(protectionTrack4.special.join(" "), /maximum combat bonus pay/);
 assert.deepEqual(protectionTrack4.sourceRefs, ["Draconis Reach pp. 110–112", "Command complications procedure p. 30", "Current Draconis Reach master errata"]);
 assert.doesNotMatch(TRACKS.find(track => track.id === "recon").special.join(" "), /Level 0 ground as Level 0 water/);
 assert.doesNotMatch(TRACKS.find(track => track.id === "pursuit").special.join(" "), /Mobile HQ/);
+const sunPrairie = HOT_SPOTS.find(item => item.id === "sun-prairie");
+assert.equal(sunPrairie.source, "Draconis Reach pp. 113–115");
+assert.match(sunPrairie.note, /two 1D6 results/);
+assert.equal(sunPrairie.tracks.length, 5);
+for (const sunPrairieTrack of sunPrairie.tracks) {
+  assert.equal(sunPrairieTrack.results.length, 6, "Sun Prairie exposes six source results for each displayed track sequence");
+  const variantResults = sunPrairieTrack.results.filter(result => result.trackId);
+  assert.equal(variantResults.length, 5);
+  for (const result of variantResults) {
+    assert.equal(result.variant.commandComplications.rows.length, 6, "Sun Prairie mission results include the complete Command Complications table");
+    assert.deepEqual(result.variant.sourceRefs, ["Draconis Reach pp. 113–115", "Current Draconis Reach master errata"]);
+  }
+}
+const sunPrairieVariant = sunPrairie.tracks[0].results[0].variant;
+assert.match(sunPrairieVariant.setupDetails.join(" "), /first 1D6 determines the first track/);
+assert.match(sunPrairieVariant.setupDetails.join(" "), /duplicate track result produces no track/);
+assert.match(sunPrairieVariant.setupDetails.join(" "), /all six rolls.*1s/);
+assert.match(sunPrairieVariant.setupDetails.join(" "), /Open Terrain #2/);
+assert.match(sunPrairieVariant.setupDetails.join(" "), /Rolling Hills #3/);
+assert.match(sunPrairieVariant.setupDetails.join(" "), /Forward Base/);
+assert.match(sunPrairieVariant.special.join(" "), /two tracks in a row/);
+assert.match(sunPrairieVariant.special.join(" "), /Temporary Hire/);
+assert.match(sunPrairieVariant.special.join(" "), /Prairie Rangers offer four Veteran motorized platoons/);
+assert.match(sunPrairieVariant.special.join(" "), /Philips Wilson pilots a Dragon Fire DGR-6FC/);
+assert.match(sunPrairieVariant.special.join(" "), /Federated Suns Purchase Options Table/);
+assert.match(sunPrairieVariant.commandComplications.note, /each player rolls 1D6/);
+assert.deepEqual(sunPrairieVariant.commandComplications.rows.map(row => row.roll), ["1", "2–3", "4–5", "6", "7", "8+"]);
+assert.deepEqual(sunPrairieVariant.commandComplications.rows.map(row => row.name), ["Lostech cache found!", "No Complication", "Opportunism and rumors of treasure", "Uneven footing / ghost town rubble", "Tinderbox conditions", "Roll twice and apply both effects"]);
+assert.match(sunPrairieVariant.commandComplications.rows[0].text, /additional 100 SP/);
+assert.match(sunPrairieVariant.commandComplications.rows[2].text, /first two turns/);
+assert.match(sunPrairieVariant.commandComplications.rows[3].text, /6 rubble hexes/);
+assert.match(sunPrairieVariant.commandComplications.rows[4].text, /5 heat/);
+assert.match(sunPrairieVariant.commandComplications.rows[4].text, /light smoke/);
+assert.match(sunPrairieVariant.commandComplications.rows[5].text, /Ignore and do not reroll duplicate effects/);
+const sunPrairieNone = sunPrairie.tracks[0].results.find(result => result.id === "none");
+assert.equal(sunPrairieNone.trackId, null, "Sun Prairie result 6 remains a no-track result");
+assert.equal(sunPrairieNone.variant, undefined, "Sun Prairie no-track result does not apply mission rules automatically");
 for (const hotSpot of HOT_SPOTS) {
   assert.ok(hotSpot.sides.length >= 2, hotSpot.name + " has opposing sides");
   for (const side of hotSpot.sides) assert.ok(Object.values(FACTION_COLORS).includes(side.color), hotSpot.name + " side has a faction UI color");
