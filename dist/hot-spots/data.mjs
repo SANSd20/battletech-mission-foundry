@@ -1045,6 +1045,196 @@ const winnerDependentTrack = (sequence, requires, outcomes, extra = {}) => ({
   ...extra
 });
 
+const gladiatorGenerator = {
+  note: "For a non-player opponent, roll 2D6 for Experience Rating, apply the duel-class adjustment, use the resulting Experience Level, then roll for Piloting/Gunnery skills, Edge abilities, faction, and ’Mech assignment.",
+  classAdjustments: [
+    ["Light (Class 2)", "−2 to Experience Rating"],
+    ["Medium (Class 3)", "No adjustment"],
+    ["Heavy (Class 4)", "+2 to Experience Rating"],
+    ["Assault (Class 5)", "+4 to Experience Rating"],
+    ["Open (Class 6)", "+6 to Experience Rating; use the Assault RAT for the ’Mech" ]
+  ],
+  experienceLevels: [
+    ["0–5", "Regular"],
+    ["6–8", "Veteran"],
+    ["9–12", "Elite"],
+    ["13–15", "Heroic"],
+    ["16–18", "Legendary"]
+  ],
+  skillLevels: {
+    headers: ["1D6", "Regular", "Veteran", "Elite", "Heroic", "Legendary"],
+    rows: [
+      ["1–2", "5/5", "4/4", "3/3", "2/2", "1/1"],
+      ["3–4", "5/4", "4/3", "3/2", "2/1", "1/0"],
+      ["5–6", "4/5", "3/4", "2/3", "1/2", "0/1"]
+    ]
+  },
+  edgeCounts: {
+    headers: ["1D6", "Regular", "Veteran", "Elite", "Heroic", "Legendary"],
+    rows: [
+      ["1", "0", "0", "0", "1", "1"],
+      ["2", "0", "1", "1", "2", "2"],
+      ["3–4", "1", "2", "2", "2", "3"],
+      ["5–6", "2", "2", "3", "3", "4"]
+    ]
+  },
+  factions: {
+    headers: ["2D6", "Faction"],
+    rows: [
+      ["2–4", "Republic of the Sphere"],
+      ["5–6", "Draconis Combine"],
+      ["7–8", "Mercenary"],
+      ["9–11", "Federated Suns"]
+    ]
+  },
+  edgeAbilities: {
+    headers: ["2D6", "Edge Ability"],
+    rows: [
+      ["2", "Assassin"],
+      ["3", "Coolant Flush"],
+      ["4", "Patient"],
+      ["5", "Jumping Jack"],
+      ["6", "Cautious"],
+      ["7", "+1 Edge Token"],
+      ["8", "Marksman"],
+      ["9", "Speed Demon"],
+      ["10", "Melee Specialist"],
+      ["11", "Nimble"],
+      ["12", "Bulwark"]
+    ]
+  }
+};
+
+const gameWorldDuelObjectives = [
+  { id: "duel-orders", name: "Orders", side: BOTH, vp: 50, text: "Survive at least two turns of attacks: your own, your opponent’s, or a mix." },
+  { id: "duel-victory", name: "Victory!", side: BOTH, vp: 100, text: "Destroy the opponent or cause them to surrender. Double the reward if the opponent is a larger weight class." },
+  { id: "duel-nice-showing", name: "Nice showing", side: BOTH, vp: 50, text: "Cripple the opponent. Double the reward if the opponent is a larger weight class." },
+  { id: "duel-shoot-them", name: "Shoot Them", side: BOTH, vp: 10, repeatable: true, text: "For each 20 damage dealt to the opponent (2 damage in Alpha Strike)." },
+  { id: "duel-beat-them", name: "Beat Them", side: BOTH, vp: 10, repeatable: true, text: "For each successful physical attack, maximum once per turn." },
+  { id: "duel-head-shot", name: "Head Shot", side: BOTH, vp: 10, repeatable: true, text: "For each shot that hits the opponent’s head, or 20 VP for each natural 12 critical on the opponent." },
+  { id: "duel-crushing-blow", name: "Crushing Blow", side: BOTH, vp: 10, repeatable: true, text: "For dealing critical damage to the opponent. Award 20 VP in Alpha Strike." },
+  { id: "duel-turning-it-around", name: "Turning It Around", side: BOTH, vp: 10, repeatable: true, text: "After losing Initiative for two or more turns, win Initiative. Award 10 VP each time." },
+  { id: "duel-humiliating-shot", name: "Humiliating Shot", side: BOTH, vp: 10, repeatable: true, text: "Successfully attack the opponent in the rear, maximum once per turn." },
+  { id: "duel-boom", name: "Boom!", side: BOTH, vp: 10, repeatable: true, text: "For each ammunition explosion dealt to the opponent. Award 20 VP in Alpha Strike." }
+];
+
+const gameWorldDuelSetup = [
+  "Contract #: N/A. Employer: None. There is no contract for Game Worlds beyond the payment received for taking part.",
+  "The track is always a duel: one ’Mech versus one ’Mech matched by weight class—light, medium, heavy, assault, or open to any weight class. Do not use normal Scale limits, BV/PV limits, or Battlefield Support for a standard duel.",
+  "The Defender selects a short edge as their home edge; the Attacker gets the opposite short edge.",
+  "Attacker: enter from the Attacker’s home edge during the Movement Phase of Turn 1. Attacking units may exit only via their home edge; exiting by any other edge for any reason counts as unit destruction.",
+  "Defender: enter from the Defender’s home edge during the Movement Phase of Turn 1. Defending units may exit only via their home edge; exiting by any other edge for any reason counts as unit destruction."
+];
+
+const gameWorldDuelSetupDetails = [
+  "Game Worlds intensity is one to three tracks. Multiple players may choose this Hot Spot, on the same game world or different game worlds; use the Taking One for the Team option when an opposing duelist is needed.",
+  "The source schedules a single duel per month so contestants can repair, recover, and train between duels.",
+  "Choose the duel class in the setup controls. Class One—exoskeleton—is not supported by the Gladiator Generator. Otherwise, the duel is treated as Scale 1 only for costs and payments.",
+  "Open class permits any weight class and generally uses better pilots. The source recommends using the Assault-class Random Assignment Table when randomly generating an open-class ’Mech.",
+  "Team Option: a duel may be fought between teams using standard Scale levels and BV/PV limits per team. If more than half of a team by BV/PV is destroyed or crippled, the duel ends in the End Phase."
+];
+
+const gameWorldDuelSpecial = [
+  "Combat Pay: the VP value of each objective is also its combat pay at 1 VP = 1 SP. A first-turn head-shot victory awards 50 SP for Victory!, 50 SP for Nice showing, and 10 SP for Head Shot.",
+  "Reputation: each point of reputation increases total combat pay by 10 percent, up to the maximum set by the selected game world.",
+  "Victory is Victory: unlike general tracks, a player may earn more objectives and still lose the duel. The player who destroys or causes the opponent to surrender through Victory! successfully completes the track and wins.",
+  "Track End: after the end of any turn when at least one side has no units in play, or after the end of Turn 12 (Turn 10 in Alpha Strike).",
+  "Game World campaign victory: earning two duel victories within a three-month period earns victory in the contract and Reputation. A victorious player also earns additional combat pay equal to standard combat pay multiplied by the competition class: light ×2, medium ×3, heavy ×4, assault ×5, open ×6."
+];
+
+const gameWorldDuelBaseVariant = {
+  page: 130,
+  type: "Game World Duel",
+  summary: "A one-’Mech-versus-one-’Mech duel using the Game Worlds mission brief from Draconis Reach.",
+  setup: gameWorldDuelSetup,
+  setupDetails: gameWorldDuelSetupDetails,
+  objectives: gameWorldDuelObjectives,
+  special: gameWorldDuelSpecial,
+  sourceRefs: ["Draconis Reach pp. 128–131", "Purchase Options pp. 22, 69"]
+};
+
+const gameWorldClassOptions = [
+  { value: "light", label: "Class 2 · Light" },
+  { value: "medium", label: "Class 3 · Medium" },
+  { value: "heavy", label: "Class 4 · Heavy" },
+  { value: "assault", label: "Class 5 · Assault" },
+  { value: "open", label: "Class 6 · Open" }
+];
+
+const gameWorldSelection = (options, note) => ({
+  id: "duel-class",
+  label: "Duel class",
+  placeholder: "Choose the weight class",
+  options,
+  note
+});
+
+const gameWorldVariant = (name, summary, setup, setupDetails, special, selection, sourceRefs = gameWorldDuelBaseVariant.sourceRefs) => ({
+  ...gameWorldDuelBaseVariant,
+  displayName: "Game Worlds · " + name,
+  summary,
+  setup: [...gameWorldDuelSetup, ...setup],
+  setupDetails: [...gameWorldDuelSetupDetails, ...setupDetails],
+  special: [...gameWorldDuelSpecial, ...special],
+  selectionControls: [selection],
+  gladiatorGenerator,
+  sourceRefs
+});
+
+const carcassonneGameWorldVariant = gameWorldVariant(
+  "Carcassonne",
+  "A fungal-field arena duel on Carcassonne, where the abandoned colony has become a specialized MechWarrior circuit.",
+  ["Game world: Carcassonne. Maximum Reputation: 5."],
+  ["Mapsheets: roll 1D6. Results 1–3 use Fungal Crevasse, Left Half; results 4–6 use Fungal Crevasse, Right Half. Use the Map Pack: Alien Worlds map or the Alpha Strike Fungal Crevasse map.", "No Class Six—Open—duels."],
+  ["Fungal Crevasse: apply the special rules for Fungal Crevasse from Map Pack: Alien Worlds or its Alpha Strike equivalent.", "Purchase Options: once a month, roll 2D6; on a 5+ one ’Mech is for sale, and on an 11+ two are for sale. Use the Federated Suns Purchase Options Table."],
+  gameWorldSelection(gameWorldClassOptions.filter(option => option.value !== "open"), "Carcassonne does not hold open-class duels.")
+);
+
+const xhosaGameWorldVariant = gameWorldVariant(
+  "Xhosa VII",
+  "An Easter Ice Fight on the frozen plains of Xhosa VII, where duelists must control their ’Mechs on treacherous ice.",
+  ["Game world: Xhosa VII. Maximum Reputation: 10."],
+  ["The Easter Ice Fights are held once a year for one week during the Easter event. A player may play only one duel during the event.", "Mapsheets: roll 1D6. Results 1–2 use Woodland; 3–4 use Scattered Woods; 5 uses Desert #3; 6 uses Badlands #1. Use the listed Alpha Strike equivalents where applicable."],
+  ["Xhosa VII adds 50 percent to combat pay from the duel.", "Freezing Blizzard: in BattleTech, units dissipate an extra 4 heat each turn and each player’s attack ranges are doubled for range modifiers only. In Alpha Strike, units dissipate 1 heat from the Heat Scale each turn and attacks receive a +2 target number modifier from the doubled range used for range modifiers. Damage remains based on actual range.", "Purchase Options: once a month, roll 2D6; on a 5+ one ’Mech is for sale, and on an 11+ two are for sale. Use the Federated Suns Purchase Options Table."],
+  gameWorldSelection(gameWorldClassOptions, "Xhosa VII permits all listed duel classes.")
+);
+
+const tybaltGameWorldVariant = gameWorldVariant(
+  "Tybalt",
+  "A grudge-match duel at the Tybalt Festival Grounds, where Roughrider-backed games turn old ruins into an arena.",
+  ["Game world: Tybalt. Maximum Reputation: 3."],
+  ["Mapsheets: roll 1D6. Results 1–3 use City Central Park; 4 uses City Observatory Hill; 5–6 use City Park District. Use the listed Alpha Strike Urban equivalents.", "No Class Five—Assault—duels. All buildings are ruins: collapsed, with CF 0."],
+  ["Purchase Options: use the Tybalt Hiring Hall rules on p. 69."],
+  gameWorldSelection(gameWorldClassOptions.filter(option => option.value !== "assault"), "Tybalt does not hold Class Five—Assault—duels.")
+);
+
+const gameWorldDuelTrack = {
+  id: "game-world-duel",
+  name: "Game Worlds Duel",
+  page: 130,
+  summary: gameWorldDuelBaseVariant.summary,
+  setup: gameWorldDuelSetup,
+  setupDetails: gameWorldDuelSetupDetails,
+  objectives: gameWorldDuelObjectives,
+  special: gameWorldDuelSpecial,
+  sourceRefs: gameWorldDuelBaseVariant.sourceRefs
+};
+
+export const SPECIAL_TRACKS = [gameWorldDuelTrack];
+
+const gameWorldResults = [
+  { id: "carcassonne", label: "Carcassonne", trackId: "game-world-duel", attacker: "duelist-one", defender: "duelist-two", variant: carcassonneGameWorldVariant },
+  { id: "xhosa-vii", label: "Xhosa VII", trackId: "game-world-duel", attacker: "duelist-one", defender: "duelist-two", variant: xhosaGameWorldVariant },
+  { id: "tybalt", label: "Tybalt", trackId: "game-world-duel", attacker: "duelist-one", defender: "duelist-two", variant: tybaltGameWorldVariant }
+];
+
+const gameWorldTracks = [1, 2, 3].map(sequence => ({
+  sequence,
+  label: "Track " + sequence,
+  resultLabel: "Game world",
+  results: gameWorldResults
+}));
+
 const pascagoulaTrack1Variant = {
   displayName: "Gem Convoy Raid",
   type: "Modified Objective Raid",
@@ -1724,6 +1914,19 @@ export const HOT_SPOTS = [
         "draconis-combine": { trackId: "strike", attacker: "draconis-combine", defender: "federated-suns", variant: xhosaTrack3StrikeVariant }
       })
     ]
+  },
+  {
+    id: "game-worlds",
+    name: "Game Worlds",
+    region: "Draconis Reach",
+    terrain: "World selected below",
+    source: "Draconis Reach pp. 128–131",
+    opforMode: "gladiator",
+    hideSideSelector: true,
+    hideScaleSelector: true,
+    note: "Game Worlds is a one-to-three-track duel hot spot. Choose the game world and duel class for each track. The browser records the duel rules, objectives, and Gladiator Generator procedure without creating a force or resolving campaign payments automatically.",
+    sides: [factionSide("duelist-one", "Duelist One", "Mercenary"), factionSide("duelist-two", "Duelist Two", "Mercenary")],
+    tracks: gameWorldTracks
   },
   {
     id: "act-of-piracy",

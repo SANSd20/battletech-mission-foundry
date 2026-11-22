@@ -1,4 +1,4 @@
-import { FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, OPPOSING_FORCE_TABLES, SOURCES, TRACKS } from "./data.mjs?v=opfor-10";
+import { FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, OPPOSING_FORCE_TABLES, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=opfor-10";
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -19,6 +19,7 @@ const state = {
   winnerSelections: {},
   resultSelections: {},
   sourceRollSelections: {},
+  selectionValues: {},
   roleSelections: {},
   trackId: "meeting-engagement",
   scale: 1,
@@ -31,7 +32,7 @@ const state = {
 };
 
 function currentTrack() {
-  return TRACKS.find(track => track.id === state.trackId) || null;
+  return [...TRACKS, ...SPECIAL_TRACKS].find(track => track.id === state.trackId) || null;
 }
 
 function currentHotSpot() {
@@ -108,6 +109,20 @@ function selectedSourceRoll(sequence, roll) {
 function sourceRollLabel(sequence, roll) {
   const selected = selectedSourceRoll(sequence, roll);
   return roll.options.find(option => option.value === selected)?.label || "Not selected";
+}
+
+function variantSelectionKey(sequence, selection) {
+  return state.hotSpotId + "::selection::" + sequence + "::" + selection.id;
+}
+
+function selectedVariantSelection(sequence, selection) {
+  const value = state.selectionValues[variantSelectionKey(sequence, selection)] || "";
+  return selection.options.some(option => option.value === value) ? value : "";
+}
+
+function variantSelectionLabel(sequence, selection) {
+  const selected = selectedVariantSelection(sequence, selection);
+  return selection.options.find(option => option.value === selected)?.label || "Not selected";
 }
 
 function roleKey(sequence) {
@@ -262,11 +277,40 @@ function renderControlState() {
   });
 }
 
+function renderGeneratorTable(title, table) {
+  if (!table) return "";
+  return '<div><span class="panel-kicker">' + esc(title) + '</span><div class="shared-rule-table-wrap"><table class="shared-rule-table"><thead><tr>' + table.headers.map(header => '<th scope="col">' + esc(header) + '</th>').join("") + '</tr></thead><tbody>' + table.rows.map(row => '<tr>' + row.map(cell => '<td>' + esc(cell) + '</td>').join("") + '</tr>').join("") + '</tbody></table></div></div>';
+}
+
+function renderGladiatorGenerator(generator) {
+  if (!generator) return "";
+  const adjustments = generator.classAdjustments.map(row => '<li><strong>' + esc(row[0]) + ':</strong> ' + esc(row[1]) + '</li>').join("");
+  const experience = generator.experienceLevels.map(row => '<tr><td>' + esc(row[0]) + '</td><td>' + esc(row[1]) + '</td></tr>').join("");
+  return '<article class="opfor-card gladiator-generator"><div class="opfor-card-head"><div><span class="panel-kicker">TAKING ONE FOR THE TEAM</span><h3>Gladiator Generator</h3><p>Use this procedure when a non-player duelist is needed.</p></div></div>' +
+    '<p class="campaign-state-note">' + esc(generator.note) + '</p>' +
+    '<div class="opfor-force-grid"><div><span>Class adjustments</span><ul>' + adjustments + '</ul></div><div><span>Experience Rating</span><div class="shared-rule-table-wrap"><table class="shared-rule-table"><thead><tr><th scope="col">Adjusted 2D6</th><th scope="col">Experience</th></tr></thead><tbody>' + experience + '</tbody></table></div></div></div>' +
+    '<div class="gladiator-tables">' +
+      renderGeneratorTable("Gladiator Skills", generator.skillLevels) +
+      renderGeneratorTable("Number of Edge Abilities", generator.edgeCounts) +
+      renderGeneratorTable("Gladiator Faction", generator.factions) +
+      renderGeneratorTable("Gladiator Edge Ability", generator.edgeAbilities) +
+    '</div><p class="opfor-rule">After determining the faction, use the matching era/faction Random Assignment Table to determine the ’Mech. Reroll Edge results that are not appropriate for the unit.</p><div class="reference-citation">Source: Draconis Reach p. 131</div></article>';
+}
+
 function renderOpFor() {
   const container = $("#opfor-display");
   if (!container) return;
-  if (currentHotSpot().opforMode === "source-table") {
+  const hotSpot = currentHotSpot();
+  if (hotSpot.opforMode === "source-table") {
     container.innerHTML = "";
+    return;
+  }
+  if (hotSpot.opforMode === "gladiator") {
+    if (!state.takingOneForTeam) {
+      container.innerHTML = "";
+      return;
+    }
+    container.innerHTML = renderGladiatorGenerator(resolvedHotSpotStep()?.variant?.gladiatorGenerator);
     return;
   }
   if (!state.takingOneForTeam) {
@@ -333,18 +377,38 @@ function renderHotSpotSetup() {
   }
   for (const roll of resolved?.variant?.sourceRolls || []) {
     const selectedRoll = selectedSourceRoll(step.sequence, roll);
-    winnerControls.push('<div class="control-group"><label for="source-roll-' + esc(roll.id) + '">' + esc(roll.label) + '</label><select id="source-roll-' + esc(roll.id) + '" data-source-roll-id="' + esc(roll.id) + '" data-source-roll-sequence="' + esc(String(step.sequence)) + '"><option value="">Choose the 1D6 result</option>' + roll.options.map(option => '<option value="' + esc(option.value) + '"' + (selectedRoll === option.value ? " selected" : "") + '>' + esc(option.label) + "</option>").join("") + '</select><span class="control-hint">' + esc(roll.note) + '</span></div>');
+    winnerControls.push('<div class="control-group"><label for="source-roll-' + esc(roll.id) + '">' + esc(roll.label) + '</label><select id="source-roll-' + esc(roll.id) + '" data-source-roll-id="' + esc(roll.id) + '" data-source-roll-sequence="' + esc(String(step.sequence)) + '"><option value="">' + esc(roll.placeholder || "Choose the 1D6 result") + '</option>' + roll.options.map(option => '<option value="' + esc(option.value) + '"' + (selectedRoll === option.value ? " selected" : "") + '>' + esc(option.label) + "</option>").join("") + '</select><span class="control-hint">' + esc(roll.note) + '</span></div>');
+  }
+  for (const selection of resolved?.variant?.selectionControls || []) {
+    const selectedValue = selectedVariantSelection(step.sequence, selection);
+    winnerControls.push('<div class="control-group"><label for="variant-selection-' + esc(selection.id) + '">' + esc(selection.label) + '</label><select id="variant-selection-' + esc(selection.id) + '" data-selection-id="' + esc(selection.id) + '" data-selection-sequence="' + esc(String(step.sequence)) + '"><option value="">' + esc(selection.placeholder || "Choose a result") + '</option>' + selection.options.map(option => '<option value="' + esc(option.value) + '"' + (selectedValue === option.value ? " selected" : "") + '>' + esc(option.label) + "</option>").join("") + '</select><span class="control-hint">' + esc(selection.note || "Record the source choice for this track.") + '</span></div>');
   }
   $("#winner-controls").innerHTML = winnerControls.length ? '<div class="winner-controls-grid">' + winnerControls.join("") + "</div>" : "";
 
-  $("#hotspot-summary").innerHTML = '<div class="hotspot-summary-copy"><strong>' + esc(hotSpot.name) + '</strong><span>' + esc(hotSpot.region) + " · " + esc(hotSpot.terrain) + '</span><span>' + esc(step?.label || "Track") + " · " + esc(resolved?.displayName || (resolved?.trackId ? TRACKS.find(track => track.id === resolved.trackId)?.name : "Pending" ) || "Pending") + '</span></div>';
+  $("#hotspot-summary").innerHTML = '<div class="hotspot-summary-copy"><strong>' + esc(hotSpot.name) + '</strong><span>' + esc(hotSpot.region) + " · " + esc(hotSpot.terrain) + '</span><span>' + esc(step?.label || "Track") + " · " + esc(resolved?.displayName || (resolved?.trackId ? currentTrack()?.name : "Pending") || "Pending") + '</span></div>';
   if (hotSpot.note) $("#hotspot-summary").insertAdjacentHTML("beforeend", '<div class="hotspot-summary-note">' + esc(hotSpot.note) + "</div>");
   const selectedSourceRolls = (resolved?.variant?.sourceRolls || []).filter(roll => selectedSourceRoll(step.sequence, roll));
   if (selectedSourceRolls.length) {
     $("#hotspot-summary").insertAdjacentHTML("beforeend", '<div class="hotspot-summary-note"><strong>Selected source rolls:</strong> ' + esc(selectedSourceRolls.map(roll => roll.label + " — " + sourceRollLabel(step.sequence, roll)).join(" · ")) + "</div>");
   }
+  const selectedVariantSelections = (resolved?.variant?.selectionControls || []).filter(selection => selectedVariantSelection(step.sequence, selection));
+  if (selectedVariantSelections.length) {
+    $("#hotspot-summary").insertAdjacentHTML("beforeend", '<div class="hotspot-summary-note"><strong>Selected setup choices:</strong> ' + esc(selectedVariantSelections.map(selection => selection.label + " — " + variantSelectionLabel(step.sequence, selection)).join(" · ")) + "</div>");
+  }
   const sourceTableMode = hotSpot.opforMode === "source-table";
-  $("#taking-one-for-team").closest("label").style.display = sourceTableMode ? "none" : "";
+  const sideControl = $("#hot-spot-side-select").closest(".control-group");
+  if (sideControl) sideControl.style.display = hotSpot.hideSideSelector ? "none" : "";
+  const scaleChoice = $("#scale-choice");
+  if (scaleChoice) scaleChoice.style.display = hotSpot.hideScaleSelector ? "none" : "";
+  const takingToggle = $("#taking-one-for-team").closest("label");
+  takingToggle.style.display = sourceTableMode ? "none" : "";
+  if (hotSpot.opforMode === "gladiator") {
+    takingToggle.querySelector("strong").textContent = "Use the Gladiator Generator";
+    takingToggle.querySelector("small").textContent = "Show the source procedure for creating a non-player duelist.";
+  } else {
+    takingToggle.querySelector("strong").textContent = "Taking one for the team";
+    takingToggle.querySelector("small").textContent = "Show a generated opposing force using the selected military side and Force Scale.";
+  }
   $("#taking-one-for-team").checked = state.takingOneForTeam;
   renderOpFor();
 }
@@ -460,6 +524,7 @@ function renderReference() {
   const special = referenceTrack.special.map(item => "<li>" + esc(item) + "</li>").join("");
   const commandComplications = renderCommandComplications(referenceTrack.commandComplications);
   const sourceReferenceText = referenceTrack.sourceRefs?.join(" · ") || SOURCES.primary + " · selected track p. " + referenceTrack.page;
+  const scaleSection = hotSpot.hideScaleSelector ? "" : '<div class="reference-section scale-section"><div class="panel-kicker">SCALE ' + esc(String(state.scale)) + ' VIEW</div><ul class="rule-list">' + scaleNotesMarkup + "</ul></div>";
 
   const attackerSide = sideById(resolved?.attacker);
   const defenderSide = sideById(resolved?.defender);
@@ -471,7 +536,7 @@ function renderReference() {
       hotSpotBrief +
       '<div class="reference-section"><div class="panel-kicker">BATTLEFIELD & SETUP</div><ul class="rule-list">' + setup + "</ul></div>" +
       (setupDetails ? '<div class="reference-section"><div class="panel-kicker">DEPLOYMENT DETAILS</div><ul class="rule-list">' + setupDetails + "</ul></div>" : "") +
-      '<div class="reference-section scale-section"><div class="panel-kicker">SCALE ' + esc(String(state.scale)) + ' VIEW</div><ul class="rule-list">' + scaleNotesMarkup + "</ul></div>" +
+      scaleSection +
       '<div class="reference-section"><div class="panel-kicker">OBJECTIVES & VICTORY POINTS</div><ul class="objective-reference-list">' + objectives + "</ul></div>" +
       '<div class="reference-section"><div class="panel-kicker">SPECIAL RULES, TRACK END & SALVAGE</div><ul class="rule-list">' + special + "</ul></div>" +
       commandComplications +
@@ -555,6 +620,7 @@ function resetTrack() {
   Object.keys(state.progress).filter(key => key.startsWith(prefix)).forEach(key => delete state.progress[key]);
   Object.keys(state.vpSelections).filter(key => key.startsWith(prefix)).forEach(key => delete state.vpSelections[key]);
   Object.keys(state.sourceRollSelections).filter(key => key.startsWith(prefix)).forEach(key => delete state.sourceRollSelections[key]);
+  Object.keys(state.selectionValues).filter(key => key.startsWith(prefix)).forEach(key => delete state.selectionValues[key]);
   renderAll();
 }
 
@@ -611,6 +677,7 @@ $("#winner-controls").addEventListener("change", event => {
   if (event.target.dataset.winnerSequence) state.winnerSelections[winnerKey(event.target.dataset.winnerSequence)] = event.target.value;
   if (event.target.dataset.resultSequence) state.resultSelections[resultKey(event.target.dataset.resultSequence)] = event.target.value;
   if (event.target.dataset.sourceRollId) state.sourceRollSelections[sourceRollKey(event.target.dataset.sourceRollSequence, event.target.dataset.sourceRollId)] = event.target.value;
+  if (event.target.dataset.selectionId) state.selectionValues[variantSelectionKey(event.target.dataset.selectionSequence, { id: event.target.dataset.selectionId })] = event.target.value;
   if (event.target.dataset.roleSequence) state.roleSelections[roleKey(event.target.dataset.roleSequence)] = event.target.value;
   renderAll();
 });

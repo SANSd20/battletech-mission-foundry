@@ -88,6 +88,8 @@ button, select { cursor: pointer; }
 .opfor-roll-control select { min-height: 36px; padding: 0 9px; border: 1px solid var(--faction-color); background: #fff; color: #10151f; font-size: 12px; font-weight: 800; letter-spacing: normal; text-transform: none; }
 .opfor-card-meta { display: flex; flex-wrap: wrap; gap: 7px 16px; padding: 10px 13px; border-bottom: 1px solid #d3dfda; background: color-mix(in srgb, var(--faction-color) 10%, #edf5f1); color: #53636b; font-size: 11px; }
 .opfor-card-meta > span { min-width: 0; overflow-wrap: anywhere; }
+.gladiator-tables { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; padding: 14px; }
+.gladiator-tables > div { min-width: 0; }
 .opfor-card-meta strong { color: var(--ink); }
 .opfor-result { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding: 12px 13px; border-bottom: 1px solid #d3dfda; color: #53636b; font-size: 11px; }
 .opfor-result > span:last-child { flex: 1 1 180px; min-width: 0; }
@@ -297,6 +299,7 @@ body { background: color-mix(in srgb, var(--faction-color) 10%, #111821); color:
   .opfor-card-head > div:first-child { min-width: 0; flex: 1 1 220px; }
   .opfor-roll-control { min-width: 0; flex: 0 1 145px; }
   .opfor-force-grid { grid-template-columns: 1fr; }
+  .gladiator-tables { grid-template-columns: 1fr; }
   .control-status { grid-column: auto; }
   .controls > .danger { grid-column: auto; grid-row: auto; }
   .mode-switch { display: grid; grid-template-columns: 1fr; }

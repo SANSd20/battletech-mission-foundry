@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, OPPOSING_FORCE_TABLES, SOURCES, TRACKS } from "../dist/hot-spots/data.mjs";
+import { FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, OPPOSING_FORCE_TABLES, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
 
 const expected = ["Assault", "Breakthrough", "Defend", "Flank", "Meeting Engagement", "Objective Raid", "Pursuit", "Pushback", "Recon", "Retreat", "Strike"];
 assert.deepEqual(TRACKS.map(track => track.name), expected, "all eleven Draconis Reach standard tracks are present");
@@ -357,6 +357,44 @@ assert.doesNotMatch(TRACKS.find(track => track.id === "objective-raid").setup.jo
 assert.doesNotMatch(TRACKS.find(track => track.id === "objective-raid").special.join(" "), /Piracy contract terms cannot be negotiated/);
 assert.ok(app.includes("sourceRollSelections") && app.includes("data-source-roll-id"), "Act of Piracy source-roll selectors are wired");
 assert.ok(app.includes('opforMode === "source-table"'), "source-defined opposing-force tables can disable generic OpFor controls");
+const gameWorlds = HOT_SPOTS.find(item => item.id === "game-worlds");
+assert.ok(gameWorlds, "Game Worlds is available as a Hot Spot");
+assert.equal(gameWorlds.source, "Draconis Reach pp. 128–131");
+assert.equal(gameWorlds.tracks.length, 3, "Game Worlds exposes the source intensity of one to three duel tracks");
+assert.equal(gameWorlds.opforMode, "gladiator");
+assert.equal(gameWorlds.hideScaleSelector, true, "Game Worlds does not use the normal Force Scale selector");
+assert.equal(gameWorlds.hideSideSelector, true, "Game Worlds does not use the normal military-side selector");
+assert.equal(SPECIAL_TRACKS.find(track => track.id === "game-world-duel").objectives.length, 10, "Game Worlds has the complete duel objective list");
+for (const track of gameWorlds.tracks) {
+  assert.equal(track.resultLabel, "Game world");
+  assert.deepEqual(track.results.map(result => result.id), ["carcassonne", "xhosa-vii", "tybalt"]);
+  for (const result of track.results) {
+    assert.equal(result.trackId, "game-world-duel");
+    assert.equal(result.variant.selectionControls.length, 1);
+    assert.equal(result.variant.selectionControls[0].id, "duel-class");
+    assert.equal(result.variant.gladiatorGenerator.skillLevels.rows.length, 3);
+    assert.match(result.variant.special.join(" "), /Victory is Victory/);
+    assert.match(result.variant.special.join(" "), /Turn 12/);
+  }
+}
+const carcassonne = gameWorlds.tracks[0].results.find(result => result.id === "carcassonne").variant;
+assert.match(carcassonne.setupDetails.join(" "), /Fungal Crevasse/);
+assert.match(carcassonne.setupDetails.join(" "), /No Class Six/);
+assert.equal(carcassonne.selectionControls[0].options.length, 4);
+const xhosaGameWorld = gameWorlds.tracks[0].results.find(result => result.id === "xhosa-vii").variant;
+assert.match(xhosaGameWorld.special.join(" "), /Freezing Blizzard/);
+assert.match(xhosaGameWorld.special.join(" "), /50 percent to combat pay/);
+assert.match(xhosaGameWorld.setupDetails.join(" "), /Easter/);
+assert.equal(xhosaGameWorld.selectionControls[0].options.length, 5);
+const tybalt = gameWorlds.tracks[0].results.find(result => result.id === "tybalt").variant;
+assert.match(tybalt.setupDetails.join(" "), /collapsed, with CF 0/);
+assert.match(tybalt.special.join(" "), /Tybalt Hiring Hall/);
+assert.equal(tybalt.selectionControls[0].options.length, 4);
+assert.match(gameWorlds.note, /Gladiator Generator/);
+assert.ok(app.includes("selectionValues") && app.includes("data-selection-id"), "Game Worlds setup selectors are wired");
+assert.ok(app.includes('opforMode === "gladiator"') && app.includes("renderGladiatorGenerator"), "Game Worlds Gladiator Generator control is wired");
+assert.ok(html.includes('id="scale-choice"'), "Force Scale control has a scoped container for source-specific hiding");
+assert.ok(css.includes("gladiator-tables"), "Gladiator Generator tables retain focused responsive styling");
 for (const hotSpot of HOT_SPOTS) {
   assert.ok(hotSpot.sides.length >= 2, hotSpot.name + " has opposing sides");
   for (const side of hotSpot.sides) assert.ok(Object.values(FACTION_COLORS).includes(side.color), hotSpot.name + " side has a faction UI color");
