@@ -25,7 +25,8 @@ const state = {
   takingOneForTeam: false,
   opforRoll: 1,
   progress: {},
-  vpSelections: {}
+  vpSelections: {},
+  campaignState: {}
 };
 
 function currentTrack() {
@@ -97,6 +98,50 @@ function resultKey(sequence) {
 
 function roleKey(sequence) {
   return state.hotSpotId + "::role::" + sequence;
+}
+
+function campaignDefinition(hotSpot = currentHotSpot()) {
+  return hotSpot.campaignState || null;
+}
+
+function campaignValues(hotSpot = currentHotSpot()) {
+  const definition = campaignDefinition(hotSpot);
+  if (!definition) return null;
+  if (!state.campaignState[hotSpot.id]) state.campaignState[hotSpot.id] = { tracks: {} };
+  if (!state.campaignState[hotSpot.id].tracks) state.campaignState[hotSpot.id].tracks = {};
+  return state.campaignState[hotSpot.id];
+}
+
+function campaignTrackValues(sequence, hotSpot = currentHotSpot()) {
+  const definition = campaignDefinition(hotSpot);
+  if (!definition) return null;
+  const campaign = campaignValues(hotSpot);
+  const key = String(sequence);
+  if (!campaign.tracks[key]) campaign.tracks[key] = {};
+  for (const field of definition.fields) {
+    if (campaign.tracks[key][field.id] === undefined) campaign.tracks[key][field.id] = field.default;
+  }
+  return campaign.tracks[key];
+}
+
+function campaignBuildingTotals(sequence, hotSpot = currentHotSpot()) {
+  const definition = campaignDefinition(hotSpot);
+  if (!definition) return { stephensons: 0, isf: 0 };
+  const totals = { stephensons: 0, isf: 0 };
+  for (let current = 1; current <= Number(sequence); current += 1) {
+    const values = campaignTrackValues(current, hotSpot);
+    totals.stephensons += Number(values?.stephensonsBuildingDamage) || 0;
+    totals.isf += Number(values?.isfBuildingDamage) || 0;
+  }
+  return totals;
+}
+
+function campaignStatusOptions(selected) {
+  return [
+    ["not-recorded", "Not recorded"],
+    ["operational", "Operational"],
+    ["destroyed", "Destroyed"]
+  ].map(([value, label]) => '<option value="' + value + '"' + (selected === value ? " selected" : "") + ">" + label + "</option>").join("");
 }
 
 function selectedWinner(sequence) {
@@ -261,7 +306,7 @@ function renderHotSpotSetup() {
   }
   if (resolved?.roleChoice) {
     const selectedRole = state.roleSelections[roleKey(step.sequence)] || hotSpot.sides[0]?.id;
-    winnerControls.push('<div class="control-group"><label for="role-choice">' + esc(step.roleChoiceLabel || "Choose the Attacker") + '</label><select id="role-choice" data-role-sequence="' + step.sequence + '">' + hotSpot.sides.map(side => '<option value="' + esc(side.id) + '"' + (selectedRole === side.id ? " selected" : "") + '>' + esc(side.name) + " as Attacker</option>").join("") + '</select><span class="control-hint">The other side is assigned Defender.</span></div>');
+    winnerControls.push('<div class="control-group"><label for="role-choice">' + esc(step.roleChoiceLabel || "Choose the Attacker") + '</label><select id="role-choice" data-role-sequence="' + step.sequence + '">' + hotSpot.sides.map(side => '<option value="' + esc(side.id) + '"' + (selectedRole === side.id ? " selected" : "") + '>' + esc(side.name) + " as Attacker</option>").join("") + '</select><span class="control-hint">' + esc(step.roleChoiceHint || "The other side is assigned Defender.") + '</span></div>');
   }
   if (step?.results?.length) {
     const result = state.resultSelections[resultKey(step.sequence)] || step.results[0].id;
@@ -273,6 +318,40 @@ function renderHotSpotSetup() {
   if (hotSpot.note) $("#hotspot-summary").insertAdjacentHTML("beforeend", '<div class="hotspot-summary-note">' + esc(hotSpot.note) + "</div>");
   $("#taking-one-for-team").checked = state.takingOneForTeam;
   renderOpFor();
+}
+
+function renderCampaignState() {
+  const container = $("#hotspot-campaign-state");
+  if (!container) return;
+  const hotSpot = currentHotSpot();
+  const definition = campaignDefinition(hotSpot);
+  if (!definition) {
+    container.innerHTML = "";
+    return;
+  }
+  const sequence = Number(currentHotSpotStep()?.sequence || 1);
+  const values = campaignTrackValues(sequence, hotSpot);
+  const totals = campaignBuildingTotals(sequence, hotSpot);
+  const priorTotals = campaignBuildingTotals(Math.max(0, sequence - 1), hotSpot);
+  const fields = definition.fields.map(field => {
+    const value = values[field.id];
+    if (field.type === "status") {
+      return '<label class="campaign-field"><span>' + esc(field.label) + '</span><select data-campaign-field="' + esc(field.id) + '" data-campaign-sequence="' + sequence + '">' + campaignStatusOptions(value) + '</select></label>';
+    }
+    return '<label class="campaign-field"><span>' + esc(field.label) + '</span><input type="number" min="' + esc(String(field.min ?? 0)) + '"' + (field.max !== undefined ? ' max="' + esc(String(field.max)) + '"' : '') + ' value="' + esc(String(value ?? field.default ?? 0)) + '" data-campaign-field="' + esc(field.id) + '" data-campaign-sequence="' + sequence + '"></label>';
+  }).join("");
+  const trackThreeDifference = Math.max(0, priorTotals.isf - priorTotals.stephensons);
+  const reputationText = totals.stephensons === totals.isf
+    ? "No side has the higher building-damage total."
+    : (totals.stephensons > totals.isf ? "Stephensons" : "ISF") + " has the higher building-damage total and takes the source’s −1 Reputation result at contract end.";
+  const trackThreeText = sequence >= 3
+    ? "Track 3 support check from the totals before Track 3: Stephensons receive " + trackThreeDifference + " Battlefield Support Mechanized Infantry Platoon(s) if the ISF total is higher."
+    : "At the beginning of Track 3, compare the running totals through Tracks 1–2; this browser records the values but does not auto-add support units.";
+  container.innerHTML = '<section class="campaign-state-card"><div class="campaign-state-head"><div><div class="panel-kicker">CROSS-TRACK PRESERVATION</div><h3>' + esc(definition.title) + '</h3></div><button type="button" class="campaign-reset-button" data-reset-campaign="' + esc(hotSpot.id) + '">Reset campaign state</button></div>' +
+    '<p class="campaign-state-note">' + esc(definition.note) + '</p>' +
+    '<div class="campaign-fields"><div class="campaign-track-label">Track ' + sequence + ' record</div>' + fields + '</div>' +
+    '<div class="campaign-state-summary"><strong>Running building-damage totals through Track ' + sequence + '</strong><span>Stephensons: ' + totals.stephensons + ' · ISF: ' + totals.isf + '</span><span>' + esc(trackThreeText) + '</span><span>' + esc(reputationText) + '</span><span>Campaign victory still requires the source’s Track 3 character-survival conditions; this record does not award victory automatically.</span></div>' +
+    '<div class="reference-citation">Source: ' + esc(definition.sourceRefs.join(" · ")) + '</div></section>';
 }
 
 function renderSharedRule(rule) {
@@ -300,6 +379,30 @@ function displayObjective(objective, variant) {
   return override ? { ...objective, ...override } : objective;
 }
 
+function objectiveVpText(display) {
+  const vp = display.vpOptions ? display.vpOptions.join(" / ") : display.vp;
+  return vp + " VP" + (display.repeatable ? " each" : "");
+}
+
+function renderReferenceObjective(objective, variant) {
+  const display = displayObjective(objective, variant);
+  const side = display.side === "both" ? "Attacker / Defender" : sideNames[display.side];
+  return '<li><div class="reference-objective-head"><strong>' + esc(display.name) + '</strong><span class="vp-badge">' + esc(side) + " · " + esc(objectiveVpText(display)) + '</span></div><p>' + esc(display.text) + "</p></li>";
+}
+
+function renderReferenceObjectives(objectives, variant) {
+  const orders = objectives.filter(objective => objective.name.toLowerCase() === "orders");
+  const nonOrders = objectives.filter(objective => objective.name.toLowerCase() !== "orders");
+  const orderMarkup = orders.length
+    ? '<li class="objective-reference-group"><div class="reference-objective-group-head"><strong>Orders</strong></div><div class="objective-reference-subitems">' + orders.map(objective => {
+      const display = displayObjective(objective, variant);
+      const side = display.side === "both" ? "Attacker / Defender" : sideNames[display.side];
+      return '<div class="reference-objective-subitem"><div class="reference-objective-subhead"><strong>' + esc(side) + '</strong><span class="vp-badge">' + esc(objectiveVpText(display)) + '</span></div><p>' + esc(display.text) + '</p></div>';
+    }).join("") + "</div></li>"
+    : "";
+  return orderMarkup + nonOrders.map(objective => renderReferenceObjective(objective, variant)).join("");
+}
+
 function renderCommandComplications(table) {
   if (!table?.rows?.length) return "";
   const rows = table.rows.map(row =>
@@ -324,12 +427,7 @@ function renderReference() {
     : "<li>No additional Scale-dependent exception is recorded for this track.</li>";
   const setup = referenceTrack.setup.map(item => "<li>" + esc(item) + "</li>").join("");
   const setupDetails = (referenceTrack.setupDetails || []).map(item => "<li>" + esc(item) + "</li>").join("");
-  const objectives = referenceTrack.objectives.map(objective => {
-    const display = displayObjective(objective, referenceTrack);
-    const side = display.side === "both" ? "Attacker / Defender" : sideNames[display.side];
-    const vp = display.vpOptions ? display.vpOptions.join(" / ") : display.vp;
-    return '<li><div class="reference-objective-head"><strong>' + esc(display.name) + '</strong><span class="vp-badge">' + esc(side) + " · " + vp + " VP" + (display.repeatable ? " each" : "") + '</span></div><p>' + esc(display.text) + "</p></li>";
-  }).join("");
+  const objectives = renderReferenceObjectives(referenceTrack.objectives, referenceTrack);
   const special = referenceTrack.special.map(item => "<li>" + esc(item) + "</li>").join("");
   const commandComplications = renderCommandComplications(referenceTrack.commandComplications);
   const sourceReferenceText = referenceTrack.sourceRefs?.join(" · ") || SOURCES.primary + " · selected track p. " + referenceTrack.page;
@@ -416,6 +514,7 @@ function renderAll() {
   syncHotSpotState();
   applyFactionTheme();
   renderHotSpotSetup();
+  renderCampaignState();
   renderControlState();
   renderReference();
   renderTracker();
@@ -442,6 +541,27 @@ $("#hot-spot-track-select").addEventListener("change", event => {
 
 $("#hot-spot-side-select").addEventListener("change", event => {
   state.selectedSide[state.hotSpotId] = event.target.value;
+  renderAll();
+});
+
+$("#hotspot-campaign-state").addEventListener("change", event => {
+  const field = event.target.dataset.campaignField;
+  const sequence = event.target.dataset.campaignSequence;
+  if (!field || !sequence) return;
+  const values = campaignTrackValues(sequence);
+  const definition = campaignDefinition();
+  const fieldDefinition = definition?.fields.find(item => item.id === field);
+  if (!fieldDefinition) return;
+  values[field] = fieldDefinition.type === "number" ? Math.max(fieldDefinition.min ?? 0, Number(event.target.value) || 0) : event.target.value;
+  renderCampaignState();
+});
+
+$("#hotspot-campaign-state").addEventListener("click", event => {
+  const button = event.target.closest("[data-reset-campaign]");
+  if (!button) return;
+  const hotSpot = currentHotSpot();
+  if (!window.confirm("Reset all cross-track campaign state for " + hotSpot.name + "?")) return;
+  delete state.campaignState[button.dataset.resetCampaign];
   renderAll();
 });
 

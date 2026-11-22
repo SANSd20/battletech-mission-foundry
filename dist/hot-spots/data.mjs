@@ -1146,6 +1146,83 @@ const leBlancTrack1Variant = {
   sourceRefs: ["Draconis Reach p. 88", "Objective Raid p. 171"]
 };
 
+const protectionCommandComplications = {
+  ref: "Draconis Reach pp. 30, 111",
+  note: "Official procedure: after determining the mapsheets, each player rolls 1D6. Add 1 for Liaison Command, 2 for House Command, or 3 for Integrated Command. The browser displays the complete table but does not select or apply a complication automatically.",
+  rows: [
+    { roll: "1–3", name: "No Complication", text: "No complication applies." },
+    { roll: "4", name: "R&R", text: "Your employer provided good rest and relaxation at a local resort, but the enemy arrived during it. Take a −2 penalty to Initiative rolls for the first 2 turns." },
+    { roll: "5", name: "Less Support", text: "Last-minute changes to the battle plan leave you with less support. Reduce the Battlefield Support available to you for the track by 10 BSP (AS: 2 BSP) per Scale." },
+    { roll: "6", name: "Local Partisans", text: "Your opponent receives support from a local partisan group: two additional Vedette Medium Tank battlefield assets. On standard maps, these Vedettes represent patrol boats. Change their motive type from Tracked to Naval, allow them to enter Depth 0 and deeper water hexes, and treat them as Level 0 (surface) for shooting." },
+    { roll: "7", name: "Monsoon", text: "Your employer determines that monsoon conditions offer the perfect opportunity to attack. On standard maps, reduce all hex levels by 1 as a storm surge floods the area. On Atlantis City maps, treat every Level 0 hex as Depth 0 water. All attacks receive an additional +1 target number modifier at medium range and +2 at long range (AS: +1 target number modifier to all weapon attacks at medium or long range)." },
+    { roll: "8+", name: "Roll Twice", text: "Roll twice and apply both effects. Do not reroll No Complication, but reroll any other duplicate effect. If both options 6 and 7 are rolled, the Vedettes represent patrol boats crazy enough to sail into the flooded streets of Atlantis City." }
+  ]
+};
+
+const protectionWaterRules = [
+  "Protection maps — official source rule: after rolling for the standard mapsheets, treat all Level 0 ground as Level 0 water. Each player receives six Depth 1 water tokens to place in Level 0 water hexes; two Depth 1 tokens may be stacked to create a Depth 2 water hex. These adjustments make tracked and wheeled assets more difficult or potentially impossible to use, so select assets accordingly.",
+  "Standard Protection mapsheet table: roll 1D6 — 1 Hilltops #1 (CI); 2 Desert #3 (AGOAC); 3 Rolling Hills #1 (MP: Grasslands); 4 Rolling Hills #2 (MP: Grasslands, CI); 5 Rolling Hills #3 (MP: Grasslands); 6 Sand Drifts #1 (MP: Deserts).",
+  "Atlantis City option — official source rule: the Attacker may instead engage at the capital, Atlantis City, by taking a −1 Reputation penalty. Use the Atlantis City mapsheet table; those mapsheets are not modified by the Protection water rules. The Defender then chooses either to check fire, giving all Gunnery rolls for the track a +1 target number modifier and gaining +1 Reputation regardless of the outcome, or to take a −1 Reputation penalty and engage without the Gunnery penalty. Do not apply this option unless the table establishes it.",
+  "Atlantis City mapsheet table: roll 1D6 — 1 Corporate Campus (MP: City); 2 Family Quarters (MP: City); 3 HPG Heliport (MP: City); 4 Business District (MP: City); 5 Shopping District (MP: City); 6 HPG Offices (MP: City)."
+];
+
+const protectionCampaignRules = [
+  "Protection campaign victory — official source rule: the player with the most track victories wins the contract. A tie ends in a draw.",
+  "Temporary Hire — official source rule: the first time a mercenary force cannot field at least two-thirds of the maximum permissible BV/PV for its next track, a local mercenary offers services. The player may choose whether to pay that mercenary to participate in each track.",
+  "Surf Rock — optional local mercenary: Old Man Hawthorne pilots a Thunderbolt TDR-12R (1,975 BV / 41 PV), has three Edge tokens, Piloting 5 and Gunnery 4 (AS: Skill 4), and demands 50 Warchest Points per track plus a 50-point bonus for each unit he destroys.",
+  "Purchase Options — official campaign rule: each month, roll 2D6; on 7+ one ’Mech is available for purchase, and on 11+ two are available. Roll on the Sea Fox Purchase Options Table (p. 176) for each. If a ’Mech is available, the player may also purchase vehicles or battle armor from the Sea Fox Tanker and Battle Armor Options Tables, up to two purchases of each per month."
+];
+
+function protectionVariant(trackId, extra = {}) {
+  const base = TRACKS.find(track => track.id === trackId);
+  const { special: extraSpecial = [], ...rest } = extra;
+  return {
+    ...rest,
+    special: [...(base?.special || []), ...protectionWaterRules, ...protectionCampaignRules, ...extraSpecial],
+    commandComplications: protectionCommandComplications,
+    sourceRefs: ["Draconis Reach pp. 110–112", "Command complications procedure p. 30", "Current Draconis Reach master errata"]
+  };
+}
+
+const protectionTrack1Variant = protectionVariant("recon", {
+  displayName: "Protection Recon",
+  summary: "The second month of the Protection contract begins open hostilities with a Recon track.",
+  setupDetails: [
+    "Contract sequence: this is the second month of the Protection contract. Play one Recon track with the Platinum Sands player as Attacker and the Kanagawa Group player as Defender. The winner determines who is the Attacker in Track 2."
+  ]
+});
+
+const protectionTrack2Variant = protectionVariant("meeting-engagement", {
+  displayName: "Protection Meeting Engagement",
+  summary: "The third month escalates the Protection contract to a Meeting Engagement.",
+  setupDetails: [
+    "Contract sequence: this is the third month of the Protection contract. Play a Meeting Engagement; the winner of Track 1 is the Attacker."
+  ]
+});
+
+const protectionTrack3Variant = protectionVariant("flank", {
+  displayName: "Protection Flank",
+  summary: "When the first two tracks are split, the fourth month becomes a Flank decided by a 2D6 roll-off.",
+  setupDetails: [
+    "Contract sequence: this is the fourth month. If Platinum Sands won both previous tracks, play Assault with Platinum Sands as Attacker. If Kanagawa Group won both, play Pushback with Kanagawa Group as Attacker. If each side won one previous track, play Flank and resolve the Attacker role by a 2D6 roll-off; the higher result may choose Attacker or Defender."
+  ],
+  roleChoiceLabel: "Choose the side assigned to the Attacker role after the 2D6 roll-off",
+  roleChoiceHint: "The source says the higher roll may choose Attacker or Defender; record the final role assignment here."
+});
+
+const protectionTrack4Variant = protectionVariant("pursuit", {
+  displayName: "Protection Pursuit",
+  summary: "The fifth month is a Pursuit to capture Governor Hale’s Mobile HQ.",
+  setupDetails: [
+    "Contract sequence: this is the fifth month. Play Pursuit with Platinum Sands as Attacker and Kanagawa Group as Defender.",
+    "Kanagawa Group receives an extra Mobile HQ asset with Regular Skill (Gunnery 4, Piloting 5, Skill 4) and hover movement instead of wheeled movement. It represents Governor Hale’s vehicle.",
+    "Platinum Sands is ordered to capture the Mobile HQ rather than destroy it. A Platinum Sands ’Mech adjacent to the Mobile HQ during the Physical Attack Phase may attempt the capture as a physical attack with a +1 target number modifier and all other normal modifiers; missing hand actuators make the roll more difficult. For Alpha Strike, resolve it as a typical melee attack with an additional +1 target number modifier."
+  ],
+  special: [
+    "Mobile HQ capture: a successful capture causes no damage, prevents the Mobile HQ from moving, and prevents the capturing ’Mech from moving or firing in following rounds unless it voluntarily releases the Mobile HQ in the End Phase. Kanagawa Group may attempt to free it in following rounds. Destroying the capturing ’Mech or causing it to fall releases the Mobile HQ at the End Phase of the current turn. If Platinum Sands still has the Mobile HQ captured at the end of the final turn, it is considered to have completed all mission objectives and receives maximum combat bonus pay."
+  ]
+});
+
 export const HOT_SPOTS = [
   {
     id: "achernar",
@@ -1261,6 +1338,18 @@ export const HOT_SPOTS = [
     region: "Draconis Combine",
     terrain: "Light Urban",
     source: "Draconis Reach pp. 101–102",
+    campaignState: {
+      title: "Cross-track campaign state",
+      note: "Record the source’s running values after each track. These entries remain associated with their track sequence when you switch between New Ivaarsen tracks. Do not count the four buildings designated by the Defender in the Strike track.",
+      sourceRefs: ["Draconis Reach pp. 101–102"],
+      fields: [
+        { id: "stephensonsBuildingDamage", label: "Stephensons building hexes destroyed this track", type: "number", min: 0, default: 0 },
+        { id: "isfBuildingDamage", label: "ISF building hexes destroyed this track", type: "number", min: 0, default: 0 },
+        { id: "sirDuncanStatus", label: "Sir Duncan Atterton after this track", type: "status", default: "not-recorded" },
+        { id: "sionaStatus", label: "Siona Stephenson after this track", type: "status", default: "not-recorded" },
+        { id: "specialCharactersPresent", label: "Stephenson special characters present this track", type: "number", min: 0, max: 2, default: 0 }
+      ]
+    },
     sides: [factionSide("stephensons", "Stephensons", "Draconis Combine"), factionSide("isf", "ISF", "Federated Suns")],
     tracks: [
       fixedHotSpotTrack(1, "strike", "stephensons", "isf"),
@@ -1289,20 +1378,21 @@ export const HOT_SPOTS = [
     region: "Draconis Combine",
     terrain: "Urban",
     source: "Draconis Reach pp. 110–112",
+    note: "Protection contract 138910A–B, Intensity 4: the source frames Platinum Sands and Kanagawa Group as opposing player-controlled mercenary contracts. The browser retains the source’s Track 1–4 sequence and winner-dependent roles; contract pay, Reputation bookkeeping, and no-track months remain reference notes rather than automatic calculations.",
     sides: [factionSide("platinum-sands", "Platinum Sands", "Corporate"), factionSide("kanagawa-group", "Kanagawa Group", "Draconis Combine")],
     tracks: [
-      fixedHotSpotTrack(1, "recon", "platinum-sands", "kanagawa-group"),
+      fixedHotSpotTrack(1, "recon", "platinum-sands", "kanagawa-group", { variant: protectionTrack1Variant }),
       winnerDependentTrack(2, [1], {
-        "platinum-sands": { trackId: "meeting-engagement", attacker: "platinum-sands", defender: "kanagawa-group" },
-        "kanagawa-group": { trackId: "meeting-engagement", attacker: "kanagawa-group", defender: "platinum-sands" }
+        "platinum-sands": { trackId: "meeting-engagement", attacker: "platinum-sands", defender: "kanagawa-group", variant: protectionTrack2Variant },
+        "kanagawa-group": { trackId: "meeting-engagement", attacker: "kanagawa-group", defender: "platinum-sands", variant: protectionTrack2Variant }
       }),
       winnerDependentTrack(3, [1, 2], {
-        "platinum-sands|platinum-sands": { trackId: "assault", attacker: "platinum-sands", defender: "kanagawa-group" },
-        "kanagawa-group|kanagawa-group": { trackId: "pushback", attacker: "kanagawa-group", defender: "platinum-sands" },
-        "platinum-sands|kanagawa-group": { trackId: "flank", roleChoice: true },
-        "kanagawa-group|platinum-sands": { trackId: "flank", roleChoice: true }
-      }, { roleChoiceLabel: "Choose the roll-off winner for the Attacker role" }),
-      fixedHotSpotTrack(4, "pursuit", "platinum-sands", "kanagawa-group")
+        "platinum-sands|platinum-sands": { trackId: "assault", attacker: "platinum-sands", defender: "kanagawa-group", variant: protectionVariant("assault", { displayName: "Protection Assault", setupDetails: ["Contract sequence: this is the fourth month. Platinum Sands won both previous tracks, so play Assault with Platinum Sands as Attacker."] }) },
+        "kanagawa-group|kanagawa-group": { trackId: "pushback", attacker: "kanagawa-group", defender: "platinum-sands", variant: protectionVariant("pushback", { displayName: "Protection Pushback", setupDetails: ["Contract sequence: this is the fourth month. Kanagawa Group won both previous tracks, so play Pushback with Kanagawa Group as Attacker."] }) },
+        "platinum-sands|kanagawa-group": { trackId: "flank", roleChoice: true, variant: protectionTrack3Variant },
+        "kanagawa-group|platinum-sands": { trackId: "flank", roleChoice: true, variant: protectionTrack3Variant }
+      }, { roleChoiceLabel: protectionTrack3Variant.roleChoiceLabel, roleChoiceHint: protectionTrack3Variant.roleChoiceHint }),
+      fixedHotSpotTrack(4, "pursuit", "platinum-sands", "kanagawa-group", { variant: protectionTrack4Variant })
     ]
   },
   {

@@ -44,6 +44,19 @@ button, select { cursor: pointer; }
 .winner-controls { margin-top: 14px; }
 .winner-controls-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; padding: 14px; border-left: 3px solid var(--orange); background: #fff8ef; }
 .control-hint { display: block; margin-top: 5px; color: #7b6b5c; font-size: 10px; line-height: 1.35; }
+.campaign-state-card { margin-top: 14px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--faction-color) 38%, #b9c6c8); background: #f7fbf8; }
+.campaign-state-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 13px 14px; background: color-mix(in srgb, var(--faction-color) 9%, #eaf2f0); }
+.campaign-state-head h3 { margin: 4px 0 0; color: var(--ink); font-size: 16px; }
+.campaign-reset-button { min-height: 32px; padding: 0 10px; border: 1px solid #b9c3cb; background: #fff; color: #53616c; font-size: 10px; font-weight: 800; }
+.campaign-reset-button:hover { border-color: var(--faction-color); color: var(--faction-color); }
+.campaign-state-note { margin: 0; padding: 12px 14px 0; color: #5d6b74; font-size: 11px; line-height: 1.4; }
+.campaign-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; padding: 12px 14px 14px; }
+.campaign-track-label { grid-column: 1 / -1; color: var(--faction-color); font-size: 10px; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
+.campaign-field { display: grid; gap: 5px; color: #56636e; font-size: 10px; font-weight: 850; letter-spacing: .05em; text-transform: uppercase; }
+.campaign-field input, .campaign-field select { min-height: 35px; padding: 0 8px; font-size: 12px; font-weight: 700; letter-spacing: normal; text-transform: none; }
+.campaign-state-summary { display: grid; gap: 5px; padding: 12px 14px; border-top: 1px solid #d3dfda; color: #53636b; font-size: 11px; line-height: 1.4; }
+.campaign-state-summary strong { color: var(--ink); font-size: 12px; }
+.campaign-state-card .reference-citation { padding: 10px 14px 12px; border-top: 1px solid #d3dfda; }
 .hotspot-summary { display: grid; grid-template-columns: minmax(190px, 1fr) auto; gap: 11px 18px; align-items: center; margin-top: 14px; padding: 13px 14px; border: 1px solid #b9c6c8; background: #f1f7f6; }
 .hotspot-summary-copy { display: grid; gap: 2px; }
 .hotspot-summary-copy strong { color: var(--ink); font-size: 17px; }
@@ -128,6 +141,12 @@ select { width: 100%; min-height: 42px; padding: 0 12px; border: 1px solid #aeb9
 .rule-list, .objective-reference-list { display: grid; gap: 9px; margin: 12px 0 0; padding-left: 18px; }
 .rule-list li, .objective-reference-list li { color: #394650; font-size: 13px; }
 .objective-reference-list { padding-left: 0; list-style: none; }
+.objective-reference-group { display: grid; gap: 10px; }
+.reference-objective-group-head { padding-bottom: 5px; border-bottom: 1px solid #d8e0e1; color: var(--ink); font-size: 14px; }
+.objective-reference-subitems { display: grid; gap: 10px; padding-left: 13px; border-left: 3px solid var(--faction-color, var(--teal)); }
+.reference-objective-subitem { display: grid; gap: 0; }
+.reference-objective-subhead { display: flex; align-items: baseline; justify-content: space-between; gap: 9px; }
+.reference-objective-subhead strong { color: var(--ink); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
 .reference-objective-head { display: flex; align-items: baseline; justify-content: space-between; gap: 9px; }
 .reference-objective-head strong { color: var(--ink); }
 .reference-objective-head .vp-badge { flex: 0 0 auto; }
@@ -268,6 +287,9 @@ body { background: color-mix(in srgb, var(--faction-color) 10%, #111821); color:
   .hotspot-summary-side { justify-content: flex-start; }
   .hotspot-summary-resolution { grid-column: auto; }
   .hotspot-summary-note { grid-column: auto; }
+  .campaign-state-head { align-items: flex-start; flex-direction: column; }
+  .campaign-fields { grid-template-columns: 1fr; }
+  .campaign-track-label { grid-column: auto; }
   .scale-choice { display: block; }
   .scale-choice .label { display: block; margin-bottom: 7px; }
 
@@ -284,7 +306,7 @@ body { background: color-mix(in srgb, var(--faction-color) 10%, #111821); color:
   .errata-note { margin-left: 16px; margin-right: 16px; }
   .reference-citation { padding-left: 16px; padding-right: 16px; }
   .section-heading { display: block; }
-  .rule-chip { display: inline-block; margin-top: 12px; }
+  .rule-chip { display: inline-block; max-width: 100%; margin-top: 12px; white-space: normal; overflow-wrap: anywhere; }
   .score-summary { grid-template-columns: 1fr 1fr; }
   .difference { grid-column: 1 / -1; grid-row: 2; }
   .score-right { text-align: left; }

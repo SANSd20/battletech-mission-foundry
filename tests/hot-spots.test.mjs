@@ -94,10 +94,27 @@ assert.match(leBlancVariant.special.join(" "), /immobile/);
 assert.match(leBlancVariant.special.join(" "), /30 damage \(AS: 4 damage\)/);
 assert.doesNotMatch(leBlancVariant.special.join(" "), /component|grab and load|carrying reduces/i);
 assert.deepEqual(leBlancVariant.sourceRefs, ["Draconis Reach p. 88", "Objective Raid p. 171"]);
+const newIvaarsen = HOT_SPOTS.find(item => item.id === "new-ivaarsen");
+assert.deepEqual(newIvaarsen.tracks.map(track => [track.sequence, track.trackId, track.attacker, track.defender]), [
+  [1, "strike", "stephensons", "isf"],
+  [2, "meeting-engagement", "stephensons", "isf"],
+  [3, "assault", "isf", "stephensons"]
+], "New Ivaarsen retains its source track order and roles");
+assert.equal(newIvaarsen.campaignState.fields.length, 5, "New Ivaarsen exposes all cross-track state fields");
+assert.deepEqual(newIvaarsen.campaignState.fields.map(field => field.id), [
+  "stephensonsBuildingDamage",
+  "isfBuildingDamage",
+  "sirDuncanStatus",
+  "sionaStatus",
+  "specialCharactersPresent"
+]);
+assert.match(newIvaarsen.campaignState.note, /remain associated with their track sequence/);
+assert.match(newIvaarsen.campaignState.note, /four buildings designated by the Defender/);
 const app = fs.readFileSync(new URL("../dist/hot-spots/app.mjs", import.meta.url), "utf8");
 const html = fs.readFileSync(new URL("../dist/hot-spots/index.html", import.meta.url), "utf8");
 const css = fs.readFileSync(new URL("../dist/hot-spots/styles.css", import.meta.url), "utf8");
 const data = fs.readFileSync(new URL("../dist/hot-spots/data.mjs", import.meta.url), "utf8");
+assert.ok(app.includes("roleChoiceHint"), "role choice hints can describe source-specific role selection");
 for (const term of ["progress", "vpSelections", "data-mode", "resetTrack", "window.confirm", "Attacker only", "Defender only", "Both sides"]) {
   assert.ok((app + html).includes(term), term + " tracking behavior is present");
 }
@@ -109,13 +126,18 @@ for (const term of ["option-toggle", "opfor-card", "opfor-force-grid"]) {
 }
 assert.ok(app.includes("Number(completed) * getVp(display, side)"), "repeatable objective counters and scenario overrides feed the VP total");
 assert.ok(app.includes("display.vp + \" VP\""), "scenario objective overrides feed the VP badge");
+assert.ok(app.includes("renderReferenceObjectives") && css.includes("objective-reference-group") && css.includes("reference-objective-subhead"), "reference objectives group Orders with side subheadings");
 assert.ok(app.includes('state.mode = button.dataset.mode') && app.includes('document.body.dataset.mode = state.mode'), "attacker/defender/both tracking views are wired");
 assert.ok(app.includes('$("#attacker-bar").style.width') && app.includes('$("#defender-bar").style.width'), "live score comparison bars update from current totals");
 assert.ok(app.includes('data-action=\"increment\"') && app.includes('data-action=\"decrement\"'), "repeatable component/VP objectives expose counters");
 for (const term of ["referenceTrack", "scaleNotesFor", "scaleNotesByScale", "sourceReferenceText", "displayObjective", "renderCommandComplications", "commandComplications", "objectiveOverrides", "Gem Convoy Raid", "Modified Objective Raid", "one component per functioning hand actuator per turn", "removed from play and cannot return", "Destroying a Ryu does not itself award victory"]) {
   assert.ok((app + data).includes(term), term + " Pascagoula variant behavior is present");
 }
+for (const term of ["campaignState", "campaignTrackValues", "campaignBuildingTotals", "CROSS-TRACK PRESERVATION", "Reset campaign state", "Stephensons building hexes destroyed this track", "running totals through Tracks 1–2"]) {
+  assert.ok((app + data + html).includes(term), term + " New Ivaarsen cross-track preservation behavior is present");
+}
 assert.ok(css.includes("command-complications-table") && css.includes("complication-roll"), "Command Complications table has focused responsive styling");
+assert.ok(css.includes("campaign-state-card") && css.includes("campaign-fields"), "cross-track campaign state has focused responsive styling");
 assert.ok(html.includes("master errata") && html.includes("topic,90893.0.html"), "current Draconis Reach master errata is identified in the source verification panel");
 assert.ok(css.includes("@media") && css.includes("flex-wrap: wrap"), "responsive layout rules remain present");
 assert.ok(HOT_SPOTS.length >= 10, "the location selector includes the Draconis Reach mission briefs currently mapped");
@@ -124,6 +146,36 @@ assert.equal(achernar.tracks[1].outcomes["home-guard"].trackId, "recon", "Achern
 assert.equal(achernar.tracks[2].outcomes["home-guard|home-guard"].trackId, "defend", "Achernar Track 3 resolves from both prior winners");
 const protection = HOT_SPOTS.find(item => item.id === "protection");
 assert.equal(protection.tracks[2].outcomes["platinum-sands|kanagawa-group"].roleChoice, true, "Protection mixed results expose the source roll-off choice");
+assert.match(protection.note, /contract 138910A–B/);
+const protectionTrack1 = protection.tracks[0].variant;
+assert.equal(protectionTrack1.displayName, "Protection Recon");
+assert.match(protectionTrack1.setupDetails.join(" "), /second month.*Platinum Sands player as Attacker/);
+assert.match(protectionTrack1.special.join(" "), /Level 0 ground as Level 0 water/);
+assert.match(protectionTrack1.special.join(" "), /six Depth 1 water tokens/);
+assert.match(protectionTrack1.special.join(" "), /Atlantis City/);
+assert.match(protectionTrack1.special.join(" "), /Do not apply this option unless the table establishes it/);
+assert.equal(protectionTrack1.commandComplications.rows.length, 6, "Protection exposes all command complication results");
+assert.deepEqual(protectionTrack1.commandComplications.rows.map(row => row.roll), ["1–3", "4", "5", "6", "7", "8+"]);
+assert.deepEqual(protectionTrack1.commandComplications.rows.map(row => row.name), ["No Complication", "R&R", "Less Support", "Local Partisans", "Monsoon", "Roll Twice"]);
+assert.match(protectionTrack1.commandComplications.rows[2].text, /10 BSP/);
+assert.match(protectionTrack1.commandComplications.rows[3].text, /two additional Vedette Medium Tank/);
+assert.match(protectionTrack1.commandComplications.rows[4].text, /reduce all hex levels by 1/);
+assert.match(protectionTrack1.commandComplications.rows[5].text, /Roll twice and apply both effects/);
+assert.equal(protectionTrack1.commandComplications.rows[5].name, "Roll Twice");
+assert.match(protectionTrack1.commandComplications.note, /each player rolls 1D6/);
+const protectionTrack2 = protection.tracks[1].outcomes["platinum-sands"].variant;
+assert.match(protectionTrack2.setupDetails.join(" "), /winner of Track 1 is the Attacker/);
+const protectionTrack3Mixed = protection.tracks[2].outcomes["platinum-sands|kanagawa-group"];
+assert.match(protectionTrack3Mixed.variant.setupDetails.join(" "), /2D6 roll-off/);
+assert.match(protectionTrack3Mixed.variant.setupDetails.join(" "), /higher result may choose Attacker or Defender/);
+assert.equal(protectionTrack3Mixed.variant.roleChoiceLabel, "Choose the side assigned to the Attacker role after the 2D6 roll-off");
+const protectionTrack4 = protection.tracks[3].variant;
+assert.match(protectionTrack4.setupDetails.join(" "), /Mobile HQ/);
+assert.match(protectionTrack4.special.join(" "), /successful capture causes no damage/);
+assert.match(protectionTrack4.special.join(" "), /maximum combat bonus pay/);
+assert.deepEqual(protectionTrack4.sourceRefs, ["Draconis Reach pp. 110–112", "Command complications procedure p. 30", "Current Draconis Reach master errata"]);
+assert.doesNotMatch(TRACKS.find(track => track.id === "recon").special.join(" "), /Level 0 ground as Level 0 water/);
+assert.doesNotMatch(TRACKS.find(track => track.id === "pursuit").special.join(" "), /Mobile HQ/);
 for (const hotSpot of HOT_SPOTS) {
   assert.ok(hotSpot.sides.length >= 2, hotSpot.name + " has opposing sides");
   for (const side of hotSpot.sides) assert.ok(Object.values(FACTION_COLORS).includes(side.color), hotSpot.name + " side has a faction UI color");
