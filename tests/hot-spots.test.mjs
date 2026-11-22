@@ -213,6 +213,56 @@ assert.match(sunPrairieVariant.commandComplications.rows[5].text, /Ignore and do
 const sunPrairieNone = sunPrairie.tracks[0].results.find(result => result.id === "none");
 assert.equal(sunPrairieNone.trackId, null, "Sun Prairie result 6 remains a no-track result");
 assert.equal(sunPrairieNone.variant, undefined, "Sun Prairie no-track result does not apply mission rules automatically");
+const tigress = HOT_SPOTS.find(item => item.id === "tigress");
+assert.equal(tigress.source, "Draconis Reach pp. 118–119");
+assert.match(tigress.note, /Meeting Engagement training mission/);
+assert.deepEqual(tigress.tracks.map(track => [track.sequence, track.trackId, track.attacker, track.defender]), [
+  [1, "recon", "legion-trainers", "roughriders"],
+  [2, "meeting-engagement", "legion-trainers", "roughriders"]
+], "Tigress retains its two-track order and roles");
+const tigressTrack1 = tigress.tracks[0].variant;
+assert.equal(tigressTrack1.displayName, "Training Mission · Meeting Engagement → Recon");
+assert.match(tigressTrack1.setup.join(" "), /short edge/);
+assert.match(tigressTrack1.setup.join(" "), /Training mission/);
+assert.doesNotMatch(tigressTrack1.setup.join(" "), /set up anywhere; at least 50 percent/);
+assert.match(tigressTrack1.setupDetails.join(" "), /1D6 − 2 turns/);
+assert.match(tigressTrack1.setupDetails.join(" "), /minimum delay of 2 turns/);
+assert.match(tigressTrack1.setupDetails.join(" "), /scenario-provided trainee ’Mechs/);
+assert.match(tigressTrack1.setupDetails.join(" "), /not purchased units or generated OpFor/);
+assert.match(tigressTrack1.setupDetails.join(" "), /combined BV\/PV of the Legion Trainers and their trainee/);
+assert.match(tigressTrack1.setupDetails.join(" "), /control.*switches from Roughriders Recon to Legion Trainers/);
+assert.match(tigressTrack1.setupDetails.join(" "), /Wooded Terrain table/);
+assert.match(tigressTrack1.setupDetails.join(" "), /standard Recon scenario/);
+assert.match(tigressTrack1.scaleNotesByScale["1"].join(" "), /Vindicator VND-7L.*Gunnery 4 \/ Piloting 6/);
+assert.match(tigressTrack1.scaleNotesByScale["2"].join(" "), /Vindicator VND-7L.*Cicada CDA-4A/);
+assert.match(tigressTrack1.scaleNotesByScale["3"].join(" "), /short lance of three.*officer-cadet/);
+assert.match(tigressTrack1.special.join(" "), /erase all damage sustained/);
+assert.match(tigressTrack1.special.join(" "), /energy weapons return to full power/);
+assert.match(tigressTrack1.special.join(" "), /Ammunition-based weapons are effectively defunct/);
+assert.match(tigressTrack1.special.join(" "), /Gauss weapons are the exception/);
+assert.match(tigressTrack1.special.join(" "), /either or both players may claim victory/);
+assert.match(tigressTrack1.special.join(" "), /Joachim Vierziger/);
+assert.match(tigressTrack1.special.join(" "), /Sea Fox Random Purchase Table/);
+assert.deepEqual(tigressTrack1.commandComplications.rows.map(row => row.roll), ["1–2", "3", "4", "5–6"]);
+assert.match(tigressTrack1.commandComplications.rows[1].text, /both players have entered the map/);
+assert.match(tigressTrack1.commandComplications.rows[1].text, /Defensive Aerospace Support or Artillery Support/);
+assert.match(tigressTrack1.commandComplications.rows[2].text, /Offensive Aerospace Support/);
+assert.match(tigressTrack1.commandComplications.rows[3].text, /To-Hit roll of 12/);
+assert.match(tigressTrack1.commandComplications.note, /Add 1 for Liaison Command/);
+assert.deepEqual(tigressTrack1.sourceRefs, ["Draconis Reach pp. 118–119", "Command complications procedure p. 30", "Current Draconis Reach master errata"]);
+const tigressTrack2 = tigress.tracks[1].variant;
+assert.equal(tigressTrack2.displayName, "Tigress Meeting Engagement");
+assert.match(tigressTrack2.setupDetails.join(" "), /remaining Legion Trainers and trainees/);
+assert.match(tigressTrack2.setupDetails.join(" "), /Captain Sutera Galindo/);
+assert.match(tigressTrack2.setupDetails.join(" "), /Caesar CES-5D/);
+assert.match(tigressTrack2.setupDetails.join(" "), /Gunnery 3 \/ Piloting 3/);
+assert.match(tigressTrack2.setupDetails.join(" "), /Hills Terrain table/);
+assert.match(tigressTrack2.special.join(" "), /loaded with live ammunition/);
+assert.match(tigressTrack2.special.join(" "), /repair armor damage and replenish ammunition/);
+assert.match(tigressTrack2.special.join(" "), /internal structure damage and critical hits remain/);
+assert.deepEqual(tigressTrack2.sourceRefs, ["Draconis Reach pp. 118–119", "Command complications procedure p. 30", "Current Draconis Reach master errata"]);
+assert.doesNotMatch(TRACKS.find(track => track.id === "recon").setup.join(" "), /training mission|Vindicator VND-7L/);
+assert.doesNotMatch(TRACKS.find(track => track.id === "meeting-engagement").special.join(" "), /Sutera Galindo|live ammunition/);
 for (const hotSpot of HOT_SPOTS) {
   assert.ok(hotSpot.sides.length >= 2, hotSpot.name + " has opposing sides");
   for (const side of hotSpot.sides) assert.ok(Object.values(FACTION_COLORS).includes(side.color), hotSpot.name + " side has a faction UI color");

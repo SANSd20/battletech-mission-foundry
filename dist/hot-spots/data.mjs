@@ -1261,6 +1261,69 @@ function sunPrairieVariant(trackId) {
   };
 }
 
+const tigressCommandComplications = {
+  ref: "Draconis Reach pp. 30, 118",
+  note: "Official campaign procedure: after the mapsheets are determined, each player rolls 1D6. Add 1 for Liaison Command, 2 for House Command, or 3 for Integrated Command. The browser displays the complete table without selecting or applying a complication automatically.",
+  rows: [
+    { roll: "1–2", name: "No complication", text: "No complication applies." },
+    { roll: "3", name: "Tigress Home Guard support", text: "Starting when both players have entered the map, the Legion Trainers may spend up to 4 BSP per Scale Level (4/8/12 for Scales 1/2/3) on any Battlefield Support Table options under Defensive Aerospace Support or Artillery Support (see p. 78, BMM, or p. 54, AS:CE)." },
+    { roll: "4", name: "Rabid Foxes air support", text: "Starting when both players have entered the map, Roughriders Recon may spend up to 4 BSP per Scale Level (4/8/12 for Scales 1/2/3) on any Battlefield Support Table options under Offensive Aerospace Support." },
+    { roll: "5–6", name: "Twenty-three-hour day", text: "The twenty-three-hour Tigress day has left all combatants without enough sleep. On a To-Hit roll of 12, a successful attack is a near miss and does no damage." }
+  ]
+};
+
+const tigressCommonSpecialRules = [
+  "Victory — official source rule: either or both players may claim victory in the contract if they successfully complete at least one of the tracks.",
+  "Temporary Hire — official source rule: a local mercenary is available to hire. Joachim Vierziger pilots an Avatar AV1-OG (1,775 BV / 34 PV), has four Edge tokens and the Marksman Edge Ability, and uses Piloting 3 / Gunnery 1 (Alpha Strike Skill 2). He demands 300 Support Points per track he participates in.",
+  "Purchase Options — official source rule: the Roughriders Recon player may make purchases from the Sea Fox Random Purchase Table (p. 176, one roll per month). The Legion Trainers player may make purchases from the Laurel’s Legion Random Allocation Table (one roll per month). Additionally, the player may purchase any vehicle or infantry on the Sea Fox Tanker and Battle Armor Options Tables (p. 176), up to two purchases of each per month."
+];
+
+const tigressTrack1Variant = {
+  page: 118,
+  displayName: "Training Mission · Meeting Engagement → Recon",
+  summary: "Track 1 begins as a Meeting Engagement training mission, then becomes a standard Recon scenario once the trainee ’Mechs enter the battlefield.",
+  setup: [
+    ...TRACKS.find(track => track.id === "meeting-engagement").setup,
+    "Training mission: the trainee force fights a Legion Trainers force of equal BV/PV. All energy weapons are dialed down, ammunition-based weapons use paint rounds, and all damage is tracked as though the weapons are at full power."
+  ],
+  setupDetails: [
+    "Working table interpretation — trainee provenance: the listed Vindicator and Cicada units are scenario-provided trainee ’Mechs, not purchased units or generated OpFor. Roughriders Recon brings and initially controls them. The Roughriders Recon player also brings a force equal to the combined BV/PV of the Legion Trainers and their trainee ’Mechs.",
+    "The Roughriders Recon player controls the trainee ’Mechs when they enter. Trainees enter the field 1D6 − 2 turns into the scenario, with a minimum delay of 2 turns.",
+    "When the trainees enter, control of the trainee ’Mechs switches from Roughriders Recon to Legion Trainers. Mapsheets for this track are rolled from the Wooded Terrain table.",
+    "Track transition: once the trainees enter, proceed as a standard Recon scenario for objectives and VP. Any VP accrued by Legion Trainers during the preceding turns is added to their final total."
+  ],
+  scaleNotesByScale: {
+    "1": ["Scale 1 trainee: one Vindicator VND-7L with Gunnery 4 / Piloting 6 (Alpha Strike Skill 5)."],
+    "2": ["Scale 2 trainees: one Vindicator VND-7L and one Cicada CDA-4A, both with Gunnery 4 / Piloting 6 (Alpha Strike Skill 5)."],
+    "3": ["Scale 3 trainees: a short lance of three ’Mechs — one Vindicator VND-7L with Gunnery 4 / Piloting 5 (Alpha Strike Skill 4, officer-cadet) and two Cicada CDA-4As with Gunnery 4 / Piloting 6 (Alpha Strike Skill 5)."]
+  },
+  special: [
+    ...TRACKS.find(track => track.id === "recon").special,
+    "Training damage and ammunition: when the trainees enter, erase all damage sustained by the Legion Trainers and trainee ’Mechs. Their energy weapons return to full power the following turn. Ammunition-based weapons are effectively defunct, but their ammunition does not explode if a normally explosive slot receives a critical hit; Gauss weapons are the exception.",
+    ...tigressCommonSpecialRules
+  ],
+  commandComplications: tigressCommandComplications,
+  sourceRefs: ["Draconis Reach pp. 118–119", "Command complications procedure p. 30", "Current Draconis Reach master errata"]
+};
+
+const tigressTrack2Variant = {
+  page: 119,
+  displayName: "Tigress Meeting Engagement",
+  summary: "Track 2 is a Meeting Engagement using the surviving elements from Track 1, with the Roughriders Recon liaison joining their side.",
+  setupDetails: [
+    "Force carryover: one side consists of any remaining Legion Trainers and trainees that survived Track 1; the other consists of any remaining Roughriders Recon elements.",
+    "Roughriders Recon liaison: Captain Sutera Galindo, formerly of the Ceti Hussars and now a member of the elite Rabid Foxes, accompanies Roughriders Recon during Track 2. She pilots a Caesar CES-5D painted in her former unit’s colors, with Gunnery 3 / Piloting 3 (Alpha Strike Skill 3).",
+    "Mapsheets for this track are rolled from the Hills Terrain table (see p. 150)."
+  ],
+  special: [
+    ...TRACKS.find(track => track.id === "meeting-engagement").special,
+    "Track 1 carryover: all ammunition-based weapons on the Legion Trainers side are loaded with live ammunition. Both sides have had time to repair armor damage and replenish ammunition, but internal structure damage and critical hits remain from Track 1.",
+    ...tigressCommonSpecialRules
+  ],
+  commandComplications: tigressCommandComplications,
+  sourceRefs: ["Draconis Reach pp. 118–119", "Command complications procedure p. 30", "Current Draconis Reach master errata"]
+};
+
 export const HOT_SPOTS = [
   {
     id: "achernar",
@@ -1461,11 +1524,11 @@ export const HOT_SPOTS = [
     region: "Capellan Confederation",
     terrain: "Wooded / Hills",
     source: "Draconis Reach pp. 118–119",
-    note: "Track 1 begins as a training mission using Meeting Engagement rules and then proceeds as Recon for objectives and VP.",
+    note: "Tigress has two opposing player-controlled mercenary contracts. Track 1 is a Meeting Engagement training mission that becomes Recon after the trainees enter; Track 2 is a Meeting Engagement using surviving forces.",
     sides: [factionSide("legion-trainers", "Legion Trainers", "Capellan Confederation"), factionSide("roughriders", "Roughriders Recon", "Mercenary")],
     tracks: [
-      fixedHotSpotTrack(1, "recon", "legion-trainers", "roughriders", { displayName: "Training Mission · Meeting Engagement → Recon" }),
-      fixedHotSpotTrack(2, "meeting-engagement", "legion-trainers", "roughriders")
+      fixedHotSpotTrack(1, "recon", "legion-trainers", "roughriders", { variant: tigressTrack1Variant }),
+      fixedHotSpotTrack(2, "meeting-engagement", "legion-trainers", "roughriders", { variant: tigressTrack2Variant })
     ]
   },
   {
