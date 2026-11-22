@@ -125,6 +125,8 @@ for (const term of ["option-toggle", "opfor-card", "opfor-force-grid"]) {
   assert.ok(css.includes(term), term + " OpFor styling is present");
 }
 assert.ok(app.includes("Number(completed) * getVp(display, side)"), "repeatable objective counters and scenario overrides feed the VP total");
+assert.ok(app.includes("const objectives = variant?.objectives || track.objectives"), "variant-specific objectives feed the live VP total");
+assert.ok(app.includes("const objectives = variant?.objectives || track?.objectives || []"), "variant-specific objectives render in the live tracker");
 assert.ok(app.includes("display.vp + \" VP\""), "scenario objective overrides feed the VP badge");
 assert.ok(app.includes("renderReferenceObjectives") && css.includes("objective-reference-group") && css.includes("reference-objective-subhead"), "reference objectives group Orders with side subheadings");
 assert.ok(app.includes('state.mode = button.dataset.mode') && app.includes('document.body.dataset.mode = state.mode'), "attacker/defender/both tracking views are wired");
@@ -263,6 +265,55 @@ assert.match(tigressTrack2.special.join(" "), /internal structure damage and cri
 assert.deepEqual(tigressTrack2.sourceRefs, ["Draconis Reach pp. 118–119", "Command complications procedure p. 30", "Current Draconis Reach master errata"]);
 assert.doesNotMatch(TRACKS.find(track => track.id === "recon").setup.join(" "), /training mission|Vindicator VND-7L/);
 assert.doesNotMatch(TRACKS.find(track => track.id === "meeting-engagement").special.join(" "), /Sutera Galindo|live ammunition/);
+const xhosa = HOT_SPOTS.find(item => item.id === "xhosa-vii");
+assert.equal(xhosa.source, "Draconis Reach pp. 122–123");
+assert.match(xhosa.note, /three-track opposing contract/);
+assert.deepEqual(xhosa.tracks.map(track => [track.sequence, track.trackId, track.attacker, track.defender]), [
+  [1, "recon", "federated-suns", "draconis-combine"],
+  [2, "breakthrough", "federated-suns", "draconis-combine"],
+  [3, undefined, undefined, undefined]
+], "Xhosa VII retains its source track sequence and winner-dependent Track 3");
+const xhosaTrack1 = xhosa.tracks[0].variant;
+assert.equal(xhosaTrack1.displayName, "Operation Cold Relief · Reconnaissance");
+assert.match(xhosaTrack1.setupDetails.join(" "), /first month.*standard Recon/);
+assert.match(xhosaTrack1.setupDetails.join(" "), /Woodland.*Scattered Woods.*Desert #3.*Badlands #1/);
+assert.match(xhosaTrack1.special.join(" "), /winner of the final track is the victor/);
+assert.deepEqual(xhosaTrack1.commandComplications.rows.map(row => row.roll), ["1–3", "4", "5", "6", "7", "8+"]);
+assert.match(xhosaTrack1.commandComplications.rows[1].text, /heavy snowfall/);
+assert.match(xhosaTrack1.commandComplications.rows[2].text, /pulse and direct-fire energy weapons/);
+assert.match(xhosaTrack1.commandComplications.rows[3].text, /damage of all Battlefield Support Strikes/);
+assert.match(xhosaTrack1.commandComplications.rows[4].text, /extra 4 points of heat/);
+assert.match(xhosaTrack1.commandComplications.rows[4].text, /2\/-\/- attacking a target 4 inches away/);
+assert.match(xhosaTrack1.commandComplications.rows[5].text, /reroll any other duplicate effects/);
+assert.match(xhosaTrack1.commandComplications.note, /each player rolls 1D6/);
+assert.match(xhosaTrack1.commandComplications.note, /Liaison Command/);
+assert.deepEqual(xhosaTrack1.sourceRefs, ["Draconis Reach pp. 122–123", "Command complications procedure p. 30", "Current Draconis Reach master errata"]);
+const xhosaTrack2 = xhosa.tracks[1].variant;
+assert.equal(xhosaTrack2.displayName, "Operation Cold Relief · Supply Breakthrough");
+assert.match(xhosaTrack2.setupDetails.join(" "), /four MASH vehicles/);
+assert.match(xhosaTrack2.setupDetails.join(" "), /lack the MASH special ability/);
+assert.match(xhosaTrack2.setupDetails.join(" "), /50 VP for each logistics truck/);
+assert.match(xhosaTrack2.setupDetails.join(" "), /at least two of the four supply trucks/);
+assert.equal(xhosaTrack2.objectives.filter(objective => objective.id === "supply-trucks-exit").length, 1);
+assert.equal(xhosaTrack2.objectives.filter(objective => objective.id === "stop-supply-trucks").length, 1);
+assert.equal(xhosaTrack2.objectives.find(objective => objective.id === "supply-trucks-exit").repeatable, true);
+assert.equal(xhosaTrack2.objectives.find(objective => objective.id === "stop-supply-trucks").repeatable, true);
+assert.match(xhosaTrack2.objectives.find(objective => objective.id === "stop-supply-trucks").text, /destroyed, crippled, or otherwise prevented/);
+const xhosaAssault = xhosa.tracks[2].outcomes["federated-suns"].variant;
+const xhosaStrike = xhosa.tracks[2].outcomes["draconis-combine"].variant;
+assert.equal(xhosaAssault.displayName, "Operation Cold Relief · Counterattack");
+assert.match(xhosaAssault.summary, /50 percent.*supply trucks/);
+assert.match(xhosaAssault.setupDetails.join(" "), /Federated Suns.*Attacker.*Assault/);
+assert.equal(xhosaStrike.displayName, "Operation Cold Relief · Strike");
+assert.match(xhosaStrike.summary, /less than 50 percent.*supply trucks/);
+assert.match(xhosaStrike.setupDetails.join(" "), /Draconis Combine.*Attacker.*Strike/);
+assert.equal(xhosaStrike.page, 123);
+assert.match(xhosaTrack1.special.join(" "), /Avery pilots a Wasp WSP-5A/);
+assert.match(xhosaTrack1.special.join(" "), /Morgan pilots a Stinger STG-6G/);
+assert.match(xhosaTrack1.special.join(" "), /Purchase Options/);
+assert.match(xhosaTrack1.special.join(" "), /automatically Retainer contracts/);
+assert.doesNotMatch(TRACKS.find(track => track.id === "breakthrough").setup.join(" "), /MASH vehicles/);
+assert.doesNotMatch(TRACKS.find(track => track.id === "breakthrough").objectives.map(objective => objective.text).join(" "), /logistics truck/);
 for (const hotSpot of HOT_SPOTS) {
   assert.ok(hotSpot.sides.length >= 2, hotSpot.name + " has opposing sides");
   for (const side of hotSpot.sides) assert.ok(Object.values(FACTION_COLORS).includes(side.color), hotSpot.name + " side has a faction UI color");

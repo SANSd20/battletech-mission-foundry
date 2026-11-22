@@ -223,7 +223,8 @@ function trackScore(side) {
   const track = currentTrack();
   if (!track) return 0;
   const variant = resolvedHotSpotStep()?.variant;
-  return track.objectives.reduce((total, objective) => {
+  const objectives = variant?.objectives || track.objectives;
+  return objectives.reduce((total, objective) => {
     if (!applies(objective, side)) return total;
     const completed = getProgress(objective, side);
     const display = displayObjective(objective, variant);
@@ -473,6 +474,7 @@ function renderTracker() {
   const track = currentTrack();
   const resolved = resolvedHotSpotStep();
   const variant = resolved?.variant;
+  const objectives = variant?.objectives || track?.objectives || [];
   const attackerSide = sideById(resolved?.attacker);
   const defenderSide = sideById(resolved?.defender);
   $("#tracker-source").textContent = track ? (variant?.sourceRefs?.join(" · ") || "Draconis Reach p. " + track.page) : currentHotSpot().source;
@@ -488,7 +490,7 @@ function renderTracker() {
   $("#defender-bar").style.background = defenderSide?.color || FACTION_COLORS.Local;
   document.body.dataset.mode = state.mode;
   $$(".mode-button").forEach(button => button.classList.toggle("active", button.dataset.mode === state.mode));
-  $("#objective-body").innerHTML = track ? track.objectives.map(objective => {
+  $("#objective-body").innerHTML = track ? objectives.map(objective => {
     const display = displayObjective(objective, variant);
     return '<tr><th scope="row"><div class="objective-title">' + esc(display.name) + '</div><div class="objective-rule">' + esc(display.text) + '</div><div class="objective-vp">' + (display.vpOptions ? display.vpOptions.join(" / ") + " VP (select value)" : display.vp + " VP" + (display.repeatable ? " each" : "")) + "</div></th>" +
       '<td class="attacker-col">' + objectiveControl(objective, "attacker", display) + "</td>" +
