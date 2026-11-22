@@ -1135,7 +1135,7 @@ const gameWorldDuelSetupDetails = [
 ];
 
 const gameWorldDuelSpecial = [
-  "Combat Pay: the VP value of each objective is also its combat pay at 1 VP = 1 SP. A first-turn head-shot victory awards 50 SP for Victory!, 50 SP for Nice showing, and 10 SP for Head Shot.",
+  "Combat Pay: the VP value of each objective is also its combat pay at 1 VP = 1 SP. A first-turn head-shot victory awards 100 SP for Victory!, 50 SP for Nice showing, and 10 SP for Head Shot.",
   "Reputation: each point of reputation increases total combat pay by 10 percent, up to the maximum set by the selected game world.",
   "Victory is Victory: unlike general tracks, a player may earn more objectives and still lose the duel. The player who destroys or causes the opponent to surrender through Victory! successfully completes the track and wins.",
   "Track End: after the end of any turn when at least one side has no units in play, or after the end of Turn 12 (Turn 10 in Alpha Strike).",
@@ -1204,8 +1204,9 @@ const tybaltGameWorldVariant = gameWorldVariant(
   "A grudge-match duel at the Tybalt Festival Grounds, where Roughrider-backed games turn old ruins into an arena.",
   ["Game world: Tybalt. Maximum Reputation: 3."],
   ["Mapsheets: roll 1D6. Results 1–3 use City Central Park; 4 uses City Observatory Hill; 5–6 use City Park District. Use the listed Alpha Strike Urban equivalents.", "No Class Five—Assault—duels. All buildings are ruins: collapsed, with CF 0."],
-  ["Purchase Options: use the Tybalt Hiring Hall rules on p. 69."],
-  gameWorldSelection(gameWorldClassOptions.filter(option => option.value !== "assault"), "Tybalt does not hold Class Five—Assault—duels.")
+  ["Purchase Options: use the Tybalt Hiring Hall rules on p. 69. For each ’Mech offered for sale, roll on the Clan Sea Fox Purchase Options Tables on p. 176."],
+  gameWorldSelection(gameWorldClassOptions.filter(option => option.value !== "assault"), "Tybalt does not hold Class Five—Assault—duels."),
+  ["Draconis Reach pp. 128–131", "Tybalt Hiring Hall p. 69", "Clan Sea Fox Purchase Options Tables p. 176"]
 );
 
 const gameWorldDuelTrack = {
@@ -1359,7 +1360,7 @@ const protectionWaterRules = [
 const protectionCampaignRules = [
   "Protection campaign victory — official source rule: the player with the most track victories wins the contract. A tie ends in a draw.",
   "Temporary Hire — official source rule: the first time a mercenary force cannot field at least two-thirds of the maximum permissible BV/PV for its next track, a local mercenary offers services. The player may choose whether to pay that mercenary to participate in each track.",
-  "Surf Rock — optional local mercenary: Old Man Hawthorne pilots a Thunderbolt TDR-12R (1,975 BV / 41 PV), has three Edge tokens, Piloting 5 and Gunnery 4 (AS: Skill 4), and demands 50 Warchest Points per track plus a 50-point bonus for each unit he destroys.",
+  "Surf Rock — optional local mercenary: Old Man Hawthorne pilots a Thunderbolt TDR-12R (1,975 BV / 41 PV), has three Edge tokens, Piloting 5 and Gunnery 4 (AS: Skill 4), and demands 50 Support Points per track plus a 50-point bonus for each unit he destroys.",
   "Purchase Options — official campaign rule: each month, roll 2D6; on 7+ one ’Mech is available for purchase, and on 11+ two are available. Roll on the Sea Fox Purchase Options Table (p. 176) for each. If a ’Mech is available, the player may also purchase vehicles or battle armor from the Sea Fox Tanker and Battle Armor Options Tables, up to two purchases of each per month."
 ];
 
@@ -1435,7 +1436,7 @@ const sunPrairieSpecialRules = [
   "Sun Prairie contract victory — official source rule: if either player successfully completes two tracks in a row, that player wins the contract. If this happens after only two tracks, there is no third-month track and that player wins. Otherwise, after the third month, the player with more successfully completed tracks wins. If the result is tied and both players have successfully completed at least one track, both are victorious; otherwise, there is no victor.",
   "Temporary Hire — official source rule: the first time a mercenary force cannot field at least two-thirds of the maximum permissible BV/PV for its next track, a local mercenary offers services. The player may choose whether to pay that local mercenary to participate in each track.",
   "Garrison support — official source rule: Prairie Rangers offer four Veteran motorized platoons carrying energy rifles (Gunnery 3 / Piloting 4; Alpha Strike Skill 3; 496 BV / 48 PV). If using Battlefield Support assets, use four Veteran motorized conventional Infantry, but purchase them using 496 BV instead of BSP. Prairie Rangers demand 50 SP per track participated in and an additional 50 SP for each Prairie Ranger unit destroyed.",
-  "Raid support — official source rule: Philips Wilson pilots a Dragon Fire DGR-6FC (1,858 BV / 43 PV), has four Edge tokens and the Patient Edge Ability, and uses Piloting 3 / Gunnery 3 (Alpha Strike Skill 3). He requests 100 SP per track participated in and an additional 50 SP if his ’Mech takes internal damage in more than one location (Alpha Strike: more than 1 structure damage).",
+  "Raid support — official source rule: Phillips Watson pilots a Dragon Fire DGR-6FC (1,858 BV / 43 PV), has four Edge tokens and the Patient Edge Ability, and uses Piloting 3 / Gunnery 3 (Alpha Strike Skill 3). He requests 100 SP per track participated in and an additional 50 SP if his ’Mech takes internal damage in more than one location (Alpha Strike: more than 1 structure damage).",
   "Purchase Options — official campaign rule: neither employer has BattleMechs available for purchase. Each month, roll 2D6: on 7+ one ’Mech is available, and on 11+ two ’Mechs are available. Roll on the Federated Suns Purchase Options Table (p. 22) for each. If a ’Mech is available, vehicles or battle armor may also be purchased from the Federated Suns Tanker and Battle Armor Options Tables (p. 22), up to two purchases of each per month."
 ];
 
