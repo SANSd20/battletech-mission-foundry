@@ -80,6 +80,20 @@ assert.match(pascagoulaVariant.commandComplications.note, /does not specify a se
 assert.match(pascagoulaVariant.commandComplications.note, /each player rolling separately/);
 assert.deepEqual(pascagoulaVariant.sourceRefs, ["Draconis Reach pp. 104–106", "Objective Raid p. 171", "Campaign withdrawal and exit rules p. 31", "Command complications procedure p. 30", "Current Draconis Reach master errata"]);
 assert.equal(MISSION_OPFOR_OVERRIDES.pascagoula["jewel-thieves"].scales["1"].primary, "Chimera CHA-2K (3/4) | Jenner JR7-C2 (3/4)");
+const leBlanc = HOT_SPOTS.find(item => item.id === "le-blanc");
+assert.equal(leBlanc.tracks[0].trackId, "objective-raid", "Le Blanc Track 1 remains an Objective Raid variant");
+assert.equal(leBlanc.tracks[0].displayName, "Objective Raid · Wreck the Place");
+const leBlancVariant = leBlanc.tracks[0].variant;
+assert.equal(leBlancVariant.displayName, "Objective Raid · Wreck the Place");
+assert.equal(leBlancVariant.objectiveOverrides["grab-stuff"].name, "Wreck the Place");
+assert.equal(leBlancVariant.objectiveOverrides["grab-stuff"].vp, 50);
+assert.match(leBlancVariant.objectiveOverrides["grab-stuff"].text, /Each medium objective building destroyed by the Attacker/);
+assert.doesNotMatch(leBlancVariant.setup.join(" "), /indestructible/);
+assert.match(leBlancVariant.setup.join(" "), /destructible/);
+assert.match(leBlancVariant.special.join(" "), /immobile/);
+assert.match(leBlancVariant.special.join(" "), /30 damage \(AS: 4 damage\)/);
+assert.doesNotMatch(leBlancVariant.special.join(" "), /component|grab and load|carrying reduces/i);
+assert.deepEqual(leBlancVariant.sourceRefs, ["Draconis Reach p. 88", "Objective Raid p. 171"]);
 const app = fs.readFileSync(new URL("../dist/hot-spots/app.mjs", import.meta.url), "utf8");
 const html = fs.readFileSync(new URL("../dist/hot-spots/index.html", import.meta.url), "utf8");
 const css = fs.readFileSync(new URL("../dist/hot-spots/styles.css", import.meta.url), "utf8");
@@ -93,7 +107,8 @@ for (const term of ["hot-spot-select", "hot-spot-track-select", "hot-spot-side-s
 for (const term of ["option-toggle", "opfor-card", "opfor-force-grid"]) {
   assert.ok(css.includes(term), term + " OpFor styling is present");
 }
-assert.ok(app.includes("Number(completed) * getVp(objective, side)"), "repeatable objective counters feed the VP total");
+assert.ok(app.includes("Number(completed) * getVp(display, side)"), "repeatable objective counters and scenario overrides feed the VP total");
+assert.ok(app.includes("display.vp + \" VP\""), "scenario objective overrides feed the VP badge");
 assert.ok(app.includes('state.mode = button.dataset.mode') && app.includes('document.body.dataset.mode = state.mode'), "attacker/defender/both tracking views are wired");
 assert.ok(app.includes('$("#attacker-bar").style.width') && app.includes('$("#defender-bar").style.width'), "live score comparison bars update from current totals");
 assert.ok(app.includes('data-action=\"increment\"') && app.includes('data-action=\"decrement\"'), "repeatable component/VP objectives expose counters");

@@ -1121,6 +1121,31 @@ const pascagoulaTrack1Variant = {
   ]
 };
 
+const leBlancTrack1Variant = {
+  displayName: "Objective Raid · Wreck the Place",
+  summary: "An Objective Raid in which the Attacker destroys the Defender’s medium objective buildings.",
+  setup: [
+    "The Defender selects a short edge as their home edge; the Attacker gets the opposite short edge.",
+    "The Defender designates two Medium objective buildings, height 1–4 levels (AS: 2–6 inches), within 4 hexes of the battlefield center, or 6 hexes at Scale 2+, in clear, rough, or wooded terrain or depth-0 water. If the center falls on a hex border, include every bordered hex. The objective buildings are destructible; apply the Wreck the Place durability rule below.",
+    "Defender (Garrison): begin with all units in the play area; at least half of the force must be within 6 hexes of the objective buildings.",
+    "Attacker (Raiders): enter from the home edge during the Movement Phase of Turn 1. The Attacker may not select Minefield or Immobile BSP assets."
+  ],
+  objectiveOverrides: {
+    "grab-stuff": {
+      name: "Wreck the Place",
+      vp: 50,
+      text: "Each medium objective building destroyed by the Attacker."
+    }
+  },
+  special: [
+    "Leg it!: the Attacker may not claim salvage.",
+    "Objective buildings: medium buildings are immobile (−4 target number modifier) and can sustain 30 damage (AS: 4 damage) before being destroyed.",
+    "Track End: after the end of any turn when at least one side has no units in play, or after the end of Turn 12 (Turn 10 in Alpha Strike).",
+    "Salvage: the Attacker may not claim salvage. The Defender claims salvage if they successfully complete the track; otherwise all salvage returns to its owners."
+  ],
+  sourceRefs: ["Draconis Reach p. 88", "Objective Raid p. 171"]
+};
+
 export const HOT_SPOTS = [
   {
     id: "achernar",
@@ -1189,7 +1214,7 @@ export const HOT_SPOTS = [
     source: "Draconis Reach pp. 88–89",
     sides: [factionSide("draconis-combine", "Draconis Combine", "Draconis Combine"), factionSide("federated-suns", "Federated Suns", "Federated Suns")],
     tracks: [
-      fixedHotSpotTrack(1, "objective-raid", "draconis-combine", "federated-suns", { displayName: "Objective Raid · Wreck the Place" }),
+      fixedHotSpotTrack(1, "objective-raid", "draconis-combine", "federated-suns", { displayName: "Objective Raid · Wreck the Place", variant: leBlancTrack1Variant }),
       winnerDependentTrack(2, [1], {
         "draconis-combine": { trackId: "strike", attacker: "draconis-combine", defender: "federated-suns" },
         "federated-suns": { trackId: "retreat", attacker: "federated-suns", defender: "draconis-combine" }

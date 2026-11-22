@@ -177,11 +177,13 @@ function setVp(objective, side, value) {
 function trackScore(side) {
   const track = currentTrack();
   if (!track) return 0;
+  const variant = resolvedHotSpotStep()?.variant;
   return track.objectives.reduce((total, objective) => {
     if (!applies(objective, side)) return total;
     const completed = getProgress(objective, side);
-    if (objective.repeatable) return total + Number(completed) * getVp(objective, side);
-    return total + (completed ? getVp(objective, side) : 0);
+    const display = displayObjective(objective, variant);
+    if (objective.repeatable) return total + Number(completed) * getVp(display, side);
+    return total + (completed ? getVp(display, side) : 0);
   }, 0);
 }
 
@@ -358,9 +360,9 @@ function objectiveControl(objective, side, display = objective) {
   const progress = getProgress(objective, side);
   const vpControl = objective.vpOptions
     ? '<select class="vp-select" aria-label="Victory Point value" data-vp-objective="' + esc(objective.id) + '" data-vp-side="' + side + '">' +
-      objective.vpOptions.map(value => '<option value="' + value + '"' + (getVp(objective, side) === value ? " selected" : "") + ">" + value + " VP</option>").join("") +
+      display.vpOptions.map(value => '<option value="' + value + '"' + (getVp(display, side) === value ? " selected" : "") + ">" + value + " VP</option>").join("") +
       "</select>"
-    : '<span class="vp-badge">' + objective.vp + " VP" + (objective.repeatable ? " each" : "") + "</span>";
+    : '<span class="vp-badge">' + display.vp + " VP" + (display.repeatable ? " each" : "") + "</span>";
   if (objective.repeatable) {
     return '<div class="counter-control"><button type="button" class="counter-button" data-action="decrement" data-objective="' + esc(objective.id) + '" data-side="' + side + '" aria-label="Decrease ' + esc(display.name) + '">−</button>' +
       '<output>' + progress + '</output><button type="button" class="counter-button" data-action="increment" data-objective="' + esc(objective.id) + '" data-side="' + side + '" aria-label="Increase ' + esc(display.name) + '">+</button>' +
@@ -375,7 +377,7 @@ function renderTracker() {
   const variant = resolved?.variant;
   const attackerSide = sideById(resolved?.attacker);
   const defenderSide = sideById(resolved?.defender);
-  $("#tracker-source").textContent = track ? (resolved?.variant ? "Draconis Reach p. 171 · Pascagoula pp. 104–106" : "Draconis Reach p. " + track.page) : currentHotSpot().source;
+  $("#tracker-source").textContent = track ? (variant?.sourceRefs?.join(" · ") || "Draconis Reach p. " + track.page) : currentHotSpot().source;
   $("#attacker-heading").innerHTML = '<span>Attacker</span><strong>' + esc(attackerSide?.name || "—") + '</strong>';
   $("#defender-heading").innerHTML = '<span>Defender</span><strong>' + esc(defenderSide?.name || "—") + '</strong>';
   $("#attacker-heading").style.setProperty("--side-color", attackerSide?.color || FACTION_COLORS.Local);
