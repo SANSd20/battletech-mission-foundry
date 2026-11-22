@@ -314,6 +314,49 @@ assert.match(xhosaTrack1.special.join(" "), /Purchase Options/);
 assert.match(xhosaTrack1.special.join(" "), /automatically Retainer contracts/);
 assert.doesNotMatch(TRACKS.find(track => track.id === "breakthrough").setup.join(" "), /MASH vehicles/);
 assert.doesNotMatch(TRACKS.find(track => track.id === "breakthrough").objectives.map(objective => objective.text).join(" "), /logistics truck/);
+const actOfPiracy = HOT_SPOTS.find(item => item.id === "act-of-piracy");
+assert.equal(actOfPiracy.source, "Draconis Reach pp. 124–126");
+assert.match(actOfPiracy.note, /one-track contracts/);
+assert.deepEqual(actOfPiracy.tracks.map(track => [track.sequence, track.trackId, track.attacker, track.defender]), [
+  [1, "objective-raid", "pirates", "law"]
+]);
+const actOfPiracyVariant = actOfPiracy.tracks[0].variant;
+assert.equal(actOfPiracyVariant.displayName, "Act of Piracy · Objective Raid");
+assert.equal(actOfPiracyVariant.type, "Opposing Contract");
+assert.match(actOfPiracyVariant.setup.join(" "), /two Medium objective buildings/);
+assert.match(actOfPiracyVariant.setup.join(" "), /Pirates are always the Attacker/);
+assert.match(actOfPiracyVariant.setupDetails.join(" "), /The Law rolls 1D6/);
+assert.match(actOfPiracyVariant.setupDetails.join(" "), /Pirates then roll 1D6/);
+assert.match(actOfPiracyVariant.setupDetails.join(" "), /generated local militia garrison force/);
+assert.match(actOfPiracyVariant.setupDetails.join(" "), /Beaumont.*Agricultural Machinery.*Federated Suns/);
+assert.match(actOfPiracyVariant.setupDetails.join(" "), /De Berry.*Mining Machinery.*Ice/);
+assert.match(actOfPiracyVariant.setupDetails.join(" "), /Tancredi IV.*Laser Weapons.*repair-only/);
+assert.match(actOfPiracyVariant.setupDetails.join(" "), /Mirach.*Ores.*Low Gravity/);
+assert.match(actOfPiracyVariant.setupDetails.join(" "), /Johnsondale.*Combat Vehicles.*Striker Light Tank/);
+assert.match(actOfPiracyVariant.setupDetails.join(" "), /Hazelhurst.*Casks of Wine.*half their MV/);
+assert.match(actOfPiracyVariant.setupDetails.join(" "), /Piracy Goods & Components Table/);
+assert.match(actOfPiracyVariant.special.join(" "), /if either player successfully completes the track/);
+assert.match(actOfPiracyVariant.special.join(" "), /no employer, combat bonus, or Base Pay/);
+assert.match(actOfPiracyVariant.special.join(" "), /negative warchest becomes debt/);
+assert.match(actOfPiracyVariant.special.join(" "), /Sea Fox Purchase Options Table/);
+assert.deepEqual(actOfPiracyVariant.commandComplications.rows.map(row => row.roll), ["1–3", "4", "5", "6"]);
+assert.match(actOfPiracyVariant.commandComplications.note, /once for the track, not once per player/);
+assert.match(actOfPiracyVariant.commandComplications.rows[1].text, /two Minefield Supports/);
+assert.match(actOfPiracyVariant.commandComplications.rows[2].text, /half.*rounded up/);
+assert.match(actOfPiracyVariant.commandComplications.rows[3].text, /mud/);
+assert.match(actOfPiracyVariant.commandComplications.rows[3].text, /bog down/);
+assert.equal(actOfPiracy.opforMode, "source-table");
+assert.deepEqual(actOfPiracyVariant.sourceRolls.map(roll => [roll.id, roll.options.length]), [
+  ["law-protected-system", 6],
+  ["pirates-attacked-system", 6]
+]);
+assert.match(actOfPiracyVariant.sourceRolls[0].note, /Law rolls 1D6/);
+assert.match(actOfPiracyVariant.sourceRolls[1].note, /Pirates roll 1D6/);
+assert.deepEqual(actOfPiracyVariant.sourceRefs, ["Draconis Reach pp. 124–126", "Objective Raid p. 171", "Command complications procedure p. 30", "Opposing Force Tables p. 186", "Piracy rules pp. 25, 36, 176", "Current Draconis Reach master errata"]);
+assert.doesNotMatch(TRACKS.find(track => track.id === "objective-raid").setup.join(" "), /Pirates are always the Attacker/);
+assert.doesNotMatch(TRACKS.find(track => track.id === "objective-raid").special.join(" "), /Piracy contract terms cannot be negotiated/);
+assert.ok(app.includes("sourceRollSelections") && app.includes("data-source-roll-id"), "Act of Piracy source-roll selectors are wired");
+assert.ok(app.includes('opforMode === "source-table"'), "source-defined opposing-force tables can disable generic OpFor controls");
 for (const hotSpot of HOT_SPOTS) {
   assert.ok(hotSpot.sides.length >= 2, hotSpot.name + " has opposing sides");
   for (const side of hotSpot.sides) assert.ok(Object.values(FACTION_COLORS).includes(side.color), hotSpot.name + " side has a faction UI color");

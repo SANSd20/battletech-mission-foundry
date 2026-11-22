@@ -1424,6 +1424,83 @@ const xhosaTrack3StrikeVariant = xhosaVariant("strike", {
   ]
 });
 
+const actOfPiracyCommandComplications = {
+  ref: "Draconis Reach pp. 30, 126",
+  note: "Official contract procedure: roll this table once for the track, not once per player. The browser displays the complete table without selecting or applying a complication automatically.",
+  rows: [
+    { roll: "1–3", name: "No Complication", text: "No effect." },
+    { roll: "4", name: "Minefield", text: "Each player may place two Minefield Supports within 3 hexes (AS: 5 inches) of the map’s center line. See p. 56, AS:CE; p. 79, BMM; or the BattleTech: Mercenaries box set." },
+    { roll: "5", name: "Meeting in the field", text: "The two forces encounter each other. Only half of each player’s units, rounded up, may deploy on Turn 1. The remainder may enter the map on Turn 2." },
+    { roll: "6", name: "Torrential downpour", text: "Torrential rain turns all clear, Depth 0 water hexes into mud. If there are fewer than six clear, Depth 0 water hexes, each player may select three hexes to reach at least six mud hexes. For Alpha Strike, the opposing player may place two 6-inch AOE mud terrain templates. Mud: a hex covered in mud adds +1 MP cost per hex; entering a mud hex forces a Piloting Skill Roll; all PSRs made in a mud hex, including the entering roll, receive a +1 target number modifier. For Alpha Strike, any unit moving through mud may bog down; see p. 60, AS:CE." }
+  ]
+};
+
+const actOfPiracySystemTable = [
+  "System result 1 — Beaumont (Savannah): loot is Agricultural Machinery; use the Federated Suns opposing force table; no special conditions.",
+  "System result 2 — De Berry (Grassland): loot is Mining Machinery; use the Mercenary opposing force table. Ice: all water and all Level 1+ hexes are covered in ice. Piloting or driving Skill checks made while on an ice hex receive a +4 target number modifier. For Alpha Strike, all terrain features cost an additional +1 MP per inch from ice.",
+  "System result 3 — Tancredi IV (Urban): loot is Laser Weapons; use the Draconis Combine opposing force table. Lasers: the raiding player may take some or all payment from the Piracy Payment Table for this raid as repair-only funds; double those Support Points and keep them in a separate repair pool.",
+  "System result 4 — Mirach (Mountains): loot is Ores; use the Mercenary opposing force table. Low Gravity: all units have +1 Walking/Cruising MP. For Alpha Strike, all units have +2 inches MV.",
+  "System result 5 — Johnsondale (Urban): loot is Combat Vehicles; use the Federated Suns opposing force table. Salvage choice: when this track is rolled, the raiding player chooses whether to capture completed vehicles or only components. If only components are chosen, there are no special conditions. If vehicles are chosen, each objective component is a shutdown Striker Light Tank, the Law player receives two free Striker Light Tanks per Scale, and captured Strikers join the capturing player’s force after the contract instead of being sold as standard components. If using BSP, each component retrieved gives one free Striker Light Tank for one track use, up to one Striker per Scale per track.",
+  "System result 6 — Hazelhurst (Hills): loot is Casks of Wine; use the Raven Alliance opposing force table. Units carrying the raid objective may not move more than half their MV or 8 inches, whichever is slower, without destroying the cargo."
+];
+
+const actOfPiracySystemRollOptions = [
+  { value: "1", label: "1 · Beaumont (Savannah)" },
+  { value: "2", label: "2 · De Berry (Grassland)" },
+  { value: "3", label: "3 · Tancredi IV (Urban)" },
+  { value: "4", label: "4 · Mirach (Mountains)" },
+  { value: "5", label: "5 · Johnsondale (Urban)" },
+  { value: "6", label: "6 · Hazelhurst (Hills)" }
+];
+
+const actOfPiracyVariant = {
+  page: 124,
+  displayName: "Act of Piracy · Objective Raid",
+  type: "Opposing Contract",
+  summary: "A one-track piracy contract using the standard Objective Raid mission. Pirates always attack while the Law protects a randomly selected system or controls a generated local militia force.",
+  setup: [
+    ...TRACKS.find(track => track.id === "objective-raid").setup,
+    "Pirates are always the Attacker; the Law is always the Defender."
+  ],
+  setupDetails: [
+    "Official contract sequence: both sides are player-controlled mercenaries. The first month is travel; the second month is the single Objective Raid track; the third month is travel while the Pirates sell their goods or escape and the Law repairs its position.",
+    "The Law rolls 1D6 to determine which system it is protecting. The Pirates then roll 1D6 to determine which system is attacked and the special conditions. If the Pirates attack the system the Law is garrisoning, the two mercenaries battle each other. Otherwise, the Law controls a generated local militia garrison force; the system result determines its faction. See the Opposing Force Tables on p. 186.",
+    "If the Law player controls a generated opposing force, that player receives one-half Base Pay as a bonus, cannot receive salvage from this track, and does not take damage or risk units. The browser records this source rule but does not generate the militia force or campaign payment automatically.",
+    "System, loot, opposing force, and condition table:",
+    ...actOfPiracySystemTable,
+    "Piracy Goods & Components Table: roll 1D6. Goods acquired / payment per component: 1 — None / 250 SP; 2 — 375 SP / 300 SP; 3 — 750 SP / 400 SP; 4 — 1,250 SP / 500 SP; 5 — 1,500 SP / 550 SP; 6 — 1,650 SP / 600 SP; 7 — no goods entry / 650 SP. The goods payment is multiplied by contract Scale. Add 1 to the Piracy Component Table roll if the track takes place on Tancredi IV or Mirach."
+  ],
+  sourceRolls: [
+    {
+      id: "law-protected-system",
+      label: "Law’s protected system roll",
+      options: actOfPiracySystemRollOptions,
+      note: "The Law rolls 1D6 to determine which system it is protecting."
+    },
+    {
+      id: "pirates-attacked-system",
+      label: "Pirates’ attacked system roll",
+      options: actOfPiracySystemRollOptions,
+      note: "The Pirates roll 1D6 to determine which system is attacked and which system conditions apply."
+    }
+  ],
+  scaleNotesByScale: {
+    "1": ["Piracy Goods Table payment is multiplied by contract Scale 1. Johnsondale provides two free Striker Light Tanks to the Law per the source rule."],
+    "2": ["Piracy Goods Table payment is multiplied by contract Scale 2. Johnsondale provides four free Striker Light Tanks to the Law per the source rule."],
+    "3": ["Piracy Goods Table payment is multiplied by contract Scale 3. Johnsondale provides six free Striker Light Tanks to the Law per the source rule."]
+  },
+  special: [
+    ...TRACKS.find(track => track.id === "objective-raid").special,
+    "Victory — official source rule: if either player successfully completes the track, that player wins the contract.",
+    "Piracy — official source rule: piracy contract terms cannot be negotiated. There is no employer, combat bonus, or Base Pay. The Pirates pay transportation and maintenance themselves and may go into the red for those costs without taking on debt until the contract ends. Each completed act of piracy has a chance of lowering Pirate Reputation; see p. 25.",
+    "Piracy payment — official source rule: after the contract, make two payment rolls. The first roll on the Piracy Goods Table determines goods from undefended raids, paid per contract Scale regardless of track results. The second roll on the Piracy Component Table determines payment for each component pirated during the contract. After payment, a negative warchest becomes debt; see p. 36.",
+    "Purchase Options — official source rule: neither employer has ’Mechs available. Each month, roll 2D6; on a 7+ one ’Mech is for sale, and on an 11+ two are for sale. If a ’Mech is available, roll on the Sea Fox Purchase Options Table on p. 176. The browser displays these campaign rules without performing purchases or bookkeeping.",
+    "Law opposing-force exception — official source rule: when the Law controls a generated local militia force, the Law player receives half Base Pay, cannot claim salvage, and does not carry damage or unit risk from the track."
+  ],
+  commandComplications: actOfPiracyCommandComplications,
+  sourceRefs: ["Draconis Reach pp. 124–126", "Objective Raid p. 171", "Command complications procedure p. 30", "Opposing Force Tables p. 186", "Piracy rules pp. 25, 36, 176", "Current Draconis Reach master errata"]
+};
+
 export const HOT_SPOTS = [
   {
     id: "achernar",
@@ -1646,6 +1723,19 @@ export const HOT_SPOTS = [
         "federated-suns": { trackId: "assault", attacker: "federated-suns", defender: "draconis-combine", variant: xhosaTrack3AssaultVariant },
         "draconis-combine": { trackId: "strike", attacker: "draconis-combine", defender: "federated-suns", variant: xhosaTrack3StrikeVariant }
       })
+    ]
+  },
+  {
+    id: "act-of-piracy",
+    name: "Act of Piracy",
+    region: "Random System",
+    terrain: "Random",
+    source: "Draconis Reach pp. 124–126",
+    opforMode: "source-table",
+    note: "Act of Piracy and Garrison are opposing one-track contracts. Pirates are always the Attacker in the Objective Raid; the Law is always the Defender. System selection, loot, conditions, campaign payments, and the Law’s generated-force exception remain source-reference rules rather than automatic campaign bookkeeping.",
+    sides: [factionSide("pirates", "Pirates", "Mercenary"), factionSide("law", "The Law", "Local")],
+    tracks: [
+      fixedHotSpotTrack(1, "objective-raid", "pirates", "law", { variant: actOfPiracyVariant })
     ]
   }
 ];

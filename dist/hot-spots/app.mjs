@@ -18,6 +18,7 @@ const state = {
   selectedSide: { achernar: "tybalt" },
   winnerSelections: {},
   resultSelections: {},
+  sourceRollSelections: {},
   roleSelections: {},
   trackId: "meeting-engagement",
   scale: 1,
@@ -94,6 +95,19 @@ function winnerKey(sequence) {
 
 function resultKey(sequence) {
   return state.hotSpotId + "::result::" + sequence;
+}
+
+function sourceRollKey(sequence, rollId) {
+  return state.hotSpotId + "::source-roll::" + sequence + "::" + rollId;
+}
+
+function selectedSourceRoll(sequence, roll) {
+  return state.sourceRollSelections[sourceRollKey(sequence, roll.id)] || "";
+}
+
+function sourceRollLabel(sequence, roll) {
+  const selected = selectedSourceRoll(sequence, roll);
+  return roll.options.find(option => option.value === selected)?.label || "Not selected";
 }
 
 function roleKey(sequence) {
@@ -251,6 +265,10 @@ function renderControlState() {
 function renderOpFor() {
   const container = $("#opfor-display");
   if (!container) return;
+  if (currentHotSpot().opforMode === "source-table") {
+    container.innerHTML = "";
+    return;
+  }
   if (!state.takingOneForTeam) {
     container.innerHTML = "";
     return;
@@ -313,10 +331,20 @@ function renderHotSpotSetup() {
     const result = state.resultSelections[resultKey(step.sequence)] || step.results[0].id;
     winnerControls.push('<div class="control-group"><label for="source-result">' + esc(step.resultLabel || "Source result") + '</label><select id="source-result" data-result-sequence="' + step.sequence + '">' + step.results.map(option => '<option value="' + esc(option.id) + '"' + (result === option.id ? " selected" : "") + '>' + esc(option.label) + "</option>").join("") + '</select><span class="control-hint">This choice records the source table result for this track.</span></div>');
   }
+  for (const roll of resolved?.variant?.sourceRolls || []) {
+    const selectedRoll = selectedSourceRoll(step.sequence, roll);
+    winnerControls.push('<div class="control-group"><label for="source-roll-' + esc(roll.id) + '">' + esc(roll.label) + '</label><select id="source-roll-' + esc(roll.id) + '" data-source-roll-id="' + esc(roll.id) + '" data-source-roll-sequence="' + esc(String(step.sequence)) + '"><option value="">Choose the 1D6 result</option>' + roll.options.map(option => '<option value="' + esc(option.value) + '"' + (selectedRoll === option.value ? " selected" : "") + '>' + esc(option.label) + "</option>").join("") + '</select><span class="control-hint">' + esc(roll.note) + '</span></div>');
+  }
   $("#winner-controls").innerHTML = winnerControls.length ? '<div class="winner-controls-grid">' + winnerControls.join("") + "</div>" : "";
 
   $("#hotspot-summary").innerHTML = '<div class="hotspot-summary-copy"><strong>' + esc(hotSpot.name) + '</strong><span>' + esc(hotSpot.region) + " · " + esc(hotSpot.terrain) + '</span><span>' + esc(step?.label || "Track") + " · " + esc(resolved?.displayName || (resolved?.trackId ? TRACKS.find(track => track.id === resolved.trackId)?.name : "Pending" ) || "Pending") + '</span></div>';
   if (hotSpot.note) $("#hotspot-summary").insertAdjacentHTML("beforeend", '<div class="hotspot-summary-note">' + esc(hotSpot.note) + "</div>");
+  const selectedSourceRolls = (resolved?.variant?.sourceRolls || []).filter(roll => selectedSourceRoll(step.sequence, roll));
+  if (selectedSourceRolls.length) {
+    $("#hotspot-summary").insertAdjacentHTML("beforeend", '<div class="hotspot-summary-note"><strong>Selected source rolls:</strong> ' + esc(selectedSourceRolls.map(roll => roll.label + " — " + sourceRollLabel(step.sequence, roll)).join(" · ")) + "</div>");
+  }
+  const sourceTableMode = hotSpot.opforMode === "source-table";
+  $("#taking-one-for-team").closest("label").style.display = sourceTableMode ? "none" : "";
   $("#taking-one-for-team").checked = state.takingOneForTeam;
   renderOpFor();
 }
@@ -526,6 +554,7 @@ function resetTrack() {
   const prefix = state.hotSpotId + "::";
   Object.keys(state.progress).filter(key => key.startsWith(prefix)).forEach(key => delete state.progress[key]);
   Object.keys(state.vpSelections).filter(key => key.startsWith(prefix)).forEach(key => delete state.vpSelections[key]);
+  Object.keys(state.sourceRollSelections).filter(key => key.startsWith(prefix)).forEach(key => delete state.sourceRollSelections[key]);
   renderAll();
 }
 
@@ -581,6 +610,7 @@ $("#opfor-display").addEventListener("change", event => {
 $("#winner-controls").addEventListener("change", event => {
   if (event.target.dataset.winnerSequence) state.winnerSelections[winnerKey(event.target.dataset.winnerSequence)] = event.target.value;
   if (event.target.dataset.resultSequence) state.resultSelections[resultKey(event.target.dataset.resultSequence)] = event.target.value;
+  if (event.target.dataset.sourceRollId) state.sourceRollSelections[sourceRollKey(event.target.dataset.sourceRollSequence, event.target.dataset.sourceRollId)] = event.target.value;
   if (event.target.dataset.roleSequence) state.roleSelections[roleKey(event.target.dataset.roleSequence)] = event.target.value;
   renderAll();
 });
