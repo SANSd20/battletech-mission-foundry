@@ -1,4 +1,4 @@
-import { calculateProtectionDenyVp, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, OPPOSING_FORCE_TABLES, PROTECTION_DENY_QUALIFYING_OBJECTIVE_IDS, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=protection-deny-1";
+import { calculateProtectionDenyVp, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, OPPOSING_FORCE_TABLES, PROTECTION_DENY_ATTACKER_OBJECTIVE_IDS, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=protection-deny-2";
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -259,7 +259,7 @@ function isProtectionTrack1Deny(objective, side = "defender") {
 function protectionDenyVp() {
   const track = currentTrack();
   if (!track) return 300;
-  const completedObjectiveIds = PROTECTION_DENY_QUALIFYING_OBJECTIVE_IDS.filter(id => {
+  const completedObjectiveIds = PROTECTION_DENY_ATTACKER_OBJECTIVE_IDS.filter(id => {
     const objective = track.objectives.find(item => item.id === id);
     return objective ? Boolean(getProgress(objective, "attacker")) : false;
   });
@@ -610,7 +610,7 @@ function renderTracker() {
     const calculatedDeny = isProtectionTrack1Deny(objective);
     const objectiveText = calculatedDeny ? display.text.replace(/ The printed value is shown as 50\/100\/200\/300; select the applicable value\.$/, "") : display.text;
     const vpLabel = calculatedDeny ? "Projected: " + protectionDenyVp() + " VP" : (display.vpOptions ? display.vpOptions.join(" / ") + " VP (select value)" : display.vp + " VP" + (display.repeatable ? " each" : ""));
-    const projectionNote = calculatedDeny ? '<div class="calculated-vp-note">Projected Deny VP decreases as the Attacker completes qualifying objectives. Remaining Deny points are awarded at the end of Turn 8.</div>' : "";
+    const projectionNote = calculatedDeny ? '<div class="calculated-vp-note">Projected Deny VP follows the printed Deny schedule as the Attacker completes objectives. Remaining Deny points are awarded at the end of Turn 8.</div>' : "";
     return '<tr><th scope="row"><div class="objective-title">' + esc(display.name) + '</div><div class="objective-rule">' + esc(objectiveText) + '</div><div class="objective-vp">' + vpLabel + "</div>" + projectionNote + "</th>" +
       '<td class="attacker-col">' + objectiveControl(objective, "attacker", display) + "</td>" +
       '<td class="defender-col">' + objectiveControl(objective, "defender", display) + "</td></tr>";

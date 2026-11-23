@@ -7,16 +7,19 @@ export const SOURCES = {
   opposingForces: "Hot Spots: Draconis Reach, First Printing, Opposing Force Tables pp. 186–201"
 };
 
-export const PROTECTION_DENY_QUALIFYING_OBJECTIVE_IDS = Object.freeze([
+export const PROTECTION_DENY_ATTACKER_OBJECTIVE_IDS = Object.freeze([
+  "orders-attacker",
   "identify-opposition",
   "preemptive-strike",
   "observe-report"
 ]);
 
+export const PROTECTION_DENY_VP_SCHEDULE = Object.freeze([300, 200, 100, 50, 0]);
+
 export function calculateProtectionDenyVp(completedObjectiveIds = []) {
   const completed = new Set(completedObjectiveIds);
-  const completedQualifyingObjectives = PROTECTION_DENY_QUALIFYING_OBJECTIVE_IDS.filter(id => completed.has(id)).length;
-  return 300 - (100 * completedQualifyingObjectives);
+  const completedAttackerObjectives = PROTECTION_DENY_ATTACKER_OBJECTIVE_IDS.filter(id => completed.has(id)).length;
+  return PROTECTION_DENY_VP_SCHEDULE[completedAttackerObjectives];
 }
 
 export const GENERAL_RULES = [
