@@ -1732,7 +1732,8 @@ const malloryVariant = (trackId, configuration) => {
     displayName: configuration.displayName,
     type: "Loneliness Island Hex Battle",
     summary: configuration.summary,
-    setup: [...baseTrack.setup],
+    setup: configuration.useCampaignBattlefieldSize ? baseTrack.setup.slice(1) : [...baseTrack.setup],
+    scaleNotes: configuration.useCampaignBattlefieldSize ? [] : [...(baseTrack.scaleNotes || [])],
     setupDetails: [...configuration.setupDetails, ...malloryCampaignSetupDetails],
     objectives: baseTrack.objectives,
     special: [...baseTrack.special, ...(configuration.special || []), ...malloryCampaignTacticalRules],
@@ -1775,7 +1776,8 @@ const malloryOperatingBaseVariant = malloryVariant("retreat", {
   special: [
     "Ownership-dependent campaign benefit: capturing the enemy HQ by winning this track ends the Loneliness Island campaign. Displayed for reference only; the browser does not resolve campaign victory."
   ],
-  trackReference: "Retreat p. 173"
+  useCampaignBattlefieldSize: true,
+  trackReference: "Retreat pp. 174–175"
 });
 
 const malloryAgroMechVariant = malloryVariant("defend", {
@@ -1814,7 +1816,7 @@ const malloryIrrigationVariant = malloryVariant("pushback", {
     "Ownership-dependent tactical benefit: in one battle per strategic map turn, the eligible controlling player may designate 10 contiguous hexes as Depth 1 water. In Alpha Strike, place one river 3 inches wide and 12 inches long. Single rubble counters from Map Pack: City may mark water. Do not apply unless control and once-per-turn eligibility are established.",
     "Ownership-dependent campaign benefit: controlling Irrigation Control increases SP received from cities by 50 percent and directly offsets the penalty from choosing a BPWW Landing Zone. Reference only."
   ],
-  trackReference: "Pushback p. 172"
+  trackReference: "Pushback p. 173"
 });
 
 const malloryBpwwVariant = malloryVariant("meeting-engagement", {
@@ -1854,6 +1856,7 @@ const malloryCityVariant = malloryVariant("pursuit", {
   special: [
     "Ownership-dependent tactical benefit: the eligible city holder receives an additional 21 BSP that may be spent on Infantry Battlefield Support units in each engagement. In Alpha Strike, use two Mechanized Hover Platoons (Flamer). Do not add this support unless ownership establishes eligibility."
   ],
+  useCampaignBattlefieldSize: true,
   trackReference: "Pursuit p. 172"
 });
 
@@ -1916,7 +1919,7 @@ const malloryTrainingVariant = malloryVariant("pushback", {
   special: [
     "Ownership-dependent campaign benefit: holding the simulator hex doubles the SP that can be assigned to Named Pilots during each strategic map turn. Do not apply automatically."
   ],
-  trackReference: "Pushback p. 172"
+  trackReference: "Pushback p. 173"
 });
 
 const malloryRestrictedFacility = {
