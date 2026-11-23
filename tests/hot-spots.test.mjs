@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { calculateReconDenyVp, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, OPPOSING_FORCE_TABLES, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
+import { achernarInitialDefectors, calculateAchernarVictory, calculateReconDenyVp, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, normalizeAchernarCampaignState, OPPOSING_FORCE_TABLES, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
 
 const expected = ["Assault", "Breakthrough", "Defend", "Flank", "Meeting Engagement", "Objective Raid", "Pursuit", "Pushback", "Recon", "Retreat", "Strike"];
 assert.deepEqual(TRACKS.map(track => track.name), expected, "all eleven Draconis Reach standard tracks are present");
@@ -213,6 +213,92 @@ assert.ok(HOT_SPOTS.length >= 10, "the location selector includes the Draconis R
 const achernar = HOT_SPOTS.find(item => item.id === "achernar");
 assert.equal(achernar.tracks[1].outcomes["home-guard"].trackId, "recon", "Achernar Track 2 resolves from the previous winner");
 assert.equal(achernar.tracks[2].outcomes["home-guard|home-guard"].trackId, "defend", "Achernar Track 3 resolves from both prior winners");
+const achernarOutcomes = [
+  achernar.tracks[0],
+  ...Object.values(achernar.tracks[1].outcomes),
+  ...Object.values(achernar.tracks[2].outcomes),
+  achernar.tracks[3],
+  achernar.tracks[4]
+];
+assert.equal(achernarOutcomes.length, 9, "Achernar exposes all nine resolved tactical outcomes");
+assert.deepEqual(achernarOutcomes.map(outcome => [outcome.trackId, outcome.attacker, outcome.defender]), [
+  ["meeting-engagement", "tybalt", "home-guard"],
+  ["pursuit", "tybalt", "home-guard"],
+  ["recon", "home-guard", "tybalt"],
+  ["strike", "tybalt", "home-guard"],
+  ["meeting-engagement", "home-guard", "tybalt"],
+  ["breakthrough", "tybalt", "home-guard"],
+  ["defend", "tybalt", "home-guard"],
+  ["breakthrough", "tybalt", "home-guard"],
+  ["retreat", "home-guard", "tybalt"]
+], "Achernar preserves every standard track and tactical role");
+for (const outcome of achernarOutcomes) {
+  assert.ok(outcome.variant, outcome.trackId + " inherits the Achernar overlay");
+  assert.equal(outcome.variant.commandComplications.rows.length, 6, outcome.trackId + " exposes every Achernar complication result");
+  assert.match(outcome.variant.commandComplications.note, /each player rolls 1D6.*Tybalt.*no modifier.*Home Guard.*adds 1/i);
+  assert.deepEqual(outcome.variant.commandComplications.rows.map(row => row.roll), ["1", "2–3", "4", "5", "6", "7+"]);
+  assert.match(outcome.variant.sourceRefs.join(" "), /Draconis Reach pp\. 74–77/);
+  assert.match(outcome.variant.sourceRefs.join(" "), /Shared rules pp\. 167–168/);
+  assert.match(outcome.variant.sourceRefs.join(" "), /Current Draconis Reach master errata/);
+  assert.match(outcome.variant.special.join(" "), /at least one defector vehicle survives all tracks/i);
+  assert.match(outcome.variant.special.join(" "), /five or more Battlefield Support units granted to Tybalt/i);
+  assert.equal(outcome.variant.objectives, undefined, "Achernar overlay does not replace standard objectives");
+}
+const achernarComplications = achernar.tracks[0].variant.commandComplications;
+assert.match(achernarComplications.rows[0].text, /SDR-8R Spider.*Gunnery 3.*Piloting 4.*Skill 3.*lost first-turn Initiative.*player who did not damage it/i);
+assert.match(achernarComplications.rows[0].text, /both players roll.*Gunnery 2.*Piloting 3.*Skill 2/i);
+assert.match(achernarComplications.rows[2].text, /six heavy-density Battlefield Support minefields.*before units deploy/i);
+assert.match(achernarComplications.rows[3].text, /six hexes.*three 2-inch AoE counters.*rubble/i);
+assert.match(achernarComplications.rows[4].text, /multiply.*Scale.*two Mechanized Infantry Platoons.*two Fox Armored Cars.*one Vedette Medium Tank/i);
+assert.match(achernarComplications.rows[5].text, /Roll twice.*Ignore duplicate/i);
+for (const outcome of Object.values(achernar.tracks[2].outcomes)) {
+  assert.match(outcome.variant.setupDetails.join(" "), /two J\. Edgar Hover Tanks per Scale.*Gunnery 4 \/ Piloting 5.*Skill 4/i);
+  assert.deepEqual(outcome.variant.scaleNotesByScale, {
+    "1": ["Track 3 defector force: two J. Edgar Hover Tanks join Tybalt."],
+    "2": ["Track 3 defector force: four J. Edgar Hover Tanks join Tybalt."],
+    "3": ["Track 3 defector force: six J. Edgar Hover Tanks join Tybalt."]
+  });
+}
+for (const outcome of [achernar.tracks[3], achernar.tracks[4]]) {
+  assert.match(outcome.variant.setupDetails.join(" "), /only the J\. Edgar Hover Tanks that survived the previous track.*Do not restore destroyed vehicles/i);
+}
+assert.equal(achernar.campaignState.kind, "achernar", "Achernar uses its bounded cross-track record");
+assert.deepEqual([1, 2, 3].map(achernarInitialDefectors), [2, 4, 6], "Achernar allocates two J. Edgar tanks per Scale");
+assert.deepEqual(normalizeAchernarCampaignState({ survivorsAfterTrack3: 7, survivorsAfterTrack4: 5, finalSurvivors: 4 }, 2), {
+  initialDefectors: 4,
+  survivorsAfterTrack3: 4,
+  survivorsAfterTrack4: 4,
+  finalSurvivors: 4,
+  strikeWinner: "not-recorded",
+  retreatWinner: "not-recorded",
+  qualifyingSupportDestroyed: 0
+}, "Achernar survivor counts cannot exceed the Scale allocation or prior survivors");
+assert.deepEqual(normalizeAchernarCampaignState({ survivorsAfterTrack3: 3, survivorsAfterTrack4: 2, finalSurvivors: 5 }, 3).finalSurvivors, 2, "destroyed defector vehicles do not reappear");
+assert.equal(calculateAchernarVictory({ survivorsAfterTrack3: 4, survivorsAfterTrack4: 2, finalSurvivors: 1 }, { scale: 2, strikePlayed: true }).tybalt, "victory", "one final defector survivor gives Tybalt victory");
+assert.deepEqual(calculateAchernarVictory({ survivorsAfterTrack3: 4, survivorsAfterTrack4: 1, finalSurvivors: 0, strikeWinner: "tybalt", retreatWinner: "tybalt" }, { scale: 2, strikePlayed: true }), {
+  initialDefectors: 4,
+  survivorsAfterTrack3: 4,
+  survivorsAfterTrack4: 1,
+  finalSurvivors: 0,
+  strikeWinner: "tybalt",
+  retreatWinner: "tybalt",
+  qualifyingSupportDestroyed: 0,
+  tybalt: "victory",
+  homeGuard: "not-qualified",
+  supportVictory: false,
+  ambiguity: null
+}, "Tybalt can use the recorded Strike-and-Retreat alternative when Strike was played");
+assert.equal(calculateAchernarVictory({ survivorsAfterTrack3: 2, survivorsAfterTrack4: 0, finalSurvivors: 0, strikeWinner: "home-guard", retreatWinner: "tybalt" }, { scale: 1, strikePlayed: true }).homeGuard, "victory", "Home Guard wins when Tybalt fails an unambiguous alternative");
+const dualAchernarVictory = calculateAchernarVictory({ survivorsAfterTrack3: 2, survivorsAfterTrack4: 1, finalSurvivors: 1, qualifyingSupportDestroyed: 5 }, { scale: 1, strikePlayed: true });
+assert.deepEqual([dualAchernarVictory.tybalt, dualAchernarVictory.homeGuard], ["victory", "victory"], "both printed victory conditions remain independently available");
+assert.match(dualAchernarVictory.ambiguity, /does not establish precedence or a tiebreaker/i);
+const nonStrikeAchernarVictory = calculateAchernarVictory({ survivorsAfterTrack3: 2, survivorsAfterTrack4: 0, finalSurvivors: 0, retreatWinner: "tybalt" }, { scale: 1, strikePlayed: false });
+assert.deepEqual([nonStrikeAchernarVictory.tybalt, nonStrikeAchernarVictory.homeGuard], ["ambiguous", "ambiguous"], "non-Strike Track 3 branches are not auto-resolved");
+assert.match(nonStrikeAchernarVictory.ambiguity, /did not produce a Strike track/i);
+for (const term of ["renderAchernarCampaignState", "survivorsAfterTrack3", "survivorsAfterTrack4", "finalSurvivors", "qualifyingSupportDestroyed", "strikeWinner", "retreatWinner", "data-achernar-field", "campaign-ambiguity"]) {
+  assert.ok(app.includes(term), term + " Achernar campaign behavior is wired into the browser");
+}
+assert.match(html, /Source-specific cross-track records are included only where a tactical force or contract-victory rule requires them/);
 const protection = HOT_SPOTS.find(item => item.id === "protection");
 assert.equal(protection.tracks[2].outcomes["platinum-sands|kanagawa-group"].roleChoice, true, "Protection mixed results expose the source roll-off choice");
 assert.match(protection.note, /contract 138910A–B/);

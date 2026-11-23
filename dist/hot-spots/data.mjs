@@ -22,6 +22,58 @@ export function calculateReconDenyVp(completedObjectiveIds = []) {
   return RECON_DENY_VP_SCHEDULE[completedAttackerObjectives];
 }
 
+export function achernarInitialDefectors(scale = 1) {
+  return Math.min(3, Math.max(1, Number(scale) || 1)) * 2;
+}
+
+export function normalizeAchernarCampaignState(record = {}, scale = 1) {
+  const initialDefectors = achernarInitialDefectors(scale);
+  const bounded = (value, maximum) => {
+    if (value === "" || value === null || value === undefined) return null;
+    return Math.min(maximum, Math.max(0, Math.trunc(Number(value) || 0)));
+  };
+  const survivorsAfterTrack3 = bounded(record.survivorsAfterTrack3, initialDefectors);
+  const survivorsAfterTrack4 = survivorsAfterTrack3 === null ? null : bounded(record.survivorsAfterTrack4, survivorsAfterTrack3);
+  const finalSurvivors = survivorsAfterTrack4 === null ? null : bounded(record.finalSurvivors, survivorsAfterTrack4);
+  return {
+    initialDefectors,
+    survivorsAfterTrack3,
+    survivorsAfterTrack4,
+    finalSurvivors,
+    strikeWinner: ["tybalt", "home-guard"].includes(record.strikeWinner) ? record.strikeWinner : "not-recorded",
+    retreatWinner: ["tybalt", "home-guard"].includes(record.retreatWinner) ? record.retreatWinner : "not-recorded",
+    qualifyingSupportDestroyed: Math.max(0, Math.trunc(Number(record.qualifyingSupportDestroyed) || 0))
+  };
+}
+
+export function calculateAchernarVictory(record = {}, { scale = 1, strikePlayed = null } = {}) {
+  const normalized = normalizeAchernarCampaignState(record, scale);
+  const supportVictory = normalized.qualifyingSupportDestroyed >= 5;
+  let tybalt = "pending";
+  let homeGuard = supportVictory ? "victory" : "pending";
+  let ambiguity = null;
+
+  if (normalized.finalSurvivors !== null) {
+    if (normalized.finalSurvivors > 0) {
+      tybalt = "victory";
+      homeGuard = supportVictory ? "victory" : "not-qualified";
+    } else if (strikePlayed === false) {
+      tybalt = "ambiguous";
+      homeGuard = supportVictory ? "victory" : "ambiguous";
+      ambiguity = "The printed alternative requires Tybalt to win both Strike and Retreat, but this campaign branch did not produce a Strike track.";
+    } else if (strikePlayed === true && normalized.strikeWinner !== "not-recorded" && normalized.retreatWinner !== "not-recorded") {
+      const alternativeVictory = normalized.strikeWinner === "tybalt" && normalized.retreatWinner === "tybalt";
+      tybalt = alternativeVictory ? "victory" : "not-qualified";
+      homeGuard = supportVictory || !alternativeVictory ? "victory" : "not-qualified";
+    }
+  }
+
+  if (tybalt === "victory" && homeGuard === "victory") {
+    ambiguity = "Both printed victory conditions are satisfied; the source does not establish precedence or a tiebreaker.";
+  }
+  return { ...normalized, tybalt, homeGuard, supportVictory, ambiguity };
+}
+
 export const GENERAL_RULES = [
   {
     title: "Commander",
@@ -1063,6 +1115,51 @@ const winnerDependentTrack = (sequence, requires, outcomes, extra = {}) => ({
   ...extra
 });
 
+const achernarCommandComplications = {
+  ref: "Draconis Reach pp. 76–77",
+  note: "At the start of each track, each player rolls 1D6. Tybalt has Independent Command Rights and adds no modifier. Home Guard has Liaison Command Rights and adds 1. The browser displays the complete table without selecting or applying a result automatically.",
+  rows: [
+    { roll: "1", name: "Republic Spider", text: "An SDR-8R Spider (Gunnery 3, Piloting 4; Alpha Strike Skill 3) enters from a random map edge perpendicular to the Defender’s edge. The player who lost first-turn Initiative controls it initially. Each turn, if only one player damaged the Spider during the previous turn, control goes to the player who did not damage it; if both or neither damaged it, control goes to the player who lost Initiative. If both players roll this complication, the Spider improves to Gunnery 2, Piloting 3; Alpha Strike Skill 2." },
+    { roll: "2–3", name: "No Complication", text: "No complication applies." },
+    { roll: "4", name: "Uncleared Minefields", text: "The opposing player places six heavy-density Battlefield Support minefields just before units deploy." },
+    { roll: "5", name: "Rubble", text: "Before either player deploys, the opposing player converts six hexes (three 2-inch AoE counters) into rubble terrain. Rubble may replace buildings or be placed on clear terrain." },
+    { roll: "6", name: "Partisan Support", text: "The opposing side receives support for this track only; multiply the listed unit quantities by the track’s Scale. If Tybalt rolled the complication, Home Guard gains Capellan support. If Home Guard rolled it, Tybalt gains Davion-aligned resistance. Roll 1D6 for the force: 1–2, two Mechanized Infantry Platoons; 3–4, two Fox Armored Cars; 5–6, one Vedette Medium Tank." },
+    { roll: "7+", name: "Roll Twice", text: "Roll twice and apply both effects. Ignore duplicate results." }
+  ]
+};
+
+const achernarVictoryRules = [
+  "Achernar contract victory — Tybalt: if at least one defector vehicle survives all tracks, Tybalt wins the contract. If all defector vehicles are destroyed, Tybalt can still claim victory by winning both the Strike and Retreat scenarios.",
+  "Achernar contract victory — Home Guard: Home Guard automatically wins if Tybalt does not meet its victory qualifications. Home Guard is also victorious if it destroys five or more Battlefield Support units granted to Tybalt through the Command Complications table.",
+  "Victory adjudication: the source does not establish precedence when both sides satisfy a victory condition, and it does not explain how the Strike-and-Retreat alternative applies when Track 3 resolves to a non-Strike branch. Record the source inputs in the campaign panel; the browser does not invent a tiebreaker."
+];
+
+function achernarVariant(trackId, sequence) {
+  const base = TRACKS.find(track => track.id === trackId);
+  const pageRef = base?.pageRef || "p. " + base?.page;
+  const setupDetails = sequence <= 2
+    ? ["Defector vehicles do not join Tybalt during Tracks 1–2."]
+    : sequence === 3
+      ? ["Defector force: Tybalt receives two J. Edgar Hover Tanks per Scale in every Track 3 branch, regardless of Tybalt’s tactical role. The crews use Gunnery 4 / Piloting 5 in BattleTech and Skill 4 in Alpha Strike. These same vehicles continue into every later track; reduce their number when one is destroyed."]
+      : ["Defector carryover: Tybalt receives only the J. Edgar Hover Tanks that survived the previous track. Do not restore destroyed vehicles or grant a fresh complement. Record the surviving count in the Achernar campaign panel."];
+  return {
+    setupDetails,
+    scaleNotesByScale: sequence === 3 ? {
+      "1": ["Track 3 defector force: two J. Edgar Hover Tanks join Tybalt."],
+      "2": ["Track 3 defector force: four J. Edgar Hover Tanks join Tybalt."],
+      "3": ["Track 3 defector force: six J. Edgar Hover Tanks join Tybalt."]
+    } : undefined,
+    special: [...(base?.special || []), ...achernarVictoryRules],
+    commandComplications: achernarCommandComplications,
+    sourceRefs: [
+      "Draconis Reach pp. 74–77",
+      base?.name + " " + pageRef,
+      "Shared rules pp. 167–168",
+      "Current Draconis Reach master errata"
+    ]
+  };
+}
+
 const gladiatorGenerator = {
   note: "For a non-player opponent, roll 2D6 for Experience Rating, apply the duel-class adjustment, use the resulting Experience Level, then roll for Piloting/Gunnery skills, Edge abilities, faction, and ’Mech assignment.",
   classAdjustments: [
@@ -1944,21 +2041,28 @@ export const HOT_SPOTS = [
     region: "Capellan Confederation",
     terrain: "Wooded",
     source: "Draconis Reach pp. 74–77",
+    note: "The browser applies the contract’s Command Complications to every track, introduces the defector J. Edgar force in Track 3, and preserves its surviving count through Tracks 4–5. Contract victory remains source-adjudicated where the printed text is ambiguous.",
+    campaignState: {
+      kind: "achernar",
+      title: "Achernar defector and victory record",
+      note: "Record the persistent defector force and contract-victory inputs. Survivor counts are limited by the Track 3 allocation for the selected Scale and by the preceding track’s survivors.",
+      sourceRefs: ["Draconis Reach pp. 74–77", "Current Draconis Reach master errata"]
+    },
     sides: [factionSide("tybalt", "Tybalt", "Mercenary"), factionSide("home-guard", "Home Guard", "Capellan Confederation")],
     tracks: [
-      fixedHotSpotTrack(1, "meeting-engagement", "tybalt", "home-guard"),
+      fixedHotSpotTrack(1, "meeting-engagement", "tybalt", "home-guard", { variant: achernarVariant("meeting-engagement", 1) }),
       winnerDependentTrack(2, [1], {
-        tybalt: { trackId: "pursuit", attacker: "tybalt", defender: "home-guard" },
-        "home-guard": { trackId: "recon", attacker: "home-guard", defender: "tybalt" }
+        tybalt: { trackId: "pursuit", attacker: "tybalt", defender: "home-guard", variant: achernarVariant("pursuit", 2) },
+        "home-guard": { trackId: "recon", attacker: "home-guard", defender: "tybalt", variant: achernarVariant("recon", 2) }
       }),
       winnerDependentTrack(3, [1, 2], {
-        "tybalt|tybalt": { trackId: "strike", attacker: "tybalt", defender: "home-guard" },
-        "tybalt|home-guard": { trackId: "meeting-engagement", attacker: "home-guard", defender: "tybalt" },
-        "home-guard|tybalt": { trackId: "breakthrough", attacker: "tybalt", defender: "home-guard" },
-        "home-guard|home-guard": { trackId: "defend", attacker: "tybalt", defender: "home-guard" }
+        "tybalt|tybalt": { trackId: "strike", attacker: "tybalt", defender: "home-guard", variant: achernarVariant("strike", 3) },
+        "tybalt|home-guard": { trackId: "meeting-engagement", attacker: "home-guard", defender: "tybalt", variant: achernarVariant("meeting-engagement", 3) },
+        "home-guard|tybalt": { trackId: "breakthrough", attacker: "tybalt", defender: "home-guard", variant: achernarVariant("breakthrough", 3) },
+        "home-guard|home-guard": { trackId: "defend", attacker: "tybalt", defender: "home-guard", variant: achernarVariant("defend", 3) }
       }),
-      fixedHotSpotTrack(4, "breakthrough", "tybalt", "home-guard"),
-      fixedHotSpotTrack(5, "retreat", "home-guard", "tybalt")
+      fixedHotSpotTrack(4, "breakthrough", "tybalt", "home-guard", { variant: achernarVariant("breakthrough", 4) }),
+      fixedHotSpotTrack(5, "retreat", "home-guard", "tybalt", { variant: achernarVariant("retreat", 5) })
     ]
   },
   {

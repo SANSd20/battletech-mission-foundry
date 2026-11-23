@@ -1,4 +1,4 @@
-import { calculateReconDenyVp, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, OPPOSING_FORCE_TABLES, RECON_DENY_ATTACKER_OBJECTIVE_IDS, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=mallory-scale-3";
+import { calculateAchernarVictory, calculateReconDenyVp, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, normalizeAchernarCampaignState, OPPOSING_FORCE_TABLES, RECON_DENY_ATTACKER_OBJECTIVE_IDS, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=achernar-overlay";
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -171,6 +171,71 @@ function campaignStatusOptions(selected) {
     ["operational", "Operational"],
     ["destroyed", "Destroyed"]
   ].map(([value, label]) => '<option value="' + value + '"' + (selected === value ? " selected" : "") + ">" + label + "</option>").join("");
+}
+
+function achernarCampaignRecord() {
+  const campaign = campaignValues();
+  if (!campaign.record) campaign.record = {};
+  return campaign.record;
+}
+
+function achernarStrikeBranchStatus() {
+  const trackOneWinner = selectedWinner(1);
+  const trackTwoWinner = selectedWinner(2);
+  if (!trackOneWinner || !trackTwoWinner) return null;
+  return trackOneWinner === "tybalt" && trackTwoWinner === "tybalt";
+}
+
+function achernarWinnerOptions(selected) {
+  return [
+    ["not-recorded", "Not recorded"],
+    ["tybalt", "Tybalt"],
+    ["home-guard", "Home Guard"]
+  ].map(([value, label]) => '<option value="' + value + '"' + (selected === value ? " selected" : "") + ">" + label + "</option>").join("");
+}
+
+function achernarVictoryStatus(label, status) {
+  const statusText = {
+    victory: "Victory condition satisfied",
+    "not-qualified": "Victory condition not satisfied",
+    ambiguous: "Requires source adjudication",
+    pending: "Pending campaign inputs"
+  }[status] || "Pending campaign inputs";
+  return "<span><strong>" + esc(label) + ":</strong> " + esc(statusText) + "</span>";
+}
+
+function renderAchernarCampaignState(container, definition) {
+  const record = achernarCampaignRecord();
+  const normalized = normalizeAchernarCampaignState(record, state.scale);
+  Object.assign(record, {
+    survivorsAfterTrack3: normalized.survivorsAfterTrack3,
+    survivorsAfterTrack4: normalized.survivorsAfterTrack4,
+    finalSurvivors: normalized.finalSurvivors,
+    strikeWinner: normalized.strikeWinner,
+    retreatWinner: normalized.retreatWinner,
+    qualifyingSupportDestroyed: normalized.qualifyingSupportDestroyed
+  });
+  const strikePlayed = achernarStrikeBranchStatus();
+  const victory = calculateAchernarVictory(record, { scale: state.scale, strikePlayed });
+  const numberField = (field, label, value, maximum, disabled = false) =>
+    '<label class="campaign-field"><span>' + esc(label) + '</span><input type="number" min="0" max="' + esc(String(maximum)) + '" value="' + esc(value === null ? "" : String(value)) + '" data-achernar-field="' + esc(field) + '"' + (disabled ? " disabled" : "") + '></label>';
+  const strikeField = strikePlayed === true
+    ? '<label class="campaign-field"><span>Strike winner</span><select data-achernar-field="strikeWinner">' + achernarWinnerOptions(normalized.strikeWinner) + '</select></label>'
+    : '<div class="campaign-field campaign-static-field"><span>Strike winner</span><strong>' + (strikePlayed === false ? "Not played — Track 3 resolved to another mission" : "Resolve the Track 1 and Track 2 winners") + '</strong></div>';
+  const ambiguity = victory.ambiguity ? '<span class="campaign-ambiguity">' + esc(victory.ambiguity) + '</span>' : "";
+
+  container.innerHTML = '<section class="campaign-state-card"><div class="campaign-state-head"><div><div class="panel-kicker">CROSS-TRACK PRESERVATION</div><h3>' + esc(definition.title) + '</h3></div><button type="button" class="campaign-reset-button" data-reset-campaign="achernar">Reset campaign state</button></div>' +
+    '<p class="campaign-state-note">' + esc(definition.note) + '</p>' +
+    '<div class="campaign-state-summary"><strong>Initial Track 3 allocation at Scale ' + esc(String(state.scale)) + '</strong><span>' + normalized.initialDefectors + ' J. Edgar Hover Tanks · Gunnery 4 / Piloting 5 · Alpha Strike Skill 4</span></div>' +
+    '<div class="campaign-fields"><div class="campaign-track-label">Persistent defector force</div>' +
+      numberField("survivorsAfterTrack3", "Survivors after Track 3", normalized.survivorsAfterTrack3, normalized.initialDefectors) +
+      numberField("survivorsAfterTrack4", "Survivors after Track 4", normalized.survivorsAfterTrack4, normalized.survivorsAfterTrack3 ?? normalized.initialDefectors, normalized.survivorsAfterTrack3 === null) +
+      numberField("finalSurvivors", "Final survivors after Track 5", normalized.finalSurvivors, normalized.survivorsAfterTrack4 ?? normalized.initialDefectors, normalized.survivorsAfterTrack4 === null) +
+      '<label class="campaign-field"><span>Qualifying Tybalt BSP units destroyed by Home Guard</span><input type="number" min="0" value="' + normalized.qualifyingSupportDestroyed + '" data-achernar-field="qualifyingSupportDestroyed"></label>' +
+      strikeField +
+      '<label class="campaign-field"><span>Retreat winner</span><select data-achernar-field="retreatWinner">' + achernarWinnerOptions(normalized.retreatWinner) + '</select></label>' +
+    '</div><div class="campaign-state-summary"><strong>Contract victory check</strong>' + achernarVictoryStatus("Tybalt", victory.tybalt) + achernarVictoryStatus("Home Guard", victory.homeGuard) + ambiguity + '<span>Home Guard’s five-unit condition counts only Battlefield Support units granted to Tybalt by the Achernar Command Complications table.</span></div>' +
+    '<div class="reference-citation">Source: ' + esc(definition.sourceRefs.join(" · ")) + '</div></section>';
 }
 
 function selectedWinner(sequence) {
@@ -453,6 +518,10 @@ function renderCampaignState() {
     container.innerHTML = "";
     return;
   }
+  if (definition.kind === "achernar") {
+    renderAchernarCampaignState(container, definition);
+    return;
+  }
   const sequence = Number(currentHotSpotStep()?.sequence || 1);
   const values = campaignTrackValues(sequence, hotSpot);
   const totals = campaignBuildingTotals(sequence, hotSpot);
@@ -688,7 +757,34 @@ $("#hot-spot-side-select").addEventListener("change", event => {
   renderAll();
 });
 
+function updateAchernarCampaignField(target) {
+  const achernarField = target.dataset.achernarField;
+  if (!achernarField) return false;
+  const record = achernarCampaignRecord();
+  record[achernarField] = target.type === "number"
+    ? (target.value === "" ? null : Number(target.value))
+    : target.value;
+  const normalized = normalizeAchernarCampaignState(record, state.scale);
+  Object.assign(record, {
+    survivorsAfterTrack3: normalized.survivorsAfterTrack3,
+    survivorsAfterTrack4: normalized.survivorsAfterTrack4,
+    finalSurvivors: normalized.finalSurvivors,
+    strikeWinner: normalized.strikeWinner,
+    retreatWinner: normalized.retreatWinner,
+    qualifyingSupportDestroyed: normalized.qualifyingSupportDestroyed
+  });
+  return true;
+}
+
+$("#hotspot-campaign-state").addEventListener("input", event => {
+  updateAchernarCampaignField(event.target);
+});
+
 $("#hotspot-campaign-state").addEventListener("change", event => {
+  if (updateAchernarCampaignField(event.target)) {
+    renderCampaignState();
+    return;
+  }
   const field = event.target.dataset.campaignField;
   const sequence = event.target.dataset.campaignSequence;
   if (!field || !sequence) return;
@@ -733,6 +829,7 @@ $("#scale-select").addEventListener("click", event => {
   const button = event.target.closest(".scale-button");
   if (!button || currentHotSpot().fixedScale) return;
   state.scale = Number(button.dataset.scale);
+  renderCampaignState();
   renderControlState();
   renderReference();
   renderOpFor();
