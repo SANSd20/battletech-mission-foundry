@@ -1,4 +1,4 @@
-import { calculateProtectionDenyVp, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, OPPOSING_FORCE_TABLES, PROTECTION_DENY_ATTACKER_OBJECTIVE_IDS, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=protection-deny-2";
+import { calculateProtectionDenyVp, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, OPPOSING_FORCE_TABLES, PROTECTION_DENY_ATTACKER_OBJECTIVE_IDS, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=mallory-phase-1";
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -191,9 +191,11 @@ function resolvedHotSpotStep() {
     outcome = step.results.find(result => result.id === selectedResult) || step.results[0];
   }
   if (outcome.roleChoice) {
-    const selectedAttacker = state.roleSelections[roleKey(step.sequence)] || currentHotSpot().sides[0].id;
-    const selectedDefender = currentHotSpot().sides.find(side => side.id !== selectedAttacker)?.id || null;
-    outcome = { ...outcome, attacker: selectedAttacker, defender: selectedDefender };
+    const selectedInitiator = state.roleSelections[roleKey(step.sequence)] || currentHotSpot().sides[0].id;
+    const opposingSide = currentHotSpot().sides.find(side => side.id !== selectedInitiator)?.id || null;
+    outcome = outcome.reverseRoles
+      ? { ...outcome, attacker: opposingSide, defender: selectedInitiator }
+      : { ...outcome, attacker: selectedInitiator, defender: opposingSide };
   }
   return { ...step, ...outcome, unresolved: false };
 }
@@ -288,7 +290,7 @@ function modeLabel() {
 function renderControlState() {
   const track = currentTrack();
   const resolved = resolvedHotSpotStep();
-  $("#derived-track-title").textContent = track ? (resolved?.displayName || track.name) : "Track pending";
+  $("#derived-track-title").textContent = track ? (resolved?.displayName || track.name) : (resolved?.variant?.displayName || "Track pending");
   Array.from(document.querySelectorAll(".scale-button")).forEach(button => {
     const active = Number(button.dataset.scale) === state.scale;
     button.classList.toggle("active", active);
@@ -376,6 +378,7 @@ function renderHotSpotSetup() {
   const selected = sideById(state.selectedSide[hotSpot.id]);
   $("#hot-spot-select").innerHTML = HOT_SPOTS.map(item => '<option value="' + esc(item.id) + '">' + esc(item.name) + " · " + esc(item.region) + "</option>").join("");
   $("#hot-spot-select").value = hotSpot.id;
+  $("#hot-spot-track-label").textContent = hotSpot.trackSelectorLabel || "Track sequence";
   $("#hot-spot-track-select").innerHTML = hotSpot.tracks.map(item => '<option value="' + item.sequence + '">' + esc(item.label) + "</option>").join("");
   $("#hot-spot-track-select").value = String(step?.sequence || "");
   $("#hot-spot-side-select").innerHTML = hotSpot.sides.map(side => '<option value="' + esc(side.id) + '">' + esc(side.name) + " · " + esc(side.faction) + "</option>").join("");
@@ -388,7 +391,8 @@ function renderHotSpotSetup() {
   }
   if (resolved?.roleChoice) {
     const selectedRole = state.roleSelections[roleKey(step.sequence)] || hotSpot.sides[0]?.id;
-    winnerControls.push('<div class="control-group"><label for="role-choice">' + esc(step.roleChoiceLabel || "Choose the Attacker") + '</label><select id="role-choice" data-role-sequence="' + step.sequence + '">' + hotSpot.sides.map(side => '<option value="' + esc(side.id) + '"' + (selectedRole === side.id ? " selected" : "") + '>' + esc(side.name) + " as Attacker</option>").join("") + '</select><span class="control-hint">' + esc(step.roleChoiceHint || "The other side is assigned Defender.") + '</span></div>');
+    const roleSuffix = step.reverseRoles ? " as strategic attacker (Pursuit Defender)" : " as strategic attacker (tactical Attacker)";
+    winnerControls.push('<div class="control-group"><label for="role-choice">' + esc(step.roleChoiceLabel || "Choose the Attacker") + '</label><select id="role-choice" data-role-sequence="' + step.sequence + '">' + hotSpot.sides.map(side => '<option value="' + esc(side.id) + '"' + (selectedRole === side.id ? " selected" : "") + '>' + esc(side.name) + roleSuffix + "</option>").join("") + '</select><span class="control-hint">' + esc(step.roleChoiceHint || "The other side is assigned Defender.") + '</span></div>');
   }
   if (step?.results?.length) {
     const result = state.resultSelections[resultKey(step.sequence)] || step.results[0].id;
@@ -529,6 +533,14 @@ function renderReference() {
   const step = currentHotSpotStep();
   const resolved = resolvedHotSpotStep();
   if (!track) {
+    if (resolved?.variant?.nonPlayable) {
+      const variant = resolved.variant;
+      const restrictions = (variant.setupDetails || []).map(item => "<li>" + esc(item) + "</li>").join("");
+      const notes = (variant.special || []).map(item => "<li>" + esc(item) + "</li>").join("");
+      const sourceReferenceText = variant.sourceRefs?.join(" · ") || hotSpot.source;
+      $("#mission-reference").innerHTML = '<article class="panel mission-card"><div class="mission-card-head"><div class="eyebrow">NON-PLAYABLE STRATEGIC HEX</div><h2>' + esc(variant.displayName) + '</h2><p>' + esc(variant.summary) + '</p></div><div class="reference-section hot-spot-reference"><div class="panel-kicker">LOCATION & RESTRICTION</div><div class="brief-grid"><div><span>Location</span><strong>' + esc(hotSpot.name) + '</strong><small>' + esc(hotSpot.region + " · " + hotSpot.terrain) + '</small></div><div><span>Strategic hex type</span><strong>' + esc(step?.label || variant.displayName) + '</strong><small>No tactical track is generated</small></div></div></div><div class="reference-section"><div class="panel-kicker">SOURCE RESTRICTION</div><ul class="rule-list">' + restrictions + '</ul></div><div class="reference-section"><div class="panel-kicker">REFERENCE NOTES</div><ul class="rule-list">' + notes + '</ul></div><div class="reference-citation">Sources: ' + esc(sourceReferenceText) + '</div></article>';
+      return;
+    }
     $("#mission-reference").innerHTML = '<article class="panel mission-card"><div class="mission-card-head"><div class="eyebrow">HOT SPOT LOCATION · ' + esc(hotSpot.name) + '</div><h2>Track pending</h2><p>' + esc(resolved?.unresolved ? "Choose the previous track winner to resolve this mission." : "The selected source result does not produce a standard track this month.") + '</p></div><div class="reference-section"><div class="panel-kicker">LOCATION & SEQUENCE</div><ul class="rule-list"><li>' + esc(hotSpot.name + " · " + hotSpot.region + " · " + hotSpot.terrain) + '</li><li>' + esc(step?.label || "Track") + " · " + esc(hotSpot.source) + '</li></ul></div><div class="reference-section"><div class="panel-kicker">SOURCE NOTE</div><p class="reference-copy">' + esc(hotSpot.note || "Resolve the Hot Spot setup controls above before opening the standard mission reference.") + '</p></div></article>';
     return;
   }
@@ -615,7 +627,7 @@ function renderTracker() {
       '<td class="attacker-col">' + objectiveControl(objective, "attacker", display) + "</td>" +
       '<td class="defender-col">' + objectiveControl(objective, "defender", display) + "</td></tr>";
   }).join("") :
-    '<tr><th scope="row" colspan="3" class="pending-track">Resolve the Hot Spot controls above to load the standard mission objectives.</th></tr>';
+    '<tr><th scope="row" colspan="3" class="pending-track">' + esc(resolved?.variant?.nonPlayable ? "This strategic hex cannot be entered and has no tactical objectives." : "Resolve the Hot Spot controls above to load the standard mission objectives.") + '</th></tr>';
   renderScore();
 }
 

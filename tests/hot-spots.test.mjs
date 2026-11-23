@@ -410,6 +410,79 @@ assert.ok(app.includes("selectionValues") && app.includes("data-selection-id"), 
 assert.ok(app.includes('opforMode === "gladiator"') && app.includes("renderGladiatorGenerator"), "Game Worlds Gladiator Generator control is wired");
 assert.ok(html.includes('id="scale-choice"'), "Force Scale control has a scoped container for source-specific hiding");
 assert.ok(css.includes("gladiator-tables"), "Gladiator Generator tables retain focused responsive styling");
+const mallory = HOT_SPOTS.find(item => item.id === "mallorys-world");
+assert.ok(mallory, "Mallory’s World is available as a Hot Spot");
+assert.equal(mallory.name, "Mallory’s World");
+assert.equal(mallory.region, "Loneliness Island");
+assert.equal(mallory.trackSelectorLabel, "Strategic Hex Type");
+assert.deepEqual(mallory.sides.map(side => [side.id, side.faction]), [
+  ["dragon-banner", "Draconis Combine"],
+  ["sword-sunburst", "Federated Suns"]
+]);
+const malloryPlayableTracks = mallory.tracks.filter(track => track.trackId);
+assert.equal(malloryPlayableTracks.length, 13, "Mallory’s World exposes all 13 playable strategic hex types");
+assert.deepEqual(malloryPlayableTracks.map(track => [track.label, track.trackId]), [
+  ["Empty Hexes", "recon"],
+  ["Operating Base / Landing Zone", "retreat"],
+  ["AgroMech Repair Facilities", "defend"],
+  ["Defensive Position", "assault"],
+  ["Irrigation Control", "pushback"],
+  ["BPWW Facilities", "meeting-engagement"],
+  ["Boshi-gumi Yakuza Operating Bases", "strike"],
+  ["City Hexes", "pursuit"],
+  ["Manufacturing Plant", "objective-raid"],
+  ["Communication Array", "objective-raid"],
+  ["Biotech Research Centre", "breakthrough"],
+  ["Shipping Port", "flank"],
+  ["Training Simulators", "pushback"]
+], "each strategic hex type resolves to its printed standard track without collapsing duplicate track types");
+for (const hexTrack of malloryPlayableTracks) {
+  const standardTrack = TRACKS.find(track => track.id === hexTrack.trackId);
+  assert.ok(standardTrack, hexTrack.label + " resolves to an existing standard track");
+  assert.equal(hexTrack.roleChoice, true, hexTrack.label + " lets the user identify the strategic attacking formation");
+  assert.deepEqual(hexTrack.variant.objectives, standardTrack.objectives, hexTrack.label + " preserves the standard objective and VP schedule");
+  assert.match(hexTrack.variant.setupDetails.join(" "), /Battlefield size: normally use one mapsheet/);
+  assert.match(hexTrack.variant.setupDetails.join(" "), /multiple formations on each side.*second mapsheet.*Savannah Terrain table/i);
+  assert.match(hexTrack.variant.setupDetails.join(" "), /Pre-battle withdrawal: if the defending formation has not yet moved/);
+  assert.match(hexTrack.variant.setupDetails.join(" "), /without time to repair/);
+  assert.match(hexTrack.variant.special.join(" "), /21 BSP.*Alpha Strike: 5 BSP/);
+  assert.match(hexTrack.variant.special.join(" "), /Forced Withdrawal is not in effect/);
+  assert.match(hexTrack.variant.special.join(" "), /Command Complications: none/);
+  assert.match(hexTrack.variant.special.join(" "), /do not receive the standard Combat Pay/);
+  assert.match(hexTrack.variant.special.join(" "), /does not determine eligibility or award those benefits automatically/);
+}
+const malloryRestricted = mallory.tracks.find(track => !track.trackId);
+assert.equal(malloryRestricted.label, "RSIS/FABL Research Facility · Hex 0507 · Non-playable");
+assert.equal(malloryRestricted.variant.nonPlayable, true);
+assert.match(malloryRestricted.variant.setupDetails.join(" "), /No formations may enter this hex/);
+assert.match(malloryRestricted.variant.special.join(" "), /No tactical scenario, objectives, VP, or track-end procedure applies/);
+const malloryDefensive = mallory.tracks.find(track => track.label === "Defensive Position").variant;
+assert.match(malloryDefensive.setupDetails.join(" "), /0307, 0312, 0505, 0510, 0910, and 1004/);
+assert.match(malloryDefensive.setupDetails.join(" "), /move four terrain pieces up to 6 inches/);
+assert.match(malloryDefensive.setupDetails.join(" "), /Defensive Garrison.*within movement range.*have not moved/i);
+const malloryIrrigation = mallory.tracks.find(track => track.label === "Irrigation Control").variant;
+assert.match(malloryIrrigation.setupDetails.join(" "), /Wide River.*large building token/i);
+assert.match(malloryIrrigation.special.join(" "), /10 contiguous hexes as Depth 1 water/);
+const malloryBpww = mallory.tracks.find(track => track.label === "BPWW Facilities").variant;
+assert.match(malloryBpww.setupDetails.join(" "), /Large Lakes #1.*dock facility/i);
+const malloryCity = mallory.tracks.find(track => track.label === "City Hexes");
+assert.equal(malloryCity.reverseRoles, true, "City Pursuit reverses the strategic attacker into the tactical Defender role");
+assert.match(malloryCity.variant.setupDetails.join(" "), /Plaza.*Roundabout/);
+assert.match(malloryCity.variant.special.join(" "), /additional 21 BSP.*Infantry/);
+const malloryManufacturing = mallory.tracks.find(track => track.label === "Manufacturing Plant").variant;
+assert.match(malloryManufacturing.setupDetails.join(" "), /HPG Heliport/);
+assert.match(malloryManufacturing.special.join(" "), /additional 24 BSP.*vehicles or emplacements/);
+assert.match(mallory.tracks.find(track => track.label === "Communication Array").variant.setupDetails.join(" "), /HPG Offices/);
+assert.match(mallory.tracks.find(track => track.label === "Biotech Research Centre").variant.setupDetails.join(" "), /CityTech.*six large building tokens/i);
+assert.match(mallory.tracks.find(track => track.label === "Shipping Port").variant.setupDetails.join(" "), /River Delta\/Drainage Basin #1.*resemble a port/i);
+assert.match(mallory.tracks.find(track => track.label === "Training Simulators").variant.setupDetails.join(" "), /Park District/);
+assert.ok(html.includes('id="hot-spot-track-label"'), "the sequence selector has a location-specific label target");
+assert.ok(app.includes('hotSpot.trackSelectorLabel || "Track sequence"'), "Mallory’s World changes the selector label without changing other Hot Spots");
+assert.ok(app.includes("outcome.reverseRoles") && app.includes("attacker: opposingSide, defender: selectedInitiator"), "City Pursuit role reversal assigns objective and VP columns to the correct tactical sides");
+assert.ok(app.includes("variant?.nonPlayable") && app.includes("This strategic hex cannot be entered and has no tactical objectives"), "the restricted research facility renders without a tactical tracker");
+for (const standardTrack of TRACKS) {
+  assert.doesNotMatch([...standardTrack.setup, ...(standardTrack.setupDetails || []), ...standardTrack.special].join(" "), /Loneliness Island|Strategic hex type|RSIS\/FABL/, standardTrack.name + " remains free of Mallory-specific rules");
+}
 for (const hotSpot of HOT_SPOTS) {
   assert.ok(hotSpot.sides.length >= 2, hotSpot.name + " has opposing sides");
   for (const side of hotSpot.sides) assert.ok(Object.values(FACTION_COLORS).includes(side.color), hotSpot.name + " side has a faction UI color");

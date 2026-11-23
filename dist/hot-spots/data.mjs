@@ -1707,6 +1707,230 @@ const actOfPiracyVariant = {
   sourceRefs: ["Draconis Reach pp. 124–126", "Objective Raid p. 171", "Command complications procedure p. 30", "Opposing Force Tables p. 186", "Piracy rules pp. 25, 36, 176", "Current Draconis Reach master errata"]
 };
 
+const malloryCampaignSetupDetails = [
+  "Battlefield size: normally use one mapsheet (Alpha Strike: 36 × 48 inches) for a battle between single formations. For a larger battle involving multiple formations on each side, add a second mapsheet rolled from the Savannah Terrain table on p. 151.",
+  "Strategic roles: the formation moving into the enemy-occupied hex initiates the engagement; the formation holding the attacked hex defends it. Select the initiating military side above for this engagement.",
+  "Pre-battle withdrawal: if the defending formation has not yet moved this strategic map turn, it may withdraw one hex to the adjacent unoccupied hex closest to its base and abandon the attacked hex instead of fighting. The browser loads a tactical track only when the Defender does not take that option.",
+  "Multiple engagements: a formation may attack, be attacked, or be counterattacked more than once during a strategic map turn. Units may therefore enter several tactical battles without time to repair between them. This browser does not track that carried damage."
+];
+
+const malloryCampaignTacticalRules = [
+  "Preserve the Island: no more than 21 BSP (Alpha Strike: 5 BSP) may be spent on Battlefield Support: Strikes choices in this combat track.",
+  "Forced Withdrawal is not in effect. A unit may voluntarily retreat through its own home edge; remove it from combat and from the track’s unit totals. Damage suffered before retreat still requires repair normally.",
+  "Command Complications: none are used during the Loneliness Island campaign.",
+  "Combat Pay: players do not receive the standard Combat Pay for successfully completing these tactical tracks. The employers instead pay for claimed strategic hexes; this browser shows relevant payments as reference information only.",
+  "Campaign bookkeeping boundary: hex ownership, payments, purchases, repairs, strategic movement, and campaign victory remain source-reference information. This tactical browser does not determine eligibility or award those benefits automatically."
+];
+
+const malloryVariant = (trackId, configuration) => {
+  const baseTrack = TRACKS.find(track => track.id === trackId);
+  return {
+    page: baseTrack.page,
+    displayName: configuration.displayName,
+    type: "Loneliness Island Hex Battle",
+    summary: configuration.summary,
+    setup: [...baseTrack.setup],
+    setupDetails: [...configuration.setupDetails, ...malloryCampaignSetupDetails],
+    objectives: baseTrack.objectives,
+    special: [...baseTrack.special, ...(configuration.special || []), ...malloryCampaignTacticalRules],
+    sourceRefs: ["Draconis Reach pp. 135–139", configuration.trackReference, "Current Draconis Reach master errata"]
+  };
+};
+
+const malloryRoleChoice = {
+  roleChoice: true,
+  roleChoiceLabel: "Strategic attacking formation",
+  roleChoiceHint: "Choose the contract side whose formation moved into the enemy-occupied hex. It uses the tactical Attacker role; the side holding the hex uses Defender."
+};
+
+const malloryHexTrack = (sequence, label, trackId, variant, extra = {}) => fixedHotSpotTrack(
+  sequence,
+  trackId,
+  "dragon-banner",
+  "sword-sunburst",
+  { label, variant, ...malloryRoleChoice, ...extra }
+);
+
+const malloryEmptyVariant = malloryVariant("recon", {
+  displayName: "Empty Hexes · Recon",
+  summary: "A Recon skirmish in an otherwise unnamed Loneliness Island hex.",
+  setupDetails: [
+    "Strategic hex type: Empty Hexes. Bonus: none.",
+    "Terrain: Savannah. Use one of River Delta/Drainage Basin #2 (Map Pack: Savannah), Mountain Lake (Map Pack: Savannah), or Sinkhole 1 (Map Pack: Savannah)."
+  ],
+  trackReference: "Recon p. 174"
+});
+
+const malloryOperatingBaseVariant = malloryVariant("retreat", {
+  displayName: "Operating Base / Landing Zone · Retreat",
+  summary: "A Retreat battle at an enemy operating base, where the defender may recall a formation to protect the command center.",
+  setupDetails: [
+    "Strategic hexes: 0601, 0614, 0106, 1110, 0512, and 0803.",
+    "Terrain: Urban. Use City Ruins (Map Pack: Savannah). The Defender arranges eight building tokens on paved hexes.",
+    "Defensive recall: the defending player may immediately recall one formation of their choice to defend the base, even if that formation has already moved during the strategic map turn."
+  ],
+  special: [
+    "Ownership-dependent campaign benefit: capturing the enemy HQ by winning this track ends the Loneliness Island campaign. Displayed for reference only; the browser does not resolve campaign victory."
+  ],
+  trackReference: "Retreat p. 173"
+});
+
+const malloryAgroMechVariant = malloryVariant("defend", {
+  displayName: "AgroMech Repair Facilities · Defend",
+  summary: "A Defend battle around the island’s AgroMech repair gantries.",
+  setupDetails: [
+    "Strategic hexes: 0306 and 0808.",
+    "Terrain: Urban. Use CityTech (Map Pack: Savannah). Players alternate placing six building tokens."
+  ],
+  special: [
+    "Ownership-dependent campaign benefit: contract Support improves by 40 percent for each facility held—from Straight / 40 percent to Straight / 80 percent, then Straight / 100 percent. Do not apply automatically."
+  ],
+  trackReference: "Defend p. 169"
+});
+
+const malloryDefensivePositionVariant = malloryVariant("assault", {
+  displayName: "Defensive Position · Assault",
+  summary: "An Assault against a natural chokepoint that can draw nearby unmoved formations into its garrison.",
+  setupDetails: [
+    "Strategic hexes: 0307, 0312, 0505, 0510, 0910, and 1004. Payment: 100 SP per strategic map turn while held; reference only.",
+    "Terrain: Grasslands. Use BattleTech (Map Pack: Savannah) or a mapsheet chosen by the Defender from Map Pack: Grasslands.",
+    "Alpha Strike terrain adjustment: after the battlefield is set up, the Defender selects their home edge and may move four terrain pieces up to 6 inches.",
+    "Defensive Garrison: a formation posted in an unoccupied Defensive Position hex defends it when attacked. It may request reinforcements from any friendly formations within movement range that have not moved this strategic map turn. Those formations immediately enter the attacked hex, join the Defenders, merge for this track, and count as moved after the attack is resolved."
+  ],
+  trackReference: "Assault p. 168"
+});
+
+const malloryIrrigationVariant = malloryVariant("pushback", {
+  displayName: "Irrigation Control · Pushback",
+  summary: "A Pushback battle in wetlands surrounding the island’s automated irrigation controls.",
+  setupDetails: [
+    "Strategic hex: 0303.",
+    "Terrain: Wetlands with one building at least 4 inches wide in the center. Use Wide River (Map Pack: Savannah) and place a large building token in the center of the mapsheet."
+  ],
+  special: [
+    "Ownership-dependent tactical benefit: in one battle per strategic map turn, the eligible controlling player may designate 10 contiguous hexes as Depth 1 water. In Alpha Strike, place one river 3 inches wide and 12 inches long. Single rubble counters from Map Pack: City may mark water. Do not apply unless control and once-per-turn eligibility are established.",
+    "Ownership-dependent campaign benefit: controlling Irrigation Control increases SP received from cities by 50 percent and directly offsets the penalty from choosing a BPWW Landing Zone. Reference only."
+  ],
+  trackReference: "Pushback p. 172"
+});
+
+const malloryBpwwVariant = malloryVariant("meeting-engagement", {
+  displayName: "BPWW Facilities · Meeting Engagement",
+  summary: "A Meeting Engagement at the Brotherhood’s wetland dock and logistics facilities.",
+  setupDetails: [
+    "Strategic hex: 1106.",
+    "Terrain: Wetlands plus four small buildings within 2 inches of each other and touching water. Use Large Lakes #1 (Map Pack: Savannah); the Defender places building tokens on lake hexes to form a dock facility."
+  ],
+  special: [
+    "Ownership-dependent campaign benefit: BattleMech purchases require a held BPWW hex. The central BPWW facilities add a 10 percent purchase premium; Landing Zone BPWW facilities use the source’s randomly determined premium. Purchased units arrive at the Landing Zone under the source formation rules. Reference only."
+  ],
+  trackReference: "Meeting Engagement p. 170"
+});
+
+const malloryBoshiGumiVariant = malloryVariant("strike", {
+  displayName: "Boshi-gumi Yakuza Operating Bases · Strike",
+  summary: "A Strike mission against a Boshi-gumi smuggling base in an urban business district.",
+  setupDetails: [
+    "Strategic hexes: 0310 and 0907. Payment: 200 SP per strategic map turn while held; reference only.",
+    "Terrain: Urban. Use Business District (Map Pack: City)."
+  ],
+  special: [
+    "Ownership-dependent campaign benefit: holding a yakuza operating base permits recruitment of Gunnery 4 / Piloting 5 MechWarriors (Alpha Strike: Skill 4). Do not apply automatically."
+  ],
+  trackReference: "Strike p. 175"
+});
+
+const malloryCityVariant = malloryVariant("pursuit", {
+  displayName: "City Hexes · Pursuit (Roles Reversed)",
+  summary: "A Pursuit through Melancholia or Leamington with the standard scenario’s Attacker and Defender roles reversed.",
+  setupDetails: [
+    "Strategic hexes: 0209 and 1006. Payment: 500 SP per strategic map turn while held; reference only.",
+    "Terrain: Urban. Use Plaza (Map Pack: City) or Roundabout (Map Pack: City).",
+    "Role reversal: the side whose formation initiated the strategic engagement uses the Pursuit Defender role. The side whose formation held the city uses the Pursuit Attacker role. Objective ownership, deployment labels, and VP columns follow those reversed tactical roles."
+  ],
+  special: [
+    "Ownership-dependent tactical benefit: the eligible city holder receives an additional 21 BSP that may be spent on Infantry Battlefield Support units in each engagement. In Alpha Strike, use two Mechanized Hover Platoons (Flamer). Do not add this support unless ownership establishes eligibility."
+  ],
+  trackReference: "Pursuit p. 172"
+});
+
+const malloryManufacturingVariant = malloryVariant("objective-raid", {
+  displayName: "Manufacturing Plant · Objective Raid",
+  summary: "An Objective Raid at the island’s civilian vehicle and prefab manufacturing plant.",
+  setupDetails: [
+    "Strategic hex: 0309.",
+    "Terrain: Urban. Use HPG Heliport (Map Pack: City)."
+  ],
+  special: [
+    "Ownership-dependent tactical benefit: the eligible plant holder receives an additional 24 BSP that may be used to purchase vehicles or emplacements in each engagement. In Alpha Strike, use two Flatbed Trucks (SRM) and two medium emplacements. Do not add this support unless ownership establishes eligibility."
+  ],
+  trackReference: "Objective Raid p. 171"
+});
+
+const malloryCommunicationVariant = malloryVariant("objective-raid", {
+  displayName: "Communication Array · Objective Raid",
+  summary: "An Objective Raid against the uplink connecting Loneliness Island to the planetary communications network.",
+  setupDetails: [
+    "Strategic hex: 0607. Payment: 400 SP per strategic map turn while held; reference only.",
+    "Terrain: Urban. Use HPG Offices (Map Pack: City)."
+  ],
+  trackReference: "Objective Raid p. 171"
+});
+
+const malloryBiotechVariant = malloryVariant("breakthrough", {
+  displayName: "Biotech Research Centre · Breakthrough",
+  summary: "A Breakthrough battle around FABL’s field-hospital-capable biotech research centre.",
+  setupDetails: [
+    "Strategic hex: 0707. Payment: 200 SP per strategic map turn while held; reference only.",
+    "Terrain: Light Urban. Use CityTech (Map Pack: Savannah). Players alternate placing six large building tokens."
+  ],
+  special: [
+    "Ownership-dependent campaign benefit: all wounded MechWarriors belonging to the holder heal one additional injury per strategic map turn. Do not apply automatically."
+  ],
+  trackReference: "Breakthrough p. 168"
+});
+
+const malloryShippingPortVariant = malloryVariant("flank", {
+  displayName: "Shipping Port · Flank",
+  summary: "A Flank battle among the buildings and waterways of Loneliness Island’s western shipping port.",
+  setupDetails: [
+    "Strategic hex: 0109.",
+    "Terrain: Wetlands plus two small and two medium buildings within 4 inches of each other, with at least two buildings within 2 inches of water. Use River Delta/Drainage Basin #1 (Map Pack: Savannah) and arrange the building tokens to resemble a port."
+  ],
+  special: [
+    "Ownership-dependent campaign benefit: holding the shipping port cancels the effects of one BPWW hex held by the opponent and permits hiring new Gunnery 6 / Piloting 6 MechWarriors (Alpha Strike: Skill 6). Do not apply automatically."
+  ],
+  trackReference: "Flank p. 170"
+});
+
+const malloryTrainingVariant = malloryVariant("pushback", {
+  displayName: "Training Simulators · Pushback",
+  summary: "A Pushback battle at the RSIS research facility’s advanced training simulator.",
+  setupDetails: [
+    "Strategic hex: 0508. Payment: 200 SP per strategic map turn while held; reference only.",
+    "Terrain: Light Urban. Use Park District (Map Pack: City)."
+  ],
+  special: [
+    "Ownership-dependent campaign benefit: holding the simulator hex doubles the SP that can be assigned to Named Pilots during each strategic map turn. Do not apply automatically."
+  ],
+  trackReference: "Pushback p. 172"
+});
+
+const malloryRestrictedFacility = {
+  nonPlayable: true,
+  displayName: "RSIS/FABL Research Facility",
+  summary: "The protected research facility is a restricted strategic hex and does not generate a tactical track.",
+  setupDetails: [
+    "Strategic hex: 0507.",
+    "No formations may enter this hex. The RSIS team is willing and able to destroy the facility if it is threatened."
+  ],
+  special: [
+    "No tactical scenario, objectives, VP, or track-end procedure applies to this selection.",
+    "The browser displays the restriction only; it does not track strategic movement or facility status."
+  ],
+  sourceRefs: ["Draconis Reach p. 139", "Current Draconis Reach master errata"]
+};
+
 export const HOT_SPOTS = [
   {
     id: "achernar",
@@ -1955,6 +2179,45 @@ export const HOT_SPOTS = [
     sides: [factionSide("pirates", "Pirates", "Mercenary"), factionSide("law", "The Law", "Local")],
     tracks: [
       fixedHotSpotTrack(1, "objective-raid", "pirates", "law", { variant: actOfPiracyVariant })
+    ]
+  },
+  {
+    id: "mallorys-world",
+    name: "Mallory’s World",
+    region: "Loneliness Island",
+    terrain: "Savannah / Urban",
+    source: "Draconis Reach pp. 132–141",
+    trackSelectorLabel: "Strategic Hex Type",
+    note: "Choose the strategic hex type being attacked. The browser resolves the printed standard tactical track and Loneliness Island modifications without tracking strategic movement, ownership, payments, repairs, or campaign victory.",
+    sides: [
+      factionSide("dragon-banner", "Raise the Dragon Banner", "Draconis Combine"),
+      factionSide("sword-sunburst", "Raise the Sword and Sunburst", "Federated Suns")
+    ],
+    tracks: [
+      malloryHexTrack(1, "Empty Hexes", "recon", malloryEmptyVariant),
+      malloryHexTrack(2, "Operating Base / Landing Zone", "retreat", malloryOperatingBaseVariant),
+      malloryHexTrack(3, "AgroMech Repair Facilities", "defend", malloryAgroMechVariant),
+      malloryHexTrack(4, "Defensive Position", "assault", malloryDefensivePositionVariant),
+      malloryHexTrack(5, "Irrigation Control", "pushback", malloryIrrigationVariant),
+      malloryHexTrack(6, "BPWW Facilities", "meeting-engagement", malloryBpwwVariant),
+      malloryHexTrack(7, "Boshi-gumi Yakuza Operating Bases", "strike", malloryBoshiGumiVariant),
+      malloryHexTrack(8, "City Hexes", "pursuit", malloryCityVariant, {
+        reverseRoles: true,
+        roleChoiceHint: "Choose the contract side whose formation moved into the city. The source reverses Pursuit roles: that strategic attacker uses the tactical Defender role, while the city holder uses tactical Attacker."
+      }),
+      malloryHexTrack(9, "Manufacturing Plant", "objective-raid", malloryManufacturingVariant),
+      malloryHexTrack(10, "Communication Array", "objective-raid", malloryCommunicationVariant),
+      malloryHexTrack(11, "Biotech Research Centre", "breakthrough", malloryBiotechVariant),
+      malloryHexTrack(12, "Shipping Port", "flank", malloryShippingPortVariant),
+      malloryHexTrack(13, "Training Simulators", "pushback", malloryTrainingVariant),
+      {
+        sequence: 14,
+        label: "RSIS/FABL Research Facility · Hex 0507 · Non-playable",
+        trackId: null,
+        attacker: null,
+        defender: null,
+        variant: malloryRestrictedFacility
+      }
     ]
   }
 ];
