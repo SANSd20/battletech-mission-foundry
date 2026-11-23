@@ -1734,7 +1734,7 @@ const malloryVariant = (trackId, configuration) => {
     summary: configuration.summary,
     setup: configuration.useCampaignBattlefieldSize ? baseTrack.setup.slice(1) : [...baseTrack.setup],
     scaleNotes: configuration.useCampaignBattlefieldSize ? [] : [...(baseTrack.scaleNotes || [])],
-    setupDetails: [...configuration.setupDetails, ...malloryCampaignSetupDetails],
+    setupDetails: [...(baseTrack.setupDetails || []), ...configuration.setupDetails, ...malloryCampaignSetupDetails],
     objectives: baseTrack.objectives,
     special: [...baseTrack.special, ...(configuration.special || []), ...malloryCampaignTacticalRules],
     sourceRefs: ["Draconis Reach pp. 135–139", configuration.trackReference, "Current Draconis Reach master errata"]
@@ -1829,7 +1829,7 @@ const malloryBpwwVariant = malloryVariant("meeting-engagement", {
   special: [
     "Ownership-dependent campaign benefit: BattleMech purchases require a held BPWW hex. The central BPWW facilities add a 10 percent purchase premium; Landing Zone BPWW facilities use the source’s randomly determined premium. Purchased units arrive at the Landing Zone under the source formation rules. Reference only."
   ],
-  trackReference: "Meeting Engagement p. 170"
+  trackReference: "Meeting Engagement pp. 170–171"
 });
 
 const malloryBoshiGumiVariant = malloryVariant("strike", {
@@ -1893,7 +1893,7 @@ const malloryBiotechVariant = malloryVariant("breakthrough", {
   special: [
     "Ownership-dependent campaign benefit: all wounded MechWarriors belonging to the holder heal one additional injury per strategic map turn. Do not apply automatically."
   ],
-  trackReference: "Breakthrough p. 168"
+  trackReference: "Breakthrough pp. 168–169"
 });
 
 const malloryShippingPortVariant = malloryVariant("flank", {
@@ -1906,7 +1906,7 @@ const malloryShippingPortVariant = malloryVariant("flank", {
   special: [
     "Ownership-dependent campaign benefit: holding the shipping port cancels the effects of one BPWW hex held by the opponent and permits hiring new Gunnery 6 / Piloting 6 MechWarriors (Alpha Strike: Skill 6). Do not apply automatically."
   ],
-  trackReference: "Flank p. 170"
+  trackReference: "Flank pp. 170–171"
 });
 
 const malloryTrainingVariant = malloryVariant("pushback", {
