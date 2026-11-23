@@ -55,7 +55,8 @@ button, select { cursor: pointer; }
 .campaign-field { display: grid; gap: 5px; color: #56636e; font-size: 10px; font-weight: 850; letter-spacing: .05em; text-transform: uppercase; }
 .campaign-field input, .campaign-field select { min-height: 35px; padding: 0 8px; font-size: 12px; font-weight: 700; letter-spacing: normal; text-transform: none; }
 .campaign-static-field strong { min-height: 35px; padding: 9px 8px; border: 1px solid #c8d1d5; background: #eef2f2; color: #53616c; font-size: 11px; font-weight: 700; letter-spacing: normal; line-height: 1.35; text-transform: none; }
-.campaign-ambiguity { padding: 9px 10px; border-left: 3px solid var(--orange); background: #fff4e9; color: #7b4b2d; }
+.campaign-contract-outcome { color: var(--ink); font-size: 13px; font-weight: 850; }
+.campaign-ruling { padding: 9px 10px; border-left: 3px solid var(--orange); background: #fff4e9; color: #7b4b2d; }
 .campaign-state-summary { display: grid; gap: 5px; padding: 12px 14px; border-top: 1px solid #d3dfda; color: #53636b; font-size: 11px; line-height: 1.4; }
 .campaign-state-summary strong { color: var(--ink); font-size: 12px; }
 .campaign-state-card .reference-citation { padding: 10px 14px 12px; border-top: 1px solid #d3dfda; }

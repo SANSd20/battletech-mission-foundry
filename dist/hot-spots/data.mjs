@@ -51,16 +51,14 @@ export function calculateAchernarVictory(record = {}, { scale = 1, strikePlayed 
   const supportVictory = normalized.qualifyingSupportDestroyed >= 5;
   let tybalt = "pending";
   let homeGuard = supportVictory ? "victory" : "pending";
-  let ambiguity = null;
 
   if (normalized.finalSurvivors !== null) {
     if (normalized.finalSurvivors > 0) {
       tybalt = "victory";
       homeGuard = supportVictory ? "victory" : "not-qualified";
     } else if (strikePlayed === false) {
-      tybalt = "ambiguous";
-      homeGuard = supportVictory ? "victory" : "ambiguous";
-      ambiguity = "The printed alternative requires Tybalt to win both Strike and Retreat, but this campaign branch did not produce a Strike track.";
+      tybalt = "not-qualified";
+      homeGuard = "victory";
     } else if (strikePlayed === true && normalized.strikeWinner !== "not-recorded" && normalized.retreatWinner !== "not-recorded") {
       const alternativeVictory = normalized.strikeWinner === "tybalt" && normalized.retreatWinner === "tybalt";
       tybalt = alternativeVictory ? "victory" : "not-qualified";
@@ -68,10 +66,14 @@ export function calculateAchernarVictory(record = {}, { scale = 1, strikePlayed 
     }
   }
 
-  if (tybalt === "victory" && homeGuard === "victory") {
-    ambiguity = "Both printed victory conditions are satisfied; the source does not establish precedence or a tiebreaker.";
-  }
-  return { ...normalized, tybalt, homeGuard, supportVictory, ambiguity };
+  const outcome = tybalt === "victory" && homeGuard === "victory"
+    ? "both-contracts-successful"
+    : tybalt === "victory" && homeGuard === "not-qualified"
+      ? "tybalt-contract-successful"
+      : tybalt === "not-qualified" && homeGuard === "victory"
+        ? "home-guard-contract-successful"
+        : "pending";
+  return { ...normalized, tybalt, homeGuard, supportVictory, outcome };
 }
 
 export const GENERAL_RULES = [
@@ -1131,7 +1133,7 @@ const achernarCommandComplications = {
 const achernarVictoryRules = [
   "Achernar contract victory — Tybalt: if at least one defector vehicle survives all tracks, Tybalt wins the contract. If all defector vehicles are destroyed, Tybalt can still claim victory by winning both the Strike and Retreat scenarios.",
   "Achernar contract victory — Home Guard: Home Guard automatically wins if Tybalt does not meet its victory qualifications. Home Guard is also victorious if it destroys five or more Battlefield Support units granted to Tybalt through the Command Complications table.",
-  "Victory adjudication: the source does not establish precedence when both sides satisfy a victory condition, and it does not explain how the Strike-and-Retreat alternative applies when Track 3 resolves to a non-Strike branch. Record the source inputs in the campaign panel; the browser does not invent a tiebreaker."
+  "Provisional project ruling — user approved pending official forum clarification: evaluate the two contracts independently. If both sides satisfy their conditions, both contracts are successful. Tybalt’s Strike-and-Retreat alternative is available only when Track 3 is Strike; if Track 3 is Meeting Engagement, Breakthrough, or Defend, Tybalt must preserve at least one defector vehicle. This is not official errata or a developer ruling."
 ];
 
 function achernarVariant(trackId, sequence) {
@@ -2041,14 +2043,14 @@ export const HOT_SPOTS = [
     region: "Capellan Confederation",
     terrain: "Wooded",
     source: "Draconis Reach pp. 74–77",
-    note: "The browser applies the contract’s Command Complications to every track, introduces the defector J. Edgar force in Track 3, and preserves its surviving count through Tracks 4–5. Contract victory remains source-adjudicated where the printed text is ambiguous.",
+    note: "The browser applies the contract’s Command Complications to every track, introduces the defector J. Edgar force in Track 3, and preserves its surviving count through Tracks 4–5. Contract victory uses the user-approved provisional project ruling pending official forum clarification.",
     campaignState: {
       kind: "achernar",
       title: "Achernar defector and victory record",
-      note: "Record the persistent defector force and contract-victory inputs. Survivor counts are limited by the Track 3 allocation for the selected Scale and by the preceding track’s survivors.",
+      note: "Record the persistent defector force and contract-victory inputs. Survivor counts are limited by the Track 3 allocation for the selected Scale and by the preceding track’s survivors. Victory interpretation is a user-approved provisional project ruling pending official forum clarification, not official errata or a developer ruling.",
       sourceRefs: ["Draconis Reach pp. 74–77", "Current Draconis Reach master errata"]
     },
-    sides: [factionSide("tybalt", "Tybalt", "Mercenary"), factionSide("home-guard", "Home Guard", "Capellan Confederation")],
+    sides: [factionSide("tybalt", "Tybalt", "Mercenary"), factionSide("home-guard", "Home Guard", "Mercenary")],
     tracks: [
       fixedHotSpotTrack(1, "meeting-engagement", "tybalt", "home-guard", { variant: achernarVariant("meeting-engagement", 1) }),
       winnerDependentTrack(2, [1], {

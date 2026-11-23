@@ -1,4 +1,4 @@
-import { calculateAchernarVictory, calculateReconDenyVp, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, normalizeAchernarCampaignState, OPPOSING_FORCE_TABLES, RECON_DENY_ATTACKER_OBJECTIVE_IDS, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=achernar-overlay";
+import { calculateAchernarVictory, calculateReconDenyVp, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, normalizeAchernarCampaignState, OPPOSING_FORCE_TABLES, RECON_DENY_ATTACKER_OBJECTIVE_IDS, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=achernar-final-rulings";
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -198,10 +198,18 @@ function achernarVictoryStatus(label, status) {
   const statusText = {
     victory: "Victory condition satisfied",
     "not-qualified": "Victory condition not satisfied",
-    ambiguous: "Requires source adjudication",
     pending: "Pending campaign inputs"
   }[status] || "Pending campaign inputs";
   return "<span><strong>" + esc(label) + ":</strong> " + esc(statusText) + "</span>";
+}
+
+function achernarOutcomeText(outcome) {
+  return {
+    "both-contracts-successful": "Both contracts successful",
+    "tybalt-contract-successful": "Tybalt contract successful",
+    "home-guard-contract-successful": "Home Guard contract successful",
+    pending: "Pending campaign inputs"
+  }[outcome] || "Pending campaign inputs";
 }
 
 function renderAchernarCampaignState(container, definition) {
@@ -222,7 +230,6 @@ function renderAchernarCampaignState(container, definition) {
   const strikeField = strikePlayed === true
     ? '<label class="campaign-field"><span>Strike winner</span><select data-achernar-field="strikeWinner">' + achernarWinnerOptions(normalized.strikeWinner) + '</select></label>'
     : '<div class="campaign-field campaign-static-field"><span>Strike winner</span><strong>' + (strikePlayed === false ? "Not played — Track 3 resolved to another mission" : "Resolve the Track 1 and Track 2 winners") + '</strong></div>';
-  const ambiguity = victory.ambiguity ? '<span class="campaign-ambiguity">' + esc(victory.ambiguity) + '</span>' : "";
 
   container.innerHTML = '<section class="campaign-state-card"><div class="campaign-state-head"><div><div class="panel-kicker">CROSS-TRACK PRESERVATION</div><h3>' + esc(definition.title) + '</h3></div><button type="button" class="campaign-reset-button" data-reset-campaign="achernar">Reset campaign state</button></div>' +
     '<p class="campaign-state-note">' + esc(definition.note) + '</p>' +
@@ -234,7 +241,7 @@ function renderAchernarCampaignState(container, definition) {
       '<label class="campaign-field"><span>Qualifying Tybalt BSP units destroyed by Home Guard</span><input type="number" min="0" value="' + normalized.qualifyingSupportDestroyed + '" data-achernar-field="qualifyingSupportDestroyed"></label>' +
       strikeField +
       '<label class="campaign-field"><span>Retreat winner</span><select data-achernar-field="retreatWinner">' + achernarWinnerOptions(normalized.retreatWinner) + '</select></label>' +
-    '</div><div class="campaign-state-summary"><strong>Contract victory check</strong>' + achernarVictoryStatus("Tybalt", victory.tybalt) + achernarVictoryStatus("Home Guard", victory.homeGuard) + ambiguity + '<span>Home Guard’s five-unit condition counts only Battlefield Support units granted to Tybalt by the Achernar Command Complications table.</span></div>' +
+    '</div><div class="campaign-state-summary"><strong>Contract victory check</strong><span class="campaign-contract-outcome">' + esc(achernarOutcomeText(victory.outcome)) + '</span>' + achernarVictoryStatus("Tybalt", victory.tybalt) + achernarVictoryStatus("Home Guard", victory.homeGuard) + '<span>Home Guard’s five-unit condition counts only Battlefield Support units granted to Tybalt by the Achernar Command Complications table. Defector J. Edgar vehicles do not count toward this total.</span><span class="campaign-ruling">Provisional project ruling approved by the user pending official forum clarification; not official errata or a developer ruling.</span></div>' +
     '<div class="reference-citation">Source: ' + esc(definition.sourceRefs.join(" · ")) + '</div></section>';
 }
 

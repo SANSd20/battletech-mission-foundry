@@ -211,6 +211,7 @@ assert.ok(html.includes("master errata") && html.includes("topic,90893.0.html"),
 assert.ok(css.includes("@media") && css.includes("flex-wrap: wrap"), "responsive layout rules remain present");
 assert.ok(HOT_SPOTS.length >= 10, "the location selector includes the Draconis Reach mission briefs currently mapped");
 const achernar = HOT_SPOTS.find(item => item.id === "achernar");
+assert.deepEqual(achernar.sides.map(side => [side.id, side.faction]), [["tybalt", "Mercenary"], ["home-guard", "Mercenary"]], "both Achernar participants are player-controlled mercenary forces");
 assert.equal(achernar.tracks[1].outcomes["home-guard"].trackId, "recon", "Achernar Track 2 resolves from the previous winner");
 assert.equal(achernar.tracks[2].outcomes["home-guard|home-guard"].trackId, "defend", "Achernar Track 3 resolves from both prior winners");
 const achernarOutcomes = [
@@ -242,6 +243,7 @@ for (const outcome of achernarOutcomes) {
   assert.match(outcome.variant.sourceRefs.join(" "), /Current Draconis Reach master errata/);
   assert.match(outcome.variant.special.join(" "), /at least one defector vehicle survives all tracks/i);
   assert.match(outcome.variant.special.join(" "), /five or more Battlefield Support units granted to Tybalt/i);
+  assert.match(outcome.variant.special.join(" "), /Provisional project ruling.*pending official forum clarification.*not official errata or a developer ruling/i);
   assert.equal(outcome.variant.objectives, undefined, "Achernar overlay does not replace standard objectives");
 }
 const achernarComplications = achernar.tracks[0].variant.commandComplications;
@@ -274,7 +276,10 @@ assert.deepEqual(normalizeAchernarCampaignState({ survivorsAfterTrack3: 7, survi
   qualifyingSupportDestroyed: 0
 }, "Achernar survivor counts cannot exceed the Scale allocation or prior survivors");
 assert.deepEqual(normalizeAchernarCampaignState({ survivorsAfterTrack3: 3, survivorsAfterTrack4: 2, finalSurvivors: 5 }, 3).finalSurvivors, 2, "destroyed defector vehicles do not reappear");
-assert.equal(calculateAchernarVictory({ survivorsAfterTrack3: 4, survivorsAfterTrack4: 2, finalSurvivors: 1 }, { scale: 2, strikePlayed: true }).tybalt, "victory", "one final defector survivor gives Tybalt victory");
+const incompleteAchernarVictory = calculateAchernarVictory({}, { scale: 2, strikePlayed: true });
+assert.deepEqual([incompleteAchernarVictory.tybalt, incompleteAchernarVictory.homeGuard, incompleteAchernarVictory.outcome], ["pending", "pending", "pending"], "incomplete Achernar state is not treated as defeat or zero survivors");
+const tybaltSurvivorVictory = calculateAchernarVictory({ survivorsAfterTrack3: 4, survivorsAfterTrack4: 2, finalSurvivors: 1, qualifyingSupportDestroyed: 4 }, { scale: 2, strikePlayed: true });
+assert.deepEqual([tybaltSurvivorVictory.tybalt, tybaltSurvivorVictory.homeGuard, tybaltSurvivorVictory.outcome], ["victory", "not-qualified", "tybalt-contract-successful"], "one final defector survivor with only four qualifying losses gives Tybalt-only victory");
 assert.deepEqual(calculateAchernarVictory({ survivorsAfterTrack3: 4, survivorsAfterTrack4: 1, finalSurvivors: 0, strikeWinner: "tybalt", retreatWinner: "tybalt" }, { scale: 2, strikePlayed: true }), {
   initialDefectors: 4,
   survivorsAfterTrack3: 4,
@@ -286,16 +291,20 @@ assert.deepEqual(calculateAchernarVictory({ survivorsAfterTrack3: 4, survivorsAf
   tybalt: "victory",
   homeGuard: "not-qualified",
   supportVictory: false,
-  ambiguity: null
+  outcome: "tybalt-contract-successful"
 }, "Tybalt can use the recorded Strike-and-Retreat alternative when Strike was played");
-assert.equal(calculateAchernarVictory({ survivorsAfterTrack3: 2, survivorsAfterTrack4: 0, finalSurvivors: 0, strikeWinner: "home-guard", retreatWinner: "tybalt" }, { scale: 1, strikePlayed: true }).homeGuard, "victory", "Home Guard wins when Tybalt fails an unambiguous alternative");
+const homeGuardOnlyVictory = calculateAchernarVictory({ survivorsAfterTrack3: 2, survivorsAfterTrack4: 0, finalSurvivors: 0, strikeWinner: "home-guard", retreatWinner: "tybalt", qualifyingSupportDestroyed: 4 }, { scale: 1, strikePlayed: true });
+assert.deepEqual([homeGuardOnlyVictory.tybalt, homeGuardOnlyVictory.homeGuard, homeGuardOnlyVictory.outcome], ["not-qualified", "victory", "home-guard-contract-successful"], "Home Guard alone succeeds when Tybalt fails the played Strike-and-Retreat alternative");
 const dualAchernarVictory = calculateAchernarVictory({ survivorsAfterTrack3: 2, survivorsAfterTrack4: 1, finalSurvivors: 1, qualifyingSupportDestroyed: 5 }, { scale: 1, strikePlayed: true });
-assert.deepEqual([dualAchernarVictory.tybalt, dualAchernarVictory.homeGuard], ["victory", "victory"], "both printed victory conditions remain independently available");
-assert.match(dualAchernarVictory.ambiguity, /does not establish precedence or a tiebreaker/i);
+assert.deepEqual([dualAchernarVictory.tybalt, dualAchernarVictory.homeGuard, dualAchernarVictory.outcome], ["victory", "victory", "both-contracts-successful"], "five qualifying losses alongside Tybalt success produces simultaneous contract success");
 const nonStrikeAchernarVictory = calculateAchernarVictory({ survivorsAfterTrack3: 2, survivorsAfterTrack4: 0, finalSurvivors: 0, retreatWinner: "tybalt" }, { scale: 1, strikePlayed: false });
-assert.deepEqual([nonStrikeAchernarVictory.tybalt, nonStrikeAchernarVictory.homeGuard], ["ambiguous", "ambiguous"], "non-Strike Track 3 branches are not auto-resolved");
-assert.match(nonStrikeAchernarVictory.ambiguity, /did not produce a Strike track/i);
-for (const term of ["renderAchernarCampaignState", "survivorsAfterTrack3", "survivorsAfterTrack4", "finalSurvivors", "qualifyingSupportDestroyed", "strikeWinner", "retreatWinner", "data-achernar-field", "campaign-ambiguity"]) {
+assert.deepEqual([nonStrikeAchernarVictory.tybalt, nonStrikeAchernarVictory.homeGuard, nonStrikeAchernarVictory.outcome], ["not-qualified", "victory", "home-guard-contract-successful"], "a non-Strike Track 3 branch with no surviving defectors makes Tybalt fail and Home Guard succeed");
+assert.equal(calculateAchernarVictory({ survivorsAfterTrack3: 2, survivorsAfterTrack4: 1, finalSurvivors: 1, qualifyingSupportDestroyed: 4 }, { scale: 1, strikePlayed: false }).supportVictory, false, "four qualifying support losses do not satisfy Home Guard’s independent condition");
+assert.equal(calculateAchernarVictory({ survivorsAfterTrack3: 2, survivorsAfterTrack4: 1, finalSurvivors: 1, qualifyingSupportDestroyed: 5 }, { scale: 1, strikePlayed: false }).supportVictory, true, "five qualifying support losses satisfy Home Guard’s independent condition");
+assert.equal(calculateAchernarVictory({ survivorsAfterTrack3: 2, survivorsAfterTrack4: 1, finalSurvivors: 1, qualifyingSupportDestroyed: 7 }, { scale: 1, strikePlayed: false }).supportVictory, true, "more than five qualifying support losses satisfy Home Guard’s independent condition");
+const incompleteWithSupportVictory = calculateAchernarVictory({ qualifyingSupportDestroyed: 5 }, { scale: 1, strikePlayed: true });
+assert.deepEqual([incompleteWithSupportVictory.tybalt, incompleteWithSupportVictory.homeGuard, incompleteWithSupportVictory.outcome], ["pending", "victory", "pending"], "an independently satisfied Home Guard condition does not turn incomplete Tybalt state into a defeat");
+for (const term of ["renderAchernarCampaignState", "survivorsAfterTrack3", "survivorsAfterTrack4", "finalSurvivors", "qualifyingSupportDestroyed", "strikeWinner", "retreatWinner", "data-achernar-field", "Both contracts successful", "campaign-ruling", "Defector J. Edgar vehicles do not count"]) {
   assert.ok(app.includes(term), term + " Achernar campaign behavior is wired into the browser");
 }
 assert.match(html, /Source-specific cross-track records are included only where a tactical force or contract-victory rule requires them/);
