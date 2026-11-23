@@ -11,6 +11,11 @@ assert.match(SOURCES.militaryPalette, /military-ui\.yaml/);
 assert.equal(FACTION_COLORS["Federated Suns"], "#7FA52F", "Federated Suns uses the brighter Hot Spots consumer adaptation");
 assert.match(SOURCES.errata, /official master errata/i);
 assert.match(SOURCES.pascagoula, /pp\. 104–106/);
+const cripplingDamage = GENERAL_RULES.find(rule => rule.title === "Crippling Damage").text;
+assert.match(cripplingDamage, /torso internal structure damage does not count while that location still has front armor/);
+assert.match(cripplingDamage, /half starting structure, rounded up/);
+assert.match(cripplingDamage, /begins with only 1 structure starts withdrawing as soon as it loses all armor/);
+assert.match(cripplingDamage, /all weapons destroyed and no ability to move is considered destroyed/);
 assert.deepEqual(Object.keys(OPPOSING_FORCE_TABLES).sort(), ["capellan", "draconis-combine", "federated-suns", "mercenary-pirate", "raven-alliance"], "all five Draconis Reach OpFor tables are present");
 for (const table of Object.values(OPPOSING_FORCE_TABLES)) {
   assert.equal(Object.keys(table.scales).length, 3, table.label + " includes all three scales");
@@ -31,6 +36,11 @@ for (const track of TRACKS) {
   }
 }
 const raid = TRACKS.find(track => track.id === "objective-raid");
+const assault = TRACKS.find(track => track.id === "assault");
+assert.match(assault.special.join(" "), /at least one side has no units in play/);
+assert.doesNotMatch(assault.special.join(" "), /no ’Mech units in play/);
+const breakthrough = TRACKS.find(track => track.id === "breakthrough");
+assert.equal(breakthrough.pageRef, "pp. 168–169");
 assert.ok(raid.objectives.some(objective => objective.repeatable), "Objective Raid includes repeatable objectives");
 assert.equal(raid.objectives.filter(objective => objective.repeatable).length, 2);
 assert.match(raid.setup.join(" "), /two Medium objective buildings/, "standard Objective Raid retains its building setup");

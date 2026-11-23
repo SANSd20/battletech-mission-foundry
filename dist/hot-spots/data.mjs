@@ -35,7 +35,7 @@ export const GENERAL_RULES = [
   },
   {
     title: "Crippling Damage",
-    text: "BattleTech: four or more pilot damage; all sensor critical slots destroyed; one gyro and one engine critical hit; two engine critical hits; side torso destroyed; internal structure damage in three or more limbs or two or more torso locations; or loss of all qualifying weapons. Alpha Strike: no armor plus half starting structure, no medium/long-range damage when the unit began with some, or immobilized through damage, critical, or motive effects.",
+    text: "BattleTech: four or more points of damage to the MechWarrior; all sensor critical slots destroyed; one gyro and one engine critical hit; two engine critical hits; a side torso destroyed; internal structure damage in either three or more limbs or two or more torso locations, except torso internal structure damage does not count while that location still has front armor; or loss through damage or ammunition depletion of all weapons with a range greater than five hexes and the inability to cause more than 5 points of combined weapons damage. The weapons condition does not apply if the ’Mech began unable to cause 5 or more damage or unable to cause damage beyond five hexes. A ’Mech with all weapons destroyed and no ability to move is considered destroyed. Alpha Strike: no armor remaining and reduced to half starting structure, rounded up; a unit that begins with only 1 structure starts withdrawing as soon as it loses all armor; reduced to a damage value of 0 for all medium- and long-range attacks, unless it began with 0 damage at both ranges; or immobilized through damage, critical, or motive hit effects.",
     ref: "Draconis Reach p. 167"
   },
   {
@@ -84,7 +84,7 @@ export const TRACKS = [
       { id: "hold-field", name: "Hold the Field", side: BOTH, vp: 100, text: "If one side’s entire deployed force, including assets, is crippled or destroyed, the other side successfully holds the field." }
     ],
     special: [
-      "Track End: after the end of any turn when at least one side has no ’Mech units in play, or after the end of Turn 10 (Turn 8 in Alpha Strike).",
+      "Track End: after the end of any turn when at least one side has no units in play, or after the end of Turn 10 (Turn 8 in Alpha Strike).",
       "Salvage: the side that successfully completes the track earns all salvage."
     ]
   },
@@ -92,6 +92,7 @@ export const TRACKS = [
     id: "breakthrough",
     name: "Breakthrough",
     page: 168,
+    pageRef: "pp. 168–169",
     summary: "The Attacker attempts a pinpoint strike to break through the Defender’s lines.",
     setup: [
       "The Defender selects a long edge as their home edge; the Attacker gets the opposite long edge.",

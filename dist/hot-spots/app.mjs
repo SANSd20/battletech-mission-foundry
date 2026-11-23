@@ -545,6 +545,7 @@ function renderReference() {
     return;
   }
   const referenceTrack = resolved?.variant ? { ...track, ...resolved.variant } : track;
+  const pageReference = referenceTrack.pageRef || "p. " + referenceTrack.page;
   const scaleNotes = scaleNotesFor(referenceTrack, state.scale);
   const scaleNotesMarkup = scaleNotes.length
     ? scaleNotes.map(note => "<li>" + esc(note) + "</li>").join("")
@@ -554,7 +555,7 @@ function renderReference() {
   const objectives = renderReferenceObjectives(referenceTrack.objectives, referenceTrack);
   const special = referenceTrack.special.map(item => "<li>" + esc(item) + "</li>").join("");
   const commandComplications = renderCommandComplications(referenceTrack.commandComplications);
-  const sourceReferenceText = referenceTrack.sourceRefs?.join(" · ") || SOURCES.primary + " · selected track p. " + referenceTrack.page;
+  const sourceReferenceText = referenceTrack.sourceRefs?.join(" · ") || SOURCES.primary + " · selected track " + pageReference;
   const scaleSection = hotSpot.hideScaleSelector ? "" : '<div class="reference-section scale-section"><div class="panel-kicker">SCALE ' + esc(String(state.scale)) + ' VIEW</div><ul class="rule-list">' + scaleNotesMarkup + "</ul></div>";
 
   const attackerSide = sideById(resolved?.attacker);
@@ -563,7 +564,7 @@ function renderReference() {
 
   $("#mission-reference").innerHTML =
     '<article class="panel mission-card">' +
-      '<div class="mission-card-head"><div class="eyebrow">SELECTED TRACK · p. ' + referenceTrack.page + (referenceTrack.type ? " · " + esc(referenceTrack.type) : "") + '</div><h2>' + esc(referenceTrack.displayName || resolved?.displayName || track.name) + '</h2><p>' + esc(referenceTrack.summary) + '</p></div>' +
+      '<div class="mission-card-head"><div class="eyebrow">SELECTED TRACK · ' + pageReference + (referenceTrack.type ? " · " + esc(referenceTrack.type) : "") + '</div><h2>' + esc(referenceTrack.displayName || resolved?.displayName || track.name) + '</h2><p>' + esc(referenceTrack.summary) + '</p></div>' +
       hotSpotBrief +
       '<div class="reference-section"><div class="panel-kicker">BATTLEFIELD & SETUP</div><ul class="rule-list">' + setup + "</ul></div>" +
       (setupDetails ? '<div class="reference-section"><div class="panel-kicker">DEPLOYMENT DETAILS</div><ul class="rule-list">' + setupDetails + "</ul></div>" : "") +
@@ -604,7 +605,7 @@ function renderTracker() {
   const objectives = variant?.objectives || track?.objectives || [];
   const attackerSide = sideById(resolved?.attacker);
   const defenderSide = sideById(resolved?.defender);
-  $("#tracker-source").textContent = track ? (variant?.sourceRefs?.join(" · ") || "Draconis Reach p. " + track.page) : currentHotSpot().source;
+  $("#tracker-source").textContent = track ? (variant?.sourceRefs?.join(" · ") || "Draconis Reach " + (track.pageRef || "p. " + track.page)) : currentHotSpot().source;
   $("#attacker-heading").innerHTML = '<span>Attacker</span><strong>' + esc(attackerSide?.name || "—") + '</strong>';
   $("#defender-heading").innerHTML = '<span>Defender</span><strong>' + esc(defenderSide?.name || "—") + '</strong>';
   $("#attacker-heading").style.setProperty("--side-color", attackerSide?.color || FACTION_COLORS.Local);
