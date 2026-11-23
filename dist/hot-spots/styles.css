@@ -32,7 +32,7 @@ button, select { cursor: pointer; }
 .eyebrow, .panel-kicker, .label { color: var(--orange); font-size: 10px; font-weight: 850; letter-spacing: .17em; text-transform: uppercase; }
 .hero h1 { max-width: 760px; margin: 11px 0 12px; font: 400 clamp(42px, 6vw, 78px)/.94 Georgia, "Times New Roman", serif; letter-spacing: -.05em; }
 .hero h1 em { color: var(--teal); font-style: normal; }
-.hero p { max-width: 800px; margin: 0; color: #4d5963; font-size: clamp(16px, 2vw, 20px); }
+.hero p { margin: 0; color: #4d5963; font-size: clamp(16px, 2vw, 20px); }
 .source-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-top: 24px; padding: 11px 13px; border-left: 3px solid var(--teal); background: rgba(25, 139, 140, .08); color: #53616c; font-size: 11px; }
 .source-strip span { color: var(--teal); font-size: 9px; font-weight: 850; letter-spacing: .13em; }
 .source-strip strong { color: var(--ink); font-weight: 700; }
