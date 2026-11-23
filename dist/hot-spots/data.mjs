@@ -7,19 +7,19 @@ export const SOURCES = {
   opposingForces: "Hot Spots: Draconis Reach, First Printing, Opposing Force Tables pp. 186–201"
 };
 
-export const PROTECTION_DENY_ATTACKER_OBJECTIVE_IDS = Object.freeze([
+export const RECON_DENY_ATTACKER_OBJECTIVE_IDS = Object.freeze([
   "orders-attacker",
   "identify-opposition",
   "preemptive-strike",
   "observe-report"
 ]);
 
-export const PROTECTION_DENY_VP_SCHEDULE = Object.freeze([300, 200, 100, 50, 0]);
+export const RECON_DENY_VP_SCHEDULE = Object.freeze([300, 200, 100, 50, 0]);
 
-export function calculateProtectionDenyVp(completedObjectiveIds = []) {
+export function calculateReconDenyVp(completedObjectiveIds = []) {
   const completed = new Set(completedObjectiveIds);
-  const completedAttackerObjectives = PROTECTION_DENY_ATTACKER_OBJECTIVE_IDS.filter(id => completed.has(id)).length;
-  return PROTECTION_DENY_VP_SCHEDULE[completedAttackerObjectives];
+  const completedAttackerObjectives = RECON_DENY_ATTACKER_OBJECTIVE_IDS.filter(id => completed.has(id)).length;
+  return RECON_DENY_VP_SCHEDULE[completedAttackerObjectives];
 }
 
 export const GENERAL_RULES = [
@@ -272,7 +272,7 @@ export const TRACKS = [
     summary: "The Attacker attempts to assess the composition of the Defender’s force before slipping away.",
     setup: [
       "The Attacker chooses any edge as their home edge first. The Defender may choose any other edge.",
-      "Defender (Standard): set up anywhere; at least 50 percent of units by number, including assets, must be within the half of the play area closest to the Attacker’s home edge.",
+      "Defender (Standard): set up anywhere; at least 50 percent of units by number, including assets, must occupy hexes fully within the half of the play area closest to the Attacker’s home edge.",
       "Attacker (Raiders): enter from the home edge during the Movement Phase of Turn 1. The Attacker may not select Minefield or Immobile BSP assets."
     ],
     objectives: [
@@ -281,7 +281,7 @@ export const TRACKS = [
       { id: "identify-opposition", name: "Identify The Opposition", side: A, vp: 100, text: "Successfully scan at least two thirds of the Defender’s starting force by number, including assets." },
       { id: "preemptive-strike", name: "Preemptive Strike", side: A, vp: 100, text: "Destroy or cripple at least 25 percent of the Defender’s starting force by BV/PV, excluding assets." },
       { id: "observe-report", name: "Observe And Report", side: A, vp: 100, text: "At least 50 percent of the Attacker’s starting force by BV/PV, including assets, survives and exits its home edge anytime after four turns." },
-      { id: "deny", name: "Deny", side: D, vp: 50, vpOptions: [50, 100, 200, 300], text: "Any Attacker objectives not met by the end of Turn 8 are counted for the Defender instead. Defender units withdrawing from their home edge before Turn 8 count as Scanned and Destroyed for objective purposes. The printed value is shown as 50/100/200/300; select the applicable value." }
+      { id: "deny", name: "Deny", side: D, vp: 50, vpOptions: [50, 100, 200, 300], text: "Any Attacker objectives not met by the end of Turn 8 are counted for the Defender instead. Defender units withdrawing from their home edge before Turn 8 count as Scanned and Destroyed for objective purposes. The printed Deny values are 50/100/200/300." }
     ],
     special: [
       "Scanning: refer to the Scanning rules on page 167.",

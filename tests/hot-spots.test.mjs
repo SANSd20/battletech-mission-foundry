@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { calculateProtectionDenyVp, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, OPPOSING_FORCE_TABLES, PROTECTION_DENY_ATTACKER_OBJECTIVE_IDS, PROTECTION_DENY_VP_SCHEDULE, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
+import { calculateReconDenyVp, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, OPPOSING_FORCE_TABLES, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
 
 const expected = ["Assault", "Breakthrough", "Defend", "Flank", "Meeting Engagement", "Objective Raid", "Pursuit", "Pushback", "Recon", "Retreat", "Strike"];
 assert.deepEqual(TRACKS.map(track => track.name), expected, "all eleven Draconis Reach standard tracks are present");
@@ -50,7 +50,11 @@ assert.match(raid.setup.join(" "), /battlefield center/, "standard Objective Rai
 assert.match(raid.special.join(" "), /Turn 12/, "standard Objective Raid retains its 12-turn limit");
 assert.match(raid.setup.join(" "), /indestructible/, "standard Objective Raid retains its building durability rule");
 const recon = TRACKS.find(track => track.id === "recon");
-assert.deepEqual(recon.objectives.find(objective => objective.id === "deny").vpOptions, [50, 100, 200, 300], "Deny retains the source's variable VP range");
+assert.match(recon.setup.join(" "), /50 percent.*including assets.*occupy hexes fully within the half of the play area closest to the Attacker’s home edge/i, "Recon Defender deployment requires fully enclosed hexes in the Attacker-side half");
+const reconDeny = recon.objectives.find(objective => objective.id === "deny");
+assert.deepEqual(reconDeny.vpOptions, [50, 100, 200, 300], "Deny retains the source's printed VP range");
+assert.match(reconDeny.text, /not met by the end of Turn 8.*withdrawing from their home edge before Turn 8.*Scanned and Destroyed/i, "Recon Deny retains Turn 8 timing and the Defender withdrawal penalty");
+assert.doesNotMatch(reconDeny.text, /select the applicable value/i, "Recon Deny no longer instructs the player to select a manual VP value");
 const pascagoula = HOT_SPOTS.find(item => item.id === "pascagoula");
 assert.equal(pascagoula.tracks[0].trackId, "objective-raid", "Pascagoula Track 1 uses Objective Raid");
 assert.equal(pascagoula.tracks[0].displayName, undefined, "Pascagoula Track 1 does not expose contract naming");
@@ -163,16 +167,21 @@ assert.equal(protection.tracks[2].outcomes["platinum-sands|kanagawa-group"].role
 assert.match(protection.note, /contract 138910A–B/);
 const protectionTrack1 = protection.tracks[0].variant;
 assert.equal(protectionTrack1.displayName, "Protection Recon");
-assert.deepEqual(PROTECTION_DENY_ATTACKER_OBJECTIVE_IDS, ["orders-attacker", "identify-opposition", "preemptive-strike", "observe-report"]);
-assert.deepEqual(PROTECTION_DENY_VP_SCHEDULE, [300, 200, 100, 50, 0]);
-assert.equal(calculateProtectionDenyVp([]), 300, "Protection Deny starts at 300 projected VP");
-assert.equal(calculateProtectionDenyVp(["orders-attacker"]), 200, "Attacker Orders counts as one completed Deny objective");
-assert.equal(calculateProtectionDenyVp(["orders-attacker", "identify-opposition"]), 100, "two completed Attacker objectives reduce Deny to 100 VP");
-assert.equal(calculateProtectionDenyVp(["orders-attacker", "identify-opposition", "preemptive-strike"]), 50, "three completed Attacker objectives reduce Deny to 50 VP");
-assert.equal(calculateProtectionDenyVp(PROTECTION_DENY_ATTACKER_OBJECTIVE_IDS), 0, "all four Attacker objectives reduce Deny to 0 VP");
-assert.equal(calculateProtectionDenyVp(["orders-defender"]), 300, "Defender Orders does not alter projected Deny VP");
-assert.ok(app.includes("isProtectionTrack1Deny") && app.includes("Read-only projection"), "Protection Track 1 renders Deny as a calculated read-only value");
-assert.ok(app.includes("Remaining Deny points are awarded at the end of Turn 8"), "Protection Track 1 distinguishes projected Deny from final awarded scoring");
+assert.deepEqual(RECON_DENY_ATTACKER_OBJECTIVE_IDS, ["orders-attacker", "identify-opposition", "preemptive-strike", "observe-report"]);
+assert.deepEqual(RECON_DENY_VP_SCHEDULE, [300, 200, 100, 50, 0]);
+assert.equal(calculateReconDenyVp([]), 300, "Recon Deny starts at 300 projected VP");
+for (const objectiveId of RECON_DENY_ATTACKER_OBJECTIVE_IDS) {
+  assert.equal(calculateReconDenyVp([objectiveId]), 200, objectiveId + " counts as one completed Recon Deny objective");
+}
+assert.equal(calculateReconDenyVp(["orders-attacker", "identify-opposition"]), 100, "two completed Recon Attacker objectives reduce Deny to 100 VP");
+assert.equal(calculateReconDenyVp(["identify-opposition", "preemptive-strike"]), 100, "Deny depends on the completed-objective count, not which two objectives were completed");
+assert.equal(calculateReconDenyVp(["orders-attacker", "identify-opposition", "preemptive-strike"]), 50, "three completed Recon Attacker objectives reduce Deny to 50 VP");
+assert.equal(calculateReconDenyVp(RECON_DENY_ATTACKER_OBJECTIVE_IDS), 0, "all four Recon Attacker objectives reduce Deny to 0 VP");
+assert.equal(calculateReconDenyVp(["orders-defender"]), 300, "Defender Orders does not alter projected Recon Deny VP");
+assert.ok(app.includes("function isReconDeny") && app.includes('state.trackId === "recon"') && app.includes("Read-only projection"), "every Recon track renders Deny as a shared calculated read-only value");
+assert.doesNotMatch(app, /isProtectionTrack1Deny|protectionDenyVp/, "Recon Deny no longer uses Protection-specific scoring logic");
+assert.ok(app.indexOf('if (isReconDeny(objective, side))') < app.indexOf("const vpControl = objective.vpOptions"), "automatic Recon Deny rendering bypasses the manual variable-VP selector");
+assert.ok(app.includes("Remaining Deny points are awarded at the end of Turn 8"), "shared Recon Deny distinguishes projected scoring from final Turn 8 scoring");
 assert.match(protectionTrack1.setupDetails.join(" "), /second month.*Platinum Sands player as Attacker/);
 assert.match(protectionTrack1.special.join(" "), /Level 0 ground as Level 0 water/);
 assert.match(protectionTrack1.special.join(" "), /six Depth 1 water tokens/);
@@ -435,6 +444,13 @@ assert.deepEqual(mallory.sides.map(side => [side.id, side.faction]), [
 ]);
 const malloryPlayableTracks = mallory.tracks.filter(track => track.trackId);
 assert.equal(malloryPlayableTracks.length, 13, "Mallory’s World exposes all 13 playable strategic hex types");
+assert.deepEqual([
+  protection.tracks[0].trackId,
+  sunPrairie.tracks[0].results.find(result => result.id === "recon").trackId,
+  tigress.tracks[0].trackId,
+  xhosa.tracks[0].trackId,
+  mallory.tracks[0].trackId
+], ["recon", "recon", "recon", "recon", "recon"], "Protection, Sun Prairie, Tigress, Xhosa VII, and Mallory’s World inherit shared Recon Deny scoring");
 assert.deepEqual(malloryPlayableTracks.map(track => [track.label, track.trackId]), [
   ["Empty Hexes", "recon"],
   ["Operating Base / Landing Zone", "retreat"],

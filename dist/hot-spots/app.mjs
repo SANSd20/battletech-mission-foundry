@@ -1,4 +1,4 @@
-import { calculateProtectionDenyVp, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, OPPOSING_FORCE_TABLES, PROTECTION_DENY_ATTACKER_OBJECTIVE_IDS, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=mallory-scale-3";
+import { calculateReconDenyVp, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, OPPOSING_FORCE_TABLES, RECON_DENY_ATTACKER_OBJECTIVE_IDS, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=mallory-scale-3";
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -251,22 +251,22 @@ function setVp(objective, side, value) {
   state.vpSelections[progressKey(state.trackId, objective.id, side)] = Number(value);
 }
 
-function isProtectionTrack1Deny(objective, side = "defender") {
-  return state.hotSpotId === "protection" &&
-    Number(state.trackSequence.protection) === 1 &&
-    state.trackId === "recon" &&
+function isReconDeny(objective, side = "defender") {
+  return state.trackId === "recon" &&
     objective.id === "deny" &&
     side === "defender";
 }
 
-function protectionDenyVp() {
+function reconDenyVp() {
   const track = currentTrack();
   if (!track) return 300;
-  const completedObjectiveIds = PROTECTION_DENY_ATTACKER_OBJECTIVE_IDS.filter(id => {
-    const objective = track.objectives.find(item => item.id === id);
+  const variant = resolvedHotSpotStep()?.variant;
+  const objectives = variant?.objectives || track.objectives;
+  const completedObjectiveIds = RECON_DENY_ATTACKER_OBJECTIVE_IDS.filter(id => {
+    const objective = objectives.find(item => item.id === id);
     return objective ? Boolean(getProgress(objective, "attacker")) : false;
   });
-  return calculateProtectionDenyVp(completedObjectiveIds);
+  return calculateReconDenyVp(completedObjectiveIds);
 }
 
 function trackScore(side) {
@@ -276,7 +276,7 @@ function trackScore(side) {
   const objectives = variant?.objectives || track.objectives;
   return objectives.reduce((total, objective) => {
     if (!applies(objective, side)) return total;
-    if (isProtectionTrack1Deny(objective, side)) return total + protectionDenyVp();
+    if (isReconDeny(objective, side)) return total + reconDenyVp();
     const completed = getProgress(objective, side);
     const display = displayObjective(objective, variant);
     if (objective.repeatable) return total + Number(completed) * getVp(display, side);
@@ -589,8 +589,8 @@ function renderReference() {
 
 function objectiveControl(objective, side, display = objective) {
   if (!applies(objective, side)) return '<span class="not-applicable" aria-label="Not applicable">—</span>';
-  if (isProtectionTrack1Deny(objective, side)) {
-    return '<div class="calculated-vp" aria-label="Projected Deny Victory Points"><strong>Projected: ' + protectionDenyVp() + ' VP</strong><span>Read-only projection</span></div>';
+  if (isReconDeny(objective, side)) {
+    return '<div class="calculated-vp" aria-label="Projected Deny Victory Points"><strong>Projected: ' + reconDenyVp() + ' VP</strong><span>Read-only projection</span></div>';
   }
   const progress = getProgress(objective, side);
   const vpControl = objective.vpOptions
@@ -628,9 +628,9 @@ function renderTracker() {
   $$(".mode-button").forEach(button => button.classList.toggle("active", button.dataset.mode === state.mode));
   $("#objective-body").innerHTML = track ? objectives.map(objective => {
     const display = displayObjective(objective, variant);
-    const calculatedDeny = isProtectionTrack1Deny(objective);
-    const objectiveText = calculatedDeny ? display.text.replace(/ The printed value is shown as 50\/100\/200\/300; select the applicable value\.$/, "") : display.text;
-    const vpLabel = calculatedDeny ? "Projected: " + protectionDenyVp() + " VP" : (display.vpOptions ? display.vpOptions.join(" / ") + " VP (select value)" : display.vp + " VP" + (display.repeatable ? " each" : ""));
+    const calculatedDeny = isReconDeny(objective);
+    const objectiveText = display.text;
+    const vpLabel = calculatedDeny ? "Projected: " + reconDenyVp() + " VP" : (display.vpOptions ? display.vpOptions.join(" / ") + " VP (select value)" : display.vp + " VP" + (display.repeatable ? " each" : ""));
     const projectionNote = calculatedDeny ? '<div class="calculated-vp-note">Projected Deny VP follows the printed Deny schedule as the Attacker completes objectives. Remaining Deny points are awarded at the end of Turn 8.</div>' : "";
     return '<tr><th scope="row"><div class="objective-title">' + esc(display.name) + '</div><div class="objective-rule">' + esc(objectiveText) + '</div><div class="objective-vp">' + vpLabel + "</div>" + projectionNote + "</th>" +
       '<td class="attacker-col">' + objectiveControl(objective, "attacker", display) + "</td>" +
