@@ -71,6 +71,27 @@ const breakthrough = TRACKS.find(track => track.id === "breakthrough");
 assert.equal(breakthrough.pageRef, "pp. 168–169");
 const meetingEngagement = TRACKS.find(track => track.id === "meeting-engagement");
 assert.equal(meetingEngagement.pageRef, "pp. 170–171");
+const pushback = TRACKS.find(track => track.id === "pushback");
+const retreat = TRACKS.find(track => track.id === "retreat");
+const strike = TRACKS.find(track => track.id === "strike");
+assert.match(pushback.setup.join(" "), /Defender sets up first.*5 hexes \(AS: 10 inches\).*Scale 2\+.*10 hexes \/ 16 inches/i, "Pushback preserves setup order and Scale-dependent distances");
+assert.match(pushback.special.join(" "), /shared pool.*take turns selecting one unit at a time.*successfully completed the track chooses first/i, "Pushback preserves alternating salvage with the successful player choosing first");
+assert.match(pushback.special.join(" "), /neither side completed.*both completed all objectives.*each side gets its own destroyed or crippled units returned/i, "Pushback preserves both salvage exceptions");
+assert.equal(retreat.pageRef, "pp. 174–175", "Retreat uses its complete source-page range");
+assert.match(strike.special.join(" "), /shared pool.*take turns selecting one unit at a time.*successfully completed the track chooses first/i, "Strike preserves alternating salvage with the successful player choosing first");
+assert.match(strike.special.join(" "), /neither side completed.*both completed all objectives.*each side gets its own destroyed or crippled units returned/i, "Strike preserves both salvage exceptions");
+assert.deepEqual(pushback.objectives.map(({ id, side, vp }) => [id, side, vp]), [
+  ["orders-attacker", "attacker", 50], ["orders-defender", "defender", 50], ["push", "attacker", 200], ["crush", "attacker", 400],
+  ["gutted", "attacker", 150], ["advance-to-rear", "defender", 200], ["make-them-hurt", "defender", 400], ["lead-to-victory", "defender", 150]
+], "Pushback objectives and VP remain unchanged");
+assert.deepEqual(retreat.objectives.map(({ id, side, vp }) => [id, side, vp]), [
+  ["orders-attacker", "attacker", 50], ["orders-defender", "defender", 50], ["identify-weaknesses", "attacker", 200],
+  ["hammer", "both", 100], ["gauntlet", "defender", 200]
+], "Retreat objectives and VP remain unchanged");
+assert.deepEqual(strike.objectives.map(({ id, side, vp }) => [id, side, vp]), [
+  ["orders-attacker", "attacker", 50], ["orders-defender", "defender", 50], ["identify-destroy", "attacker", 200],
+  ["rough-up-place", "both", 100], ["seek-destroy", "defender", 200]
+], "Strike objectives and VP remain unchanged");
 assert.ok(raid.objectives.some(objective => objective.repeatable), "Objective Raid includes repeatable objectives");
 assert.equal(raid.objectives.filter(objective => objective.repeatable).length, 2);
 assert.match(raid.setup.join(" "), /two Medium objective buildings/, "standard Objective Raid retains its building setup");
@@ -158,6 +179,8 @@ const app = fs.readFileSync(new URL("../dist/hot-spots/app.mjs", import.meta.url
 const html = fs.readFileSync(new URL("../dist/hot-spots/index.html", import.meta.url), "utf8");
 const css = fs.readFileSync(new URL("../dist/hot-spots/styles.css", import.meta.url), "utf8");
 const data = fs.readFileSync(new URL("../dist/hot-spots/data.mjs", import.meta.url), "utf8");
+assert.ok(app.includes('referenceTrack.pageRef || "p. " + referenceTrack.page'), "mission heading and citation use the complete pageRef metadata");
+assert.ok(app.includes('track.pageRef || "p. " + track.page'), "objective tracker uses the complete pageRef metadata");
 assert.ok(app.includes("roleChoiceHint"), "role choice hints can describe source-specific role selection");
 for (const term of ["progress", "vpSelections", "data-mode", "resetTrack", "window.confirm", "Attacker only", "Defender only", "Both sides"]) {
   assert.ok((app + html).includes(term), term + " tracking behavior is present");

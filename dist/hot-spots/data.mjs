@@ -246,7 +246,7 @@ export const TRACKS = [
     summary: "The Attacker makes a two-pronged attack to try to push the Defender’s lines back.",
     setup: [
       "The Attacker selects a short edge as their home edge; the Defender gets the opposite short edge.",
-      "Defender (Standard): set up anywhere at least 5 hexes (AS: 10 inches) from the home edge; at Scale 2+, use 10 hexes / 16 inches.",
+      "Defender (Standard): the Defender sets up first anywhere at least 5 hexes (AS: 10 inches) from the home edge; at Scale 2+, use 10 hexes / 16 inches.",
       "Attacker (Standard): receive an additional 32 BSP in vehicle assets per Scale (AS: an additional Scale 1 force total) and split the force in two. At Scale 1, the Scale 1 force is the first force and added BSP assets are the second. At Scale 2+, additional units may be divided between the two. In Turn 1, the first force enters from the Attacker’s home edge and the second enters from the long edges at least halfway up the map from the Defender’s home edge. The Attacker may not select Minefield or Immobile BSP assets."
     ],
     scaleNotes: ["At Scale 2+, Defender setup is 10 hexes / 16 inches from the home edge."],
@@ -262,7 +262,7 @@ export const TRACKS = [
     ],
     special: [
       "Track End: after the end of any turn when at least one side has no units in play, or after the end of Turn 10 (Turn 8 in Alpha Strike).",
-      "Salvage: both sides may claim salvage from one shared pool. The player that successfully completed the track chooses first. If neither side completed it, or both completed all objectives, no opposing salvage is claimed and each side gets its own destroyed or crippled units returned."
+      "Salvage: both sides may claim salvage from one shared pool. Players take turns selecting one unit at a time from the salvage pool. The player that successfully completed the track chooses first. If neither side completed it, or both completed all objectives, no opposing salvage is claimed and each side gets its own destroyed or crippled units returned."
     ]
   },
   {
@@ -294,6 +294,7 @@ export const TRACKS = [
     id: "retreat",
     name: "Retreat",
     page: 174,
+    pageRef: "pp. 174–175",
     summary: "After a successful mission, the Defender attempts to slip away before the Attacker can ascertain their identities and retaliate.",
     setup: [
       "At Scale 1–2, use two mapsheets with long edges touching, or one 36-inch Alpha Strike BattleMat. At Scale 3+, use four mapsheets or two 48-inch BattleMats with long edges touching.",
@@ -340,7 +341,7 @@ export const TRACKS = [
     special: [
       "Scanning: refer to the Scanning rules on page 167. Buildings may be scanned to determine whether they are the headquarters objective. When successfully scanned, the Defender reveals whether it is the headquarters. Battle armor and infantry may scan only when adjacent to or inside the building and may not have attacked that turn.",
       "Track End: after the end of any turn when at least one side has no units in play, or after the end of Turn 10 (Turn 8 in Alpha Strike).",
-      "Salvage: both sides may claim salvage from one shared pool. The player that successfully completed the track chooses first. If neither side completed it, or both completed all objectives, no opposing salvage is claimed and each side gets its own destroyed or crippled units returned."
+      "Salvage: both sides may claim salvage from one shared pool. Players take turns selecting one unit at a time from the salvage pool. The player that successfully completed the track chooses first. If neither side completed it, or both completed all objectives, no opposing salvage is claimed and each side gets its own destroyed or crippled units returned."
     ],
     errataNote: "The supplied v2.41 errata changes the older Hinterlands Strike scanning paragraph. The Draconis Reach p. 167 scanning rules plus the specific Strike restriction above are used here."
   }
