@@ -16,6 +16,34 @@ assert.match(cripplingDamage, /torso internal structure damage does not count wh
 assert.match(cripplingDamage, /half starting structure, rounded up/);
 assert.match(cripplingDamage, /begins with only 1 structure starts withdrawing as soon as it loses all armor/);
 assert.match(cripplingDamage, /all weapons destroyed and no ability to move is considered destroyed/);
+const scanning = GENERAL_RULES.find(rule => rule.title === "Scanning").text;
+const scanningRange = GENERAL_RULES.find(rule => rule.title === "Scanning range").table;
+assert.match(scanning, /BattleTech:.*BattleMechs and vehicle assets.*within 4 hexes and LOS.*Physical Attack Phase.*in place of making a physical attack/i, "BattleTech scanning preserves scanner eligibility, range, LOS, phase, and initial physical-attack replacement");
+assert.match(scanning, /End Phase of the following turn.*physical attacks.*may not make weapon attacks/i, "BattleTech scanning preserves its two-turn procedure and second-turn attack restrictions");
+assert.match(scanning, /fails if the target is destroyed or out of range.*destroyed units cannot be scanned/i, "BattleTech scanning preserves failure and destroyed-target restrictions");
+assert.match(scanning, /Sensor critical hit.*functioning probe/i, "BattleTech scanning preserves the Sensor critical-hit restriction and probe exception");
+assert.match(scanning, /probe.*removes the LOS requirement.*weapon and physical attacks.*enemy ECM/i, "BattleTech scanning preserves probe range, LOS, attack, and ECM interactions");
+assert.match(scanning, /Alpha Strike:.*within 8 inches and LOS.*Combat Phase/i, "Alpha Strike scanning uses the errata-corrected declaration range");
+assert.match(scanning, /may not make a physical attack during the initial turn.*End Phase of the following turn.*may make physical attacks/i, "Alpha Strike scanning preserves its two-turn physical-attack procedure");
+assert.match(scanning, /sprinting unit cannot scan.*Fire Control critical hit.*functioning probe/i, "Alpha Strike scanning preserves sprinting and Fire Control restrictions plus the probe exception");
+assert.match(scanning, /probe that is not blocked by enemy ECM.*removes the LOS requirement.*Scanning Range Table range.*weapon or physical attacks/i, "Alpha Strike scanning preserves probe range, LOS, attack, and ECM interactions");
+assert.deepEqual(scanningRange.headers, ["Scanning Equipment", "BT Range", "AS Range", "LOS Required", "Weapon Attacks on 2nd Turn"]);
+assert.deepEqual(scanningRange.rows, [
+  ["Default Sensors", "4", "8″", "Yes", "No"],
+  ["Light Active Probe (LPRB)", "3", "6″", "No", "Yes"],
+  ["Watchdog (WAT)", "3", "6″", "No", "Yes"],
+  ["Beagle Active Probe (PRB)", "4", "9″", "No", "Yes"],
+  ["Asset with PRB", "4", "N/A", "No", "Yes"],
+  ["Clan Active Probe", "5", "N/A", "No", "Yes"],
+  ["Bloodhound (BH)", "8", "12″", "No", "Yes"]
+], "Scanning Range Table matches Draconis Reach pp. 167–168 with current errata");
+for (const trackId of ["recon", "retreat", "strike"]) {
+  const track = TRACKS.find(candidate => candidate.id === trackId);
+  assert.match(track.special.join(" "), /Scanning: refer to the Scanning rules on page 167/i, track.name + " retains the central shared Scanning reference");
+}
+const strikeScanning = TRACKS.find(track => track.id === "strike").special.join(" ");
+assert.match(strikeScanning, /Buildings may be scanned.*Defender reveals whether it is the headquarters/i, "Strike retains its building scanning and reveal procedure");
+assert.match(strikeScanning, /Battle armor and infantry may scan only when adjacent to or inside the building.*may not have attacked/i, "Strike retains its battle armor and infantry scanning restrictions");
 assert.deepEqual(Object.keys(OPPOSING_FORCE_TABLES).sort(), ["capellan", "draconis-combine", "federated-suns", "mercenary-pirate", "raven-alliance"], "all five Draconis Reach OpFor tables are present");
 for (const table of Object.values(OPPOSING_FORCE_TABLES)) {
   assert.equal(Object.keys(table.scales).length, 3, table.label + " includes all three scales");

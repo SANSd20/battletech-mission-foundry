@@ -40,7 +40,7 @@ export const GENERAL_RULES = [
   },
   {
     title: "Scanning",
-    text: "BattleTech scans begin during the Physical Attack Phase and complete at the end phase of the following turn. Without a functioning probe, the scanner may not make weapon attacks during the second turn, while the source permits physical attacks; a probe permits weapon and physical attacks and ignores LOS within probe range. Alpha Strike scans begin during the Combat Phase, require LOS within 4 inches, and complete at the end phase of the following turn.",
+    text: "BattleTech: BattleMechs and vehicle assets may declare a scan of one target within 4 hexes and LOS during the Physical Attack Phase in place of making a physical attack. The scan completes during the End Phase of the following turn. The scanner may make physical attacks during that second turn, but may not make weapon attacks. The scan fails if the target is destroyed or out of range at the end of the following turn, and destroyed units cannot be scanned. A unit with a Sensor critical hit cannot scan without a functioning probe. A functioning probe within its Scanning Range Table range removes the LOS requirement and permits weapon and physical attacks during the second turn, but a probe cannot scan when blocked by enemy ECM. Alpha Strike: A unit may declare a scan of one target within 8 inches and LOS during the Combat Phase. The scanning unit may not make a physical attack during the initial turn. The scan completes during the End Phase of the following turn, when the scanner may make physical attacks. The scan fails if the target is destroyed or out of range at the end of that turn. A sprinting unit cannot scan, and a Fire Control critical hit prevents scanning unless the unit has a functioning probe. A functioning probe that is not blocked by enemy ECM removes the LOS requirement, uses the probe’s Scanning Range Table range, and permits weapon or physical attacks during the second turn.",
     ref: "Draconis Reach p. 167"
   },
   {
@@ -48,16 +48,16 @@ export const GENERAL_RULES = [
     table: {
       headers: ["Scanning Equipment", "BT Range", "AS Range", "LOS Required", "Weapon Attacks on 2nd Turn"],
       rows: [
-        ["Default Sensors", "4", "9″", "Yes", "No"],
-        ["Light Active Probe (LRP)", "3", "6″", "No", "Yes"],
+        ["Default Sensors", "4", "8″", "Yes", "No"],
+        ["Light Active Probe (LPRB)", "3", "6″", "No", "Yes"],
         ["Watchdog (WAT)", "3", "6″", "No", "Yes"],
-        ["Beagle Active Probe (BAP)", "4", "9″", "No", "Yes"],
+        ["Beagle Active Probe (PRB)", "4", "9″", "No", "Yes"],
         ["Asset with PRB", "4", "N/A", "No", "Yes"],
         ["Clan Active Probe", "5", "N/A", "No", "Yes"],
         ["Bloodhound (BH)", "8", "12″", "No", "Yes"]
       ]
     },
-    text: "Sprinting units cannot scan, and a Fire Control critical hit blocks scanning unless a functioning probe is present.",
+    text: "The ranges and restrictions above apply with the complete BattleTech and Alpha Strike procedures in the shared Scanning rule.",
     ref: "Draconis Reach p. 167"
   }
 ];
