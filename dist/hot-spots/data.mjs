@@ -163,6 +163,7 @@ export const TRACKS = [
     id: "meeting-engagement",
     name: "Meeting Engagement",
     page: 171,
+    pageRef: "pp. 170–171",
     summary: "Two forces make contact and quickly fall back.",
     setup: [
       "The Defender selects a short edge as their home edge; the Attacker gets the opposite short edge. Neither side may select Minefield or Immobile BSP assets.",
@@ -2189,6 +2190,8 @@ export const HOT_SPOTS = [
     terrain: "Savannah / Urban",
     source: "Draconis Reach pp. 132–141",
     trackSelectorLabel: "Strategic Hex Type",
+    fixedScale: 3,
+    fixedScaleNote: "Mallory's World is designed and balanced for Scale 3. See Veteran Command (p. 19) for starting directly at this Scale.",
     note: "Choose the strategic hex type being attacked. The browser resolves the printed standard tactical track and Loneliness Island modifications without tracking strategic movement, ownership, payments, repairs, or campaign victory.",
     sides: [
       factionSide("dragon-banner", "Raise the Dragon Banner", "Draconis Combine"),

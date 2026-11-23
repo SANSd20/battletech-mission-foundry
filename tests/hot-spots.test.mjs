@@ -41,6 +41,8 @@ assert.match(assault.special.join(" "), /at least one side has no units in play/
 assert.doesNotMatch(assault.special.join(" "), /no ’Mech units in play/);
 const breakthrough = TRACKS.find(track => track.id === "breakthrough");
 assert.equal(breakthrough.pageRef, "pp. 168–169");
+const meetingEngagement = TRACKS.find(track => track.id === "meeting-engagement");
+assert.equal(meetingEngagement.pageRef, "pp. 170–171");
 assert.ok(raid.objectives.some(objective => objective.repeatable), "Objective Raid includes repeatable objectives");
 assert.equal(raid.objectives.filter(objective => objective.repeatable).length, 2);
 assert.match(raid.setup.join(" "), /two Medium objective buildings/, "standard Objective Raid retains its building setup");
@@ -425,6 +427,8 @@ assert.ok(mallory, "Mallory’s World is available as a Hot Spot");
 assert.equal(mallory.name, "Mallory’s World");
 assert.equal(mallory.region, "Loneliness Island");
 assert.equal(mallory.trackSelectorLabel, "Strategic Hex Type");
+assert.equal(mallory.fixedScale, 3, "Mallory’s World is fixed to Scale 3 in the browser");
+assert.equal(mallory.fixedScaleNote, "Mallory's World is designed and balanced for Scale 3. See Veteran Command (p. 19) for starting directly at this Scale.");
 assert.deepEqual(mallory.sides.map(side => [side.id, side.faction]), [
   ["dragon-banner", "Draconis Combine"],
   ["sword-sunburst", "Federated Suns"]
@@ -488,6 +492,9 @@ assert.match(mallory.tracks.find(track => track.label === "Shipping Port").varia
 assert.match(mallory.tracks.find(track => track.label === "Training Simulators").variant.setupDetails.join(" "), /Park District/);
 assert.ok(html.includes('id="hot-spot-track-label"'), "the sequence selector has a location-specific label target");
 assert.ok(app.includes('hotSpot.trackSelectorLabel || "Track sequence"'), "Mallory’s World changes the selector label without changing other Hot Spots");
+assert.ok(app.includes("if (hotSpot.fixedScale) state.scale = hotSpot.fixedScale"), "Mallory’s World applies its fixed Scale before each render");
+assert.ok(app.includes("button.disabled = Boolean(fixedScale)"), "the Scale selector locks for fixed-Scale Hot Spots and unlocks elsewhere");
+assert.ok(html.includes('id="scale-restriction-note"'), "the fixed-Scale explanation has a dedicated display target");
 assert.ok(app.includes("outcome.reverseRoles") && app.includes("attacker: opposingSide, defender: selectedInitiator"), "City Pursuit role reversal assigns objective and VP columns to the correct tactical sides");
 assert.ok(app.includes("variant?.nonPlayable") && app.includes("This strategic hex cannot be entered and has no tactical objectives"), "the restricted research facility renders without a tactical tracker");
 for (const standardTrack of TRACKS) {

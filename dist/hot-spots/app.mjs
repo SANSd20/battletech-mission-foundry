@@ -1,4 +1,4 @@
-import { calculateProtectionDenyVp, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, OPPOSING_FORCE_TABLES, PROTECTION_DENY_ATTACKER_OBJECTIVE_IDS, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=mallory-phase-1";
+import { calculateProtectionDenyVp, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, OPPOSING_FORCE_TABLES, PROTECTION_DENY_ATTACKER_OBJECTIVE_IDS, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=mallory-scale-3";
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -202,6 +202,7 @@ function resolvedHotSpotStep() {
 
 function syncHotSpotState() {
   const hotSpot = currentHotSpot();
+  if (hotSpot.fixedScale) state.scale = hotSpot.fixedScale;
   if (!state.trackSequence[hotSpot.id]) state.trackSequence[hotSpot.id] = hotSpot.tracks[0]?.sequence || 1;
   const step = currentHotSpotStep();
   if (!state.selectedSide[hotSpot.id] || !hotSpot.sides.some(side => side.id === state.selectedSide[hotSpot.id])) {
@@ -290,11 +291,13 @@ function modeLabel() {
 function renderControlState() {
   const track = currentTrack();
   const resolved = resolvedHotSpotStep();
+  const fixedScale = currentHotSpot().fixedScale;
   $("#derived-track-title").textContent = track ? (resolved?.displayName || track.name) : (resolved?.variant?.displayName || "Track pending");
   Array.from(document.querySelectorAll(".scale-button")).forEach(button => {
     const active = Number(button.dataset.scale) === state.scale;
     button.classList.toggle("active", active);
     button.setAttribute("aria-pressed", String(active));
+    button.disabled = Boolean(fixedScale);
   });
 }
 
@@ -422,7 +425,12 @@ function renderHotSpotSetup() {
   const sideControl = $("#hot-spot-side-select").closest(".control-group");
   if (sideControl) sideControl.style.display = hotSpot.hideSideSelector ? "none" : "";
   const scaleChoice = $("#scale-choice");
-  if (scaleChoice) scaleChoice.style.display = hotSpot.hideScaleSelector ? "none" : "";
+  if (scaleChoice) {
+    scaleChoice.style.display = hotSpot.hideScaleSelector ? "none" : "";
+    const scaleNote = $("#scale-restriction-note");
+    scaleNote.textContent = hotSpot.fixedScaleNote || "";
+    scaleNote.hidden = !hotSpot.fixedScaleNote;
+  }
   const takingToggle = $("#taking-one-for-team").closest("label");
   takingToggle.style.display = sourceTableMode ? "none" : "";
   if (hotSpot.opforMode === "gladiator") {
@@ -723,7 +731,7 @@ $("#winner-controls").addEventListener("change", event => {
 
 $("#scale-select").addEventListener("click", event => {
   const button = event.target.closest(".scale-button");
-  if (!button) return;
+  if (!button || currentHotSpot().fixedScale) return;
   state.scale = Number(button.dataset.scale);
   renderControlState();
   renderReference();

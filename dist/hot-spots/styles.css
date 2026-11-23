@@ -69,6 +69,10 @@ button, select { cursor: pointer; }
 .scale-button { min-width: 38px; min-height: 36px; padding: 0 11px; border: 1px solid #aeb9c2; background: #fff; color: var(--ink); font-size: 12px; font-weight: 850; }
 .scale-button:hover { border-color: var(--faction-color); color: var(--faction-color); }
 .scale-button.active { border: 2px solid var(--faction-color); color: var(--faction-color); box-shadow: 0 0 0 2px color-mix(in srgb, var(--faction-color) 24%, transparent); }
+.scale-button:disabled { cursor: not-allowed; opacity: .55; }
+.scale-button:disabled:hover { border-color: #aeb9c2; color: var(--ink); }
+.scale-button.active:disabled { border-color: var(--faction-color); color: var(--faction-color); opacity: 1; }
+.scale-restriction-note { flex: 1 1 320px; margin: 0; color: #42545d; font-size: 11px; line-height: 1.45; }
 
 
 .option-toggle { display: flex; align-items: flex-start; gap: 10px; margin-top: 14px; padding: 12px 13px; border: 1px solid #b9c6c8; background: #f1f7f6; color: var(--ink); cursor: pointer; }
@@ -298,6 +302,7 @@ body { background: color-mix(in srgb, var(--faction-color) 10%, #111821); color:
   .campaign-track-label { grid-column: auto; }
   .scale-choice { display: block; }
   .scale-choice .label { display: block; margin-bottom: 7px; }
+  .scale-restriction-note { margin-top: 9px; }
 
   .opfor-card-head { align-items: flex-start; flex-wrap: wrap; }
   .opfor-card-head > div:first-child { min-width: 0; flex: 1 1 220px; }
