@@ -198,6 +198,10 @@ select { width: 100%; min-height: 42px; padding: 0 12px; border: 1px solid #aeb9
 .not-applicable { color: #9aa5ad; font-size: 20px; }
 .pending-track { padding: 24px 15px !important; color: #66737d; font-weight: 600; text-align: center !important; }
 .vp-select { min-height: 28px; margin-top: 6px; padding: 0 5px; font-size: 10px; }
+.calculated-vp { display: grid; gap: 3px; min-height: 34px; align-content: center; color: var(--ink); }
+.calculated-vp strong { font-size: 12px; }
+.calculated-vp span { color: #6d7982; font-size: 9px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.calculated-vp-note { margin-top: 6px; color: #53616c; font-size: 10px; font-weight: 500; line-height: 1.4; }
 .score-card { margin-top: 16px; padding: 15px; border: 1px solid #b9c6c8; background: #f4f8f7; }
 .score-summary { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 12px; }
 .score-summary strong { display: block; margin-top: 2px; font-size: 29px; line-height: 1; }

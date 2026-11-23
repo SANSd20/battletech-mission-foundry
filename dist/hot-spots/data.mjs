@@ -7,6 +7,18 @@ export const SOURCES = {
   opposingForces: "Hot Spots: Draconis Reach, First Printing, Opposing Force Tables pp. 186–201"
 };
 
+export const PROTECTION_DENY_QUALIFYING_OBJECTIVE_IDS = Object.freeze([
+  "identify-opposition",
+  "preemptive-strike",
+  "observe-report"
+]);
+
+export function calculateProtectionDenyVp(completedObjectiveIds = []) {
+  const completed = new Set(completedObjectiveIds);
+  const completedQualifyingObjectives = PROTECTION_DENY_QUALIFYING_OBJECTIVE_IDS.filter(id => completed.has(id)).length;
+  return 300 - (100 * completedQualifyingObjectives);
+}
+
 export const GENERAL_RULES = [
   {
     title: "Commander",

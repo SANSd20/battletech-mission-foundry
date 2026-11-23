@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, OPPOSING_FORCE_TABLES, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
+import { calculateProtectionDenyVp, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, OPPOSING_FORCE_TABLES, PROTECTION_DENY_QUALIFYING_OBJECTIVE_IDS, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
 
 const expected = ["Assault", "Breakthrough", "Defend", "Flank", "Meeting Engagement", "Objective Raid", "Pursuit", "Pushback", "Recon", "Retreat", "Strike"];
 assert.deepEqual(TRACKS.map(track => track.name), expected, "all eleven Draconis Reach standard tracks are present");
@@ -151,6 +151,14 @@ assert.equal(protection.tracks[2].outcomes["platinum-sands|kanagawa-group"].role
 assert.match(protection.note, /contract 138910A–B/);
 const protectionTrack1 = protection.tracks[0].variant;
 assert.equal(protectionTrack1.displayName, "Protection Recon");
+assert.deepEqual(PROTECTION_DENY_QUALIFYING_OBJECTIVE_IDS, ["identify-opposition", "preemptive-strike", "observe-report"]);
+assert.equal(calculateProtectionDenyVp([]), 300, "Protection Deny starts at 300 projected VP");
+assert.equal(calculateProtectionDenyVp(["identify-opposition"]), 200, "one qualifying Attacker objective reduces Deny to 200 VP");
+assert.equal(calculateProtectionDenyVp(["identify-opposition", "preemptive-strike"]), 100, "two qualifying Attacker objectives reduce Deny to 100 VP");
+assert.equal(calculateProtectionDenyVp(PROTECTION_DENY_QUALIFYING_OBJECTIVE_IDS), 0, "all three qualifying Attacker objectives reduce Deny to 0 VP");
+assert.equal(calculateProtectionDenyVp(["orders-attacker", "orders-defender"]), 300, "Orders objectives do not alter projected Deny VP");
+assert.ok(app.includes("isProtectionTrack1Deny") && app.includes("Read-only projection"), "Protection Track 1 renders Deny as a calculated read-only value");
+assert.ok(app.includes("Remaining Deny points are awarded at the end of Turn 8"), "Protection Track 1 distinguishes projected Deny from final awarded scoring");
 assert.match(protectionTrack1.setupDetails.join(" "), /second month.*Platinum Sands player as Attacker/);
 assert.match(protectionTrack1.special.join(" "), /Level 0 ground as Level 0 water/);
 assert.match(protectionTrack1.special.join(" "), /six Depth 1 water tokens/);

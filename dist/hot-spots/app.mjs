@@ -1,4 +1,4 @@
-import { FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, OPPOSING_FORCE_TABLES, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=opfor-10";
+import { calculateProtectionDenyVp, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, OPPOSING_FORCE_TABLES, PROTECTION_DENY_QUALIFYING_OBJECTIVE_IDS, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=protection-deny-1";
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -248,6 +248,24 @@ function setVp(objective, side, value) {
   state.vpSelections[progressKey(state.trackId, objective.id, side)] = Number(value);
 }
 
+function isProtectionTrack1Deny(objective, side = "defender") {
+  return state.hotSpotId === "protection" &&
+    Number(state.trackSequence.protection) === 1 &&
+    state.trackId === "recon" &&
+    objective.id === "deny" &&
+    side === "defender";
+}
+
+function protectionDenyVp() {
+  const track = currentTrack();
+  if (!track) return 300;
+  const completedObjectiveIds = PROTECTION_DENY_QUALIFYING_OBJECTIVE_IDS.filter(id => {
+    const objective = track.objectives.find(item => item.id === id);
+    return objective ? Boolean(getProgress(objective, "attacker")) : false;
+  });
+  return calculateProtectionDenyVp(completedObjectiveIds);
+}
+
 function trackScore(side) {
   const track = currentTrack();
   if (!track) return 0;
@@ -255,6 +273,7 @@ function trackScore(side) {
   const objectives = variant?.objectives || track.objectives;
   return objectives.reduce((total, objective) => {
     if (!applies(objective, side)) return total;
+    if (isProtectionTrack1Deny(objective, side)) return total + protectionDenyVp();
     const completed = getProgress(objective, side);
     const display = displayObjective(objective, variant);
     if (objective.repeatable) return total + Number(completed) * getVp(display, side);
@@ -549,6 +568,9 @@ function renderReference() {
 
 function objectiveControl(objective, side, display = objective) {
   if (!applies(objective, side)) return '<span class="not-applicable" aria-label="Not applicable">—</span>';
+  if (isProtectionTrack1Deny(objective, side)) {
+    return '<div class="calculated-vp" aria-label="Projected Deny Victory Points"><strong>Projected: ' + protectionDenyVp() + ' VP</strong><span>Read-only projection</span></div>';
+  }
   const progress = getProgress(objective, side);
   const vpControl = objective.vpOptions
     ? '<select class="vp-select" aria-label="Victory Point value" data-vp-objective="' + esc(objective.id) + '" data-vp-side="' + side + '">' +
@@ -585,7 +607,11 @@ function renderTracker() {
   $$(".mode-button").forEach(button => button.classList.toggle("active", button.dataset.mode === state.mode));
   $("#objective-body").innerHTML = track ? objectives.map(objective => {
     const display = displayObjective(objective, variant);
-    return '<tr><th scope="row"><div class="objective-title">' + esc(display.name) + '</div><div class="objective-rule">' + esc(display.text) + '</div><div class="objective-vp">' + (display.vpOptions ? display.vpOptions.join(" / ") + " VP (select value)" : display.vp + " VP" + (display.repeatable ? " each" : "")) + "</div></th>" +
+    const calculatedDeny = isProtectionTrack1Deny(objective);
+    const objectiveText = calculatedDeny ? display.text.replace(/ The printed value is shown as 50\/100\/200\/300; select the applicable value\.$/, "") : display.text;
+    const vpLabel = calculatedDeny ? "Projected: " + protectionDenyVp() + " VP" : (display.vpOptions ? display.vpOptions.join(" / ") + " VP (select value)" : display.vp + " VP" + (display.repeatable ? " each" : ""));
+    const projectionNote = calculatedDeny ? '<div class="calculated-vp-note">Projected Deny VP decreases as the Attacker completes qualifying objectives. Remaining Deny points are awarded at the end of Turn 8.</div>' : "";
+    return '<tr><th scope="row"><div class="objective-title">' + esc(display.name) + '</div><div class="objective-rule">' + esc(objectiveText) + '</div><div class="objective-vp">' + vpLabel + "</div>" + projectionNote + "</th>" +
       '<td class="attacker-col">' + objectiveControl(objective, "attacker", display) + "</td>" +
       '<td class="defender-col">' + objectiveControl(objective, "defender", display) + "</td></tr>";
   }).join("") :
