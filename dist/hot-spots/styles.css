@@ -53,7 +53,9 @@ button, select { cursor: pointer; }
 .campaign-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; padding: 12px 14px 14px; }
 .campaign-track-label { grid-column: 1 / -1; color: var(--faction-color); font-size: 10px; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
 .campaign-field { display: grid; gap: 5px; color: #56636e; font-size: 10px; font-weight: 850; letter-spacing: .05em; text-transform: uppercase; }
-.campaign-field input, .campaign-field select { min-height: 35px; padding: 0 8px; font-size: 12px; font-weight: 700; letter-spacing: normal; text-transform: none; }
+.campaign-field input, .campaign-field select, .campaign-field textarea { min-height: 35px; padding: 0 8px; font-size: 12px; font-weight: 700; letter-spacing: normal; text-transform: none; }
+.campaign-field textarea { box-sizing: border-box; width: 100%; padding: 8px; resize: vertical; }
+.campaign-wide-field { grid-column: 1 / -1; }
 .campaign-static-field strong { min-height: 35px; padding: 9px 8px; border: 1px solid #c8d1d5; background: #eef2f2; color: #53616c; font-size: 11px; font-weight: 700; letter-spacing: normal; line-height: 1.35; text-transform: none; }
 .campaign-contract-outcome { color: var(--ink); font-size: 13px; font-weight: 850; }
 .campaign-ruling { padding: 9px 10px; border-left: 3px solid var(--orange); background: #fff4e9; color: #7b4b2d; }
@@ -194,7 +196,7 @@ select { width: 100%; min-height: 42px; padding: 0 12px; border: 1px solid #aeb9
 .objective-rule { margin-top: 4px; color: #64717a; font-size: 11px; font-weight: 400; line-height: 1.35; }
 .objective-vp { margin-top: 7px; color: var(--orange); font-size: 10px; font-weight: 850; letter-spacing: .05em; }
 .check-control, .counter-control { display: flex; align-items: center; justify-content: center; gap: 5px; min-height: 34px; }
-.check-control { flex-wrap: wrap; }
+.check-control { position: relative; flex-wrap: wrap; }
 .check-control input { position: absolute; opacity: 0; }
 .checkmark { display: inline-block; width: 22px; height: 22px; border: 1px solid #98a6af; border-radius: 3px; background: #fff; }
 .check-control input:checked + .checkmark { border-color: var(--teal); background: var(--teal); box-shadow: inset 0 0 0 4px #fff; }

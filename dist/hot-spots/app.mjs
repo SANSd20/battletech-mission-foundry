@@ -1,4 +1,4 @@
-import { calculateAchernarVictory, calculateReconDenyVp, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, normalizeAchernarCampaignState, OPPOSING_FORCE_TABLES, RECON_DENY_ATTACKER_OBJECTIVE_IDS, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=achernar-final-rulings";
+import { ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, evaluateAltaVistaCampaign, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, RECON_DENY_ATTACKER_OBJECTIVE_IDS, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=alta-vista-correction";
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -9,6 +9,7 @@ const opforTableByFaction = {
   "Capellan Confederation": "capellan",
   "Draconis Combine": "draconis-combine",
   "Federated Suns": "federated-suns",
+  "Raven Alliance": "raven-alliance",
   "Clan Sea Fox": "raven-alliance"
 };
 
@@ -41,8 +42,15 @@ function currentHotSpot() {
 
 function currentHotSpotStep() {
   const hotSpot = currentHotSpot();
-  const sequence = Number(state.trackSequence[hotSpot.id] || hotSpot.tracks[0]?.sequence || 1);
-  return hotSpot.tracks.find(track => track.sequence === sequence) || hotSpot.tracks[0] || null;
+  const tracks = availableHotSpotTracks(hotSpot);
+  const sequence = Number(state.trackSequence[hotSpot.id] || tracks[0]?.sequence || 1);
+  return tracks.find(track => track.sequence === sequence) || tracks[0] || null;
+}
+
+function availableHotSpotTracks(hotSpot = currentHotSpot()) {
+  if (hotSpot.campaignState?.kind !== "alta-vista") return hotSpot.tracks;
+  const evaluation = evaluateAltaVistaCampaign(state.campaignState[hotSpot.id]?.record || {});
+  return hotSpot.tracks.filter(track => evaluation.availableSequences.includes(track.sequence));
 }
 
 function selectionKey(sequence) {
@@ -50,7 +58,12 @@ function selectionKey(sequence) {
 }
 
 function sideById(sideId) {
-  return currentHotSpot().sides.find(side => side.id === sideId) || null;
+  const hotSpot = currentHotSpot();
+  const side = hotSpot.sides.find(item => item.id === sideId) || null;
+  if (!side || hotSpot.id !== "alta-vista" || side.id !== "ravens") return side;
+  const selected = normalizeAltaVistaCampaignState(state.campaignState[hotSpot.id]?.record || {}).ravenFaction;
+  const faction = selected === "raven-alliance" ? "Raven Alliance" : selected === "mercenary" ? "Mercenary" : "Faction not selected";
+  return { ...side, faction, color: FACTION_COLORS[faction] || FACTION_COLORS.Local };
 }
 
 function currentOpForTable() {
@@ -245,6 +258,67 @@ function renderAchernarCampaignState(container, definition) {
     '<div class="reference-citation">Source: ' + esc(definition.sourceRefs.join(" · ")) + '</div></section>';
 }
 
+function altaVistaCampaignRecord() {
+  const campaign = campaignValues();
+  if (!campaign.record) campaign.record = {};
+  const normalized = normalizeAltaVistaCampaignState(campaign.record);
+  campaign.record = normalized;
+  return campaign.record;
+}
+
+function altaOptions(options, selected, disabledValue = null) {
+  return options.map(([value, label]) => '<option value="' + esc(value) + '"' + (selected === value ? " selected" : "") + (disabledValue === value && selected !== value ? " disabled" : "") + '>' + esc(label) + '</option>').join("");
+}
+
+function altaOutcomeText(outcome) {
+  return {
+    "both-contracts-successful": "Both contracts successful",
+    "escobar-wins": "Escobar wins",
+    "ravens-win": "Ravens win",
+    "no-victor": "No victor",
+    pending: "Pending"
+  }[outcome] || "Pending";
+}
+
+function renderAltaVistaCampaignState(container, definition) {
+  const record = altaVistaCampaignRecord();
+  const evaluation = evaluateAltaVistaCampaign(record);
+  const selectedSequence = Number(currentHotSpotStep()?.sequence || 1);
+  const trialIndex = Math.min(2, Math.max(0, selectedSequence - 1));
+  const trial = evaluation.trials[trialIndex];
+  const isMeeting = selectedSequence <= 3;
+  const winnerOptions = [["not-recorded", "Not recorded"], ["ravens", "Ravens"], ["escobar", "Escobar"], ["neither", "Neither side"]];
+  const completionOptions = [["not-recorded", "Not recorded"], ["successful", "Successfully completed"], ["unsuccessful", "Not successfully completed"]];
+  const withdrawalOptions = [["not-triggered", "Not triggered"], ["both-comply", "Both comply"], ["escobar-complies-ravens-refuse", "Escobar complies; Ravens refuse"], ["escobar-refuses-ravens-comply", "Escobar refuses; Ravens comply"], ["both-refuse", "Both refuse"]];
+  const decisionOptions = [["pending", "Pending"], ["cargo-departure", "Depart with cargo"], ["stop", "Choose no further tracks"], ["revenge", "Seek revenge — trigger Retreat"]];
+  const hireOptions = [["none", "No hire"], ["raven", "Raven — War Crow Prime (200 SP)"], ["roland", "Roland D’Isque — Kintaro KTO-19b (50 SP)"]];
+  const buildingOptions = [["not-recorded", "Not recorded"], ["preserved", "No buildings destroyed — 100 SP each"], ["destroyed", "One or more buildings destroyed"]];
+  const trialFields = isMeeting ? '<div class="campaign-fields"><div class="campaign-track-label">Warehouse Trial ' + selectedSequence + ' record</div>' +
+    '<label class="campaign-field"><span>Trial played</span><select data-alta-trial-field="played" data-alta-trial-index="' + trialIndex + '">' + altaOptions([["false", "Not yet"], ["true", "Played"]], String(trial.played)) + '</select></label>' +
+    '<label class="campaign-field"><span>Tactical winner</span><select data-alta-trial-field="tacticalWinner" data-alta-trial-index="' + trialIndex + '">' + altaOptions(winnerOptions, trial.tacticalWinner) + '</select></label>' +
+    '<label class="campaign-field"><span>Escobar completion</span><select data-alta-trial-field="escobarCompletion" data-alta-trial-index="' + trialIndex + '">' + altaOptions(completionOptions, trial.escobarCompletion) + '</select></label>' +
+    '<label class="campaign-field"><span>Ravens completion</span><select data-alta-trial-field="ravensCompletion" data-alta-trial-index="' + trialIndex + '">' + altaOptions(completionOptions, trial.ravensCompletion) + '</select></label>' +
+    '<label class="campaign-field"><span>Withdrawal order</span><select data-alta-trial-field="complicationSix" data-alta-trial-index="' + trialIndex + '">' + altaOptions(withdrawalOptions, trial.complicationSix) + '</select></label>' +
+    '<label class="campaign-field"><span>Raven decision after normal win</span><select data-alta-trial-field="ravensDecision" data-alta-trial-index="' + trialIndex + '"' + (trial.complicationSix !== "not-triggered" ? " disabled" : "") + '>' + altaOptions(decisionOptions, trial.ravensDecision) + '</select></label>' +
+    '<label class="campaign-field"><span>Escobar temporary hire</span><select data-alta-trial-field="escobarHire" data-alta-trial-index="' + trialIndex + '">' + altaOptions(hireOptions, trial.escobarHire, trial.ravensHire) + '</select></label>' +
+    '<label class="campaign-field"><span>Ravens temporary hire</span><select data-alta-trial-field="ravensHire" data-alta-trial-index="' + trialIndex + '">' + altaOptions(hireOptions, trial.ravensHire, trial.escobarHire) + '</select></label>' +
+    '<label class="campaign-field"><span>Building result</span><select data-alta-trial-field="buildingResult" data-alta-trial-index="' + trialIndex + '">' + altaOptions(buildingOptions, trial.buildingResult) + '</select></label>' +
+    '<label class="campaign-field campaign-wide-field"><span>Raven survivors / surviving hire</span><textarea rows="2" data-alta-trial-field="ravenSurvivors" data-alta-trial-index="' + trialIndex + '">' + esc(trial.ravenSurvivors) + '</textarea></label>' +
+    '<label class="campaign-field campaign-wide-field"><span>Escobar survivors / added-force allowance</span><textarea rows="2" data-alta-trial-field="escobarSurvivors" data-alta-trial-index="' + trialIndex + '">' + esc(trial.escobarSurvivors) + '</textarea></label>' +
+    '<label class="campaign-field campaign-wide-field"><span>Mapsheets, alignment, terrain, and battlefield carryover</span><textarea rows="2" data-alta-trial-field="battlefieldCarryover" data-alta-trial-index="' + trialIndex + '">' + esc(trial.battlefieldCarryover) + '</textarea></label></div>' : "";
+  const retreatField = evaluation.availableSequences.includes(4) ? '<div class="campaign-fields"><div class="campaign-track-label">Conditional Retreat result</div><label class="campaign-field"><span>Retreat result</span><select data-alta-root-field="retreatResult">' + altaOptions([["not-recorded", "Not played / result pending"], ["ravens", "Ravens won Retreat"], ["no-raven-victory", "Played without Raven victory"]], evaluation.retreatResult) + '</select></label><div class="campaign-field campaign-static-field"><span>Triggered after</span><strong>Warehouse Trial ' + esc(String(evaluation.retreatTriggerTrial || "—")) + '</strong></div></div>' : "";
+  const trialSummaries = evaluation.trials.map((item, index) => '<span><strong>Trial ' + (index + 1) + ':</strong> ' + (item.played ? esc(item.tacticalWinner) + ' tactical result · Escobar ' + esc(item.escobarCompletion) : "not played") + '</span>').join("");
+
+  container.innerHTML = '<section class="campaign-state-card"><div class="campaign-state-head"><div><div class="panel-kicker">CONDITIONAL CONTRACT PROGRESSION</div><h3>' + esc(definition.title) + '</h3></div><button type="button" class="campaign-reset-button" data-reset-campaign="alta-vista">Reset campaign state</button></div>' +
+    '<p class="campaign-state-note">' + esc(definition.note) + '</p>' +
+    '<div class="campaign-fields"><div class="campaign-track-label">Contract setup</div><label class="campaign-field"><span>Ravens participating faction</span><select data-alta-root-field="ravenFaction">' + altaOptions([["not-recorded", "Choose faction"], ["mercenary", "Mercenary"], ["raven-alliance", "Raven Alliance"]], evaluation.ravenFaction) + '</select></label><label class="campaign-field"><span>Escobar Command Rights</span><select data-alta-root-field="escobarCommandRights">' + altaOptions([["liaison", "Liaison — roll once"], ["house", "House — roll twice"], ["integrated", "Integrated — roll three times"]], evaluation.escobarCommandRights) + '</select></label></div>' +
+    trialFields + retreatField +
+    '<div class="campaign-state-summary"><strong>Progression</strong><span>' + esc(evaluation.terminationReason) + '</span><span>Available scenarios: ' + esc(evaluation.availableSequences.map(value => value === 4 ? "Retreat" : "Trial " + value).join(" · ")) + '</span><span>Retreat status: ' + esc(evaluation.retreatStatus) + '</span>' + trialSummaries + '</div>' +
+    '<div class="campaign-state-summary"><strong>Contract victory check</strong><span class="campaign-contract-outcome">' + esc(altaOutcomeText(evaluation.outcome)) + '</span><span>Meeting Engagements played: ' + evaluation.playedMeetingEngagements + ' · Escobar successful completions: ' + evaluation.escobarSuccessfulTracks + ' / ' + evaluation.escobarRequiredTracks + ' required</span><span>Detained — Ravens: ' + (evaluation.ravensDetained ? "yes" : "no") + ' · Escobar: ' + (evaluation.escobarDetained ? "yes" : "no") + ' · Escobar contract broken: ' + (evaluation.escobarBrokeContract ? "yes" : "no") + '</span></div>' +
+    '<div class="campaign-state-summary"><strong>Project rulings</strong>' + ALTA_VISTA_PROVISIONAL_RULES.map(rule => '<span class="campaign-ruling">' + esc(rule) + '</span>').join("") + '<span>' + esc(ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION) + '</span></div>' +
+    '<div class="reference-citation">Source: ' + esc(definition.sourceRefs.join(" · ")) + '</div></section>';
+}
+
 function selectedWinner(sequence) {
   return state.winnerSelections[winnerKey(sequence)] || "";
 }
@@ -275,7 +349,8 @@ function resolvedHotSpotStep() {
 function syncHotSpotState() {
   const hotSpot = currentHotSpot();
   if (hotSpot.fixedScale) state.scale = hotSpot.fixedScale;
-  if (!state.trackSequence[hotSpot.id]) state.trackSequence[hotSpot.id] = hotSpot.tracks[0]?.sequence || 1;
+  const availableTracks = availableHotSpotTracks(hotSpot);
+  if (!availableTracks.some(track => track.sequence === Number(state.trackSequence[hotSpot.id]))) state.trackSequence[hotSpot.id] = availableTracks[0]?.sequence || 1;
   const step = currentHotSpotStep();
   if (!state.selectedSide[hotSpot.id] || !hotSpot.sides.some(side => side.id === state.selectedSide[hotSpot.id])) {
     state.selectedSide[hotSpot.id] = hotSpot.sides[0]?.id || "";
@@ -448,15 +523,19 @@ function renderOpFor() {
 
 function renderHotSpotSetup() {
   const hotSpot = currentHotSpot();
+  const availableTracks = availableHotSpotTracks(hotSpot);
   const step = currentHotSpotStep();
   const resolved = resolvedHotSpotStep();
   const selected = sideById(state.selectedSide[hotSpot.id]);
   $("#hot-spot-select").innerHTML = HOT_SPOTS.map(item => '<option value="' + esc(item.id) + '">' + esc(item.name) + " · " + esc(item.region) + "</option>").join("");
   $("#hot-spot-select").value = hotSpot.id;
   $("#hot-spot-track-label").textContent = hotSpot.trackSelectorLabel || "Track sequence";
-  $("#hot-spot-track-select").innerHTML = hotSpot.tracks.map(item => '<option value="' + item.sequence + '">' + esc(item.label) + "</option>").join("");
+  $("#hot-spot-track-select").innerHTML = availableTracks.map(item => '<option value="' + item.sequence + '">' + esc(item.label) + "</option>").join("");
   $("#hot-spot-track-select").value = String(step?.sequence || "");
-  $("#hot-spot-side-select").innerHTML = hotSpot.sides.map(side => '<option value="' + esc(side.id) + '">' + esc(side.name) + " · " + esc(side.faction) + "</option>").join("");
+  $("#hot-spot-side-select").innerHTML = hotSpot.sides.map(side => {
+    const displaySide = sideById(side.id) || side;
+    return '<option value="' + esc(side.id) + '">' + esc(displaySide.name) + " · " + esc(displaySide.faction) + "</option>";
+  }).join("");
   $("#hot-spot-side-select").value = selected?.id || "";
 
   const winnerControls = [];
@@ -527,6 +606,10 @@ function renderCampaignState() {
   }
   if (definition.kind === "achernar") {
     renderAchernarCampaignState(container, definition);
+    return;
+  }
+  if (definition.kind === "alta-vista") {
+    renderAltaVistaCampaignState(container, definition);
     return;
   }
   const sequence = Number(currentHotSpotStep()?.sequence || 1);
@@ -783,13 +866,36 @@ function updateAchernarCampaignField(target) {
   return true;
 }
 
+function updateAltaVistaCampaignField(target) {
+  const rootField = target.dataset.altaRootField;
+  const trialField = target.dataset.altaTrialField;
+  if (!rootField && !trialField) return false;
+  const record = altaVistaCampaignRecord();
+  if (rootField) {
+    record[rootField] = target.value;
+  } else {
+    const trialIndex = Number(target.dataset.altaTrialIndex);
+    if (!record.trials[trialIndex]) return false;
+    record.trials[trialIndex][trialField] = trialField === "played" ? target.value === "true" : target.value;
+    if (trialField === "escobarHire" && target.value !== "none" && record.trials[trialIndex].ravensHire === target.value) record.trials[trialIndex].ravensHire = "none";
+    if (trialField === "ravensHire" && target.value !== "none" && record.trials[trialIndex].escobarHire === target.value) record.trials[trialIndex].escobarHire = "none";
+  }
+  state.campaignState["alta-vista"].record = normalizeAltaVistaCampaignState(record);
+  return true;
+}
+
 $("#hotspot-campaign-state").addEventListener("input", event => {
-  updateAchernarCampaignField(event.target);
+  if (updateAchernarCampaignField(event.target)) return;
+  updateAltaVistaCampaignField(event.target);
 });
 
 $("#hotspot-campaign-state").addEventListener("change", event => {
   if (updateAchernarCampaignField(event.target)) {
     renderCampaignState();
+    return;
+  }
+  if (updateAltaVistaCampaignField(event.target)) {
+    renderAll();
     return;
   }
   const field = event.target.dataset.campaignField;

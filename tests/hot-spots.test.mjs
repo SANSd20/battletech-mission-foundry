@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { achernarInitialDefectors, calculateAchernarVictory, calculateReconDenyVp, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, normalizeAchernarCampaignState, OPPOSING_FORCE_TABLES, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
+import { achernarInitialDefectors, ALTA_VISTA_COMMAND_COMPLICATIONS, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, evaluateAltaVistaCampaign, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
 
 const expected = ["Assault", "Breakthrough", "Defend", "Flank", "Meeting Engagement", "Objective Raid", "Pursuit", "Pushback", "Recon", "Retreat", "Strike"];
 assert.deepEqual(TRACKS.map(track => track.name), expected, "all eleven Draconis Reach standard tracks are present");
@@ -688,6 +688,117 @@ assert.ok(app.includes("variant?.nonPlayable") && app.includes("This strategic h
 for (const standardTrack of TRACKS) {
   assert.doesNotMatch([...standardTrack.setup, ...(standardTrack.setupDetails || []), ...standardTrack.special].join(" "), /Loneliness Island|Strategic hex type|RSIS\/FABL/, standardTrack.name + " remains free of Mallory-specific rules");
 }
+const altaVista = HOT_SPOTS.find(item => item.id === "alta-vista");
+assert.ok(altaVista, "Alta Vista is available as a Hot Spot");
+assert.equal(altaVista.source, "Draconis Reach pp. 78–81");
+assert.deepEqual(altaVista.sides.map(side => [side.id, side.faction]), [["escobar", "Mercenary"], ["ravens", "Mercenary"]]);
+assert.equal(FACTION_COLORS["Raven Alliance"], FACTION_COLORS["Clan Sea Fox"], "Raven Alliance has an explicit UI palette without reclassifying the participating force");
+assert.deepEqual(altaVista.tracks.map(track => [track.sequence, track.trackId, track.attacker, track.defender]), [
+  [1, "meeting-engagement", "ravens", "escobar"],
+  [2, "meeting-engagement", "ravens", "escobar"],
+  [3, "meeting-engagement", "ravens", "escobar"],
+  [4, "retreat", "ravens", "escobar"]
+]);
+for (const warehouse of altaVista.tracks.slice(0, 3)) {
+  assert.match(warehouse.variant.setupDetails.join(" "), /Light Urban.*warehouse complex/i);
+  assert.match(warehouse.variant.setupDetails.join(" "), /CF 30.*two levels.*CF 4.*2 inches/i);
+  assert.match(warehouse.variant.setupDetails.join(" "), /100 Support Points to each side.*separate from tactical Victory Points/i);
+  assert.match(warehouse.variant.setupDetails.join(" "), /War Crow Prime.*2,835 BV.*56 PV.*2 Edge.*Piloting 3.*Gunnery 3.*Skill 3.*200 SP/i);
+  assert.match(warehouse.variant.setupDetails.join(" "), /Kintaro KTO-19b.*1,265 BV.*39 PV.*1 Edge.*Marksman.*Piloting 5.*Gunnery 3.*Skill 4.*50 SP/i);
+  assert.match(warehouse.variant.setupDetails.join(" "), /other may hire only the other pilot.*2D6.*high roll chooses first.*ties are rerolled/i);
+  assert.deepEqual(warehouse.variant.objectives || TRACKS.find(track => track.id === "meeting-engagement").objectives, TRACKS.find(track => track.id === "meeting-engagement").objectives);
+  assert.deepEqual(warehouse.variant.sourceRefs, ["Draconis Reach pp. 78–81", "Meeting Engagement pp. 170–171", "Shared rules pp. 167–168", "Current Draconis Reach master errata"]);
+}
+assert.deepEqual(ALTA_VISTA_COMMAND_COMPLICATIONS.rows.map(row => row.roll), ["1–2", "3", "4", "5", "6"]);
+assert.match(ALTA_VISTA_COMMAND_COMPLICATIONS.note, /Escobar player.*once.*twice.*three times.*Reroll duplicate results of 4, 5, or 6.*not a separate roll by each player/i);
+assert.match(ALTA_VISTA_COMMAND_COMPLICATIONS.rows[1].text, /20 BSP.*per Scale.*visible.*within or adjacent to a building.*automatically damages/i);
+assert.match(ALTA_VISTA_COMMAND_COMPLICATIONS.rows[2].text, /Half.*rounded up.*home edge.*Turn 2/i);
+assert.match(ALTA_VISTA_COMMAND_COMPLICATIONS.rows[3].text, /\+1 Target Number.*1 hex.*2 inches/i);
+assert.match(ALTA_VISTA_COMMAND_COMPLICATIONS.rows[4].text, /BattleTech Turn 3.*Alpha Strike Turn 2.*2D6.*4 or less.*increasing.*Retreat is prohibited/i);
+assert.equal(ALTA_VISTA_PROVISIONAL_RULES.length, 4);
+assert.match(ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, /User-supplied clarification.*continues normally.*next Meeting Engagement/i);
+
+const altaRetreat = altaVista.tracks[3].variant;
+assert.match(altaRetreat.setup.join(" "), /Retain.*mapsheets.*Light Urban terrain.*battlefield alignment.*carryover/i);
+assert.match(altaRetreat.setup.join(" "), /Only the Raven force surviving.*Turn 2/i);
+assert.match(altaRetreat.setup.join(" "), /Escobar.*surviving.*center.*add other available units.*Scale limit.*Turn 1/i);
+assert.match(altaRetreat.setupDetails.join(" "), /Only a temporary hire that survived.*No fresh temporary hire/i);
+assert.equal(altaRetreat.commandComplications, null);
+assert.deepEqual(altaRetreat.objectives, TRACKS.find(track => track.id === "retreat").objectives);
+assert.match(altaRetreat.special.join(" "), /No Alta Vista Command Complications.*contract ends/i);
+
+const altaTrial = overrides => ({ played: true, tacticalWinner: "escobar", escobarCompletion: "successful", ravensCompletion: "unsuccessful", ...overrides });
+assert.deepEqual(evaluateAltaVistaCampaign({}).availableSequences, [1], "only Trial 1 is initially available");
+assert.deepEqual(evaluateAltaVistaCampaign({ trials: [altaTrial()] }).availableSequences, [1, 2], "a non-Raven Trial 1 result opens Trial 2");
+assert.deepEqual(evaluateAltaVistaCampaign({ trials: [altaTrial(), altaTrial()] }).availableSequences, [1, 2, 3], "a non-Raven Trial 2 result opens Trial 3");
+const completedThree = evaluateAltaVistaCampaign({ trials: [altaTrial(), altaTrial(), altaTrial()] });
+assert.equal(completedThree.contractComplete, true);
+assert.equal(completedThree.escobarRequiredTracks, 2);
+assert.equal(completedThree.outcome, "escobar-wins");
+
+for (const triggerTrial of [1, 2, 3]) {
+  const trials = Array.from({ length: triggerTrial }, (_, index) => index === triggerTrial - 1
+    ? altaTrial({ tacticalWinner: "ravens", ravensDecision: "revenge" })
+    : altaTrial());
+  const result = evaluateAltaVistaCampaign({ trials });
+  assert.deepEqual(result.availableSequences, [...Array.from({ length: triggerTrial }, (_, index) => index + 1), 4], "Retreat is immediately available after Raven revenge on Trial " + triggerTrial);
+  assert.equal(result.retreatTriggerTrial, triggerTrial);
+  assert.equal(result.retreatStatus, "pending");
+}
+
+const cargoDeparture = evaluateAltaVistaCampaign({ trials: [altaTrial({ tacticalWinner: "ravens", ravensDecision: "cargo-departure" })] });
+assert.equal(cargoDeparture.contractComplete, true);
+assert.equal(cargoDeparture.retreatStatus, "declined");
+assert.equal(cargoDeparture.outcome, "no-victor", "cargo departure is not Raven contract victory and Raven majority activates no-victor");
+const stopDecision = evaluateAltaVistaCampaign({ trials: [altaTrial({ tacticalWinner: "ravens", ravensDecision: "stop" })] });
+assert.equal(stopDecision.outcome, "no-victor");
+
+const mutualWithdrawal = evaluateAltaVistaCampaign({ trials: [{ complicationSix: "both-comply" }] });
+assert.deepEqual(mutualWithdrawal.availableSequences, [1, 2]);
+assert.equal(mutualWithdrawal.trials[0].tacticalWinner, "ravens");
+assert.equal(mutualWithdrawal.trials[0].escobarCompletion, "successful");
+assert.equal(mutualWithdrawal.trials[0].ravensCompletion, "successful");
+assert.equal(mutualWithdrawal.retreatStatus, "prohibited");
+assert.equal(mutualWithdrawal.contractComplete, false);
+const finalMutualWithdrawal = evaluateAltaVistaCampaign({ trials: [{ complicationSix: "both-comply" }, { complicationSix: "both-comply" }, { complicationSix: "both-comply" }] });
+assert.equal(finalMutualWithdrawal.contractComplete, true);
+assert.equal(finalMutualWithdrawal.escobarRequiredTracks, 2);
+assert.equal(finalMutualWithdrawal.outcome, "escobar-wins", "prohibited Retreat is not treated as declined Retreat");
+
+const ravensRefuse = evaluateAltaVistaCampaign({ trials: [{ complicationSix: "escobar-complies-ravens-refuse" }] });
+assert.equal(ravensRefuse.ravensDetained, true);
+assert.equal(ravensRefuse.explicitNoVictor, true);
+assert.equal(ravensRefuse.outcome, "no-victor");
+const escobarRefuses = evaluateAltaVistaCampaign({ trials: [{ complicationSix: "escobar-refuses-ravens-comply" }] });
+assert.equal(escobarRefuses.escobarDetained, true);
+assert.equal(escobarRefuses.escobarBrokeContract, true);
+assert.equal(escobarRefuses.outcome, "no-victor");
+const bothRefuse = evaluateAltaVistaCampaign({ trials: [{ complicationSix: "both-refuse" }] });
+assert.equal(bothRefuse.ravensDetained, true);
+assert.equal(bothRefuse.escobarDetained, true);
+assert.equal(bothRefuse.escobarBrokeContract, true);
+assert.equal(bothRefuse.outcome, "no-victor");
+
+const bothWin = evaluateAltaVistaCampaign({ trials: [altaTrial({ tacticalWinner: "ravens", ravensDecision: "revenge" })], retreatResult: "ravens" });
+assert.equal(bothWin.outcome, "both-contracts-successful");
+const ravensOnly = evaluateAltaVistaCampaign({ trials: [altaTrial({ tacticalWinner: "ravens", escobarCompletion: "unsuccessful", ravensDecision: "revenge" })], retreatResult: "ravens" });
+assert.equal(ravensOnly.outcome, "ravens-win");
+const escobarOnly = evaluateAltaVistaCampaign({ trials: [altaTrial(), altaTrial({ tacticalWinner: "ravens", ravensDecision: "cargo-departure" })] });
+assert.equal(escobarOnly.outcome, "escobar-wins", "a tied Meeting Engagement record does not activate the Raven-majority no-victor exception");
+const failedRetreat = evaluateAltaVistaCampaign({ trials: [altaTrial({ tacticalWinner: "ravens", ravensDecision: "revenge" })], retreatResult: "no-raven-victory" });
+assert.equal(failedRetreat.outcome, "no-victor");
+assert.equal(evaluateAltaVistaCampaign({ trials: [altaTrial({ tacticalWinner: "ravens", ravensDecision: "revenge" })] }).outcome, "pending");
+assert.equal(evaluateAltaVistaCampaign({ trials: [altaTrial()] }).escobarRequiredTracks, 1);
+assert.equal(evaluateAltaVistaCampaign({ trials: [altaTrial(), altaTrial()] }).escobarRequiredTracks, 1);
+assert.equal(evaluateAltaVistaCampaign({ trials: [altaTrial(), altaTrial(), altaTrial()] }).escobarRequiredTracks, 2);
+assert.equal(normalizeAltaVistaCampaignState({ ravenFaction: "raven-alliance" }).ravenFaction, "raven-alliance");
+assert.ok(app.includes('"Raven Alliance": "raven-alliance"'), "Raven Alliance faction choice maps to the Raven Alliance OpFor table");
+assert.ok(app.includes("availableHotSpotTracks") && app.includes("evaluateAltaVistaCampaign"), "Alta Vista later scenarios are conditionally exposed");
+assert.ok(app.includes("data-alta-trial-field") && app.includes("data-alta-root-field"), "Alta Vista campaign controls are wired");
+assert.ok(app.includes("state.mode") && app.includes("renderCampaignState"), "campaign state remains independent of Attacker/Defender/Both display mode");
+assert.ok(css.includes("campaign-wide-field"), "Alta Vista bounded carryover notes have responsive full-width styling");
+assert.match(html, /alta-vista-correction/, "Alta Vista implementation uses a fresh asset cache key");
+
 for (const hotSpot of HOT_SPOTS) {
   assert.ok(hotSpot.sides.length >= 2, hotSpot.name + " has opposing sides");
   for (const side of hotSpot.sides) assert.ok(Object.values(FACTION_COLORS).includes(side.color), hotSpot.name + " side has a faction UI color");

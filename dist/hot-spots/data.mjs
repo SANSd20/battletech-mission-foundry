@@ -76,6 +76,215 @@ export function calculateAchernarVictory(record = {}, { scale = 1, strikePlayed 
   return { ...normalized, tybalt, homeGuard, supportVictory, outcome };
 }
 
+const ALTA_WINNERS = ["not-recorded", "ravens", "escobar", "neither"];
+const ALTA_COMPLETIONS = ["not-recorded", "successful", "unsuccessful"];
+const ALTA_COMPLICATION_SIX = ["not-triggered", "both-comply", "escobar-complies-ravens-refuse", "escobar-refuses-ravens-comply", "both-refuse"];
+const ALTA_RAVEN_DECISIONS = ["pending", "cargo-departure", "stop", "revenge"];
+const ALTA_HIRES = ["none", "raven", "roland"];
+const ALTA_BUILDING_RESULTS = ["not-recorded", "preserved", "destroyed"];
+
+function altaChoice(value, choices, fallback) {
+  return choices.includes(value) ? value : fallback;
+}
+
+function normalizeAltaVistaTrial(trial = {}) {
+  const complicationSix = altaChoice(trial.complicationSix, ALTA_COMPLICATION_SIX, "not-triggered");
+  const normalized = {
+    played: Boolean(trial.played),
+    tacticalWinner: altaChoice(trial.tacticalWinner, ALTA_WINNERS, "not-recorded"),
+    escobarCompletion: altaChoice(trial.escobarCompletion, ALTA_COMPLETIONS, "not-recorded"),
+    ravensCompletion: altaChoice(trial.ravensCompletion, ALTA_COMPLETIONS, "not-recorded"),
+    complicationSix,
+    ravensDecision: altaChoice(trial.ravensDecision, ALTA_RAVEN_DECISIONS, "pending"),
+    escobarHire: altaChoice(trial.escobarHire, ALTA_HIRES, "none"),
+    ravensHire: altaChoice(trial.ravensHire, ALTA_HIRES, "none"),
+    buildingResult: altaChoice(trial.buildingResult, ALTA_BUILDING_RESULTS, "not-recorded"),
+    ravenSurvivors: String(trial.ravenSurvivors || ""),
+    escobarSurvivors: String(trial.escobarSurvivors || ""),
+    battlefieldCarryover: String(trial.battlefieldCarryover || "")
+  };
+  if (complicationSix === "both-comply") {
+    normalized.played = true;
+    normalized.tacticalWinner = "ravens";
+    normalized.escobarCompletion = "successful";
+    normalized.ravensCompletion = "successful";
+    normalized.ravensDecision = "pending";
+  } else if (complicationSix === "escobar-complies-ravens-refuse") {
+    normalized.played = true;
+    normalized.escobarCompletion = "successful";
+    normalized.ravensDecision = "pending";
+  } else if (complicationSix === "escobar-refuses-ravens-comply") {
+    normalized.played = true;
+    normalized.escobarCompletion = "unsuccessful";
+    normalized.ravensCompletion = "successful";
+    normalized.ravensDecision = "pending";
+  } else if (complicationSix === "both-refuse") {
+    normalized.played = true;
+    normalized.escobarCompletion = "unsuccessful";
+    normalized.ravensCompletion = "unsuccessful";
+    normalized.ravensDecision = "pending";
+  }
+  return normalized;
+}
+
+export function normalizeAltaVistaCampaignState(record = {}) {
+  const inputTrials = Array.isArray(record.trials) ? record.trials : [];
+  return {
+    ravenFaction: altaChoice(record.ravenFaction, ["not-recorded", "mercenary", "raven-alliance"], "not-recorded"),
+    escobarCommandRights: altaChoice(record.escobarCommandRights, ["liaison", "house", "integrated"], "liaison"),
+    trials: [0, 1, 2].map(index => normalizeAltaVistaTrial(inputTrials[index])),
+    retreatResult: altaChoice(record.retreatResult, ["not-recorded", "ravens", "no-raven-victory"], "not-recorded")
+  };
+}
+
+export function evaluateAltaVistaCampaign(record = {}) {
+  const normalized = normalizeAltaVistaCampaignState(record);
+  const availableSequences = [];
+  const playedTrials = [];
+  let contractComplete = false;
+  let terminationReason = "Awaiting Trial 1";
+  let retreatStatus = "not-triggered";
+  let retreatTriggerTrial = null;
+  let ravensDetained = false;
+  let escobarDetained = false;
+  let escobarBrokeContract = false;
+
+  for (let index = 0; index < normalized.trials.length; index += 1) {
+    const sequence = index + 1;
+    const trial = normalized.trials[index];
+    availableSequences.push(sequence);
+    if (!trial.played) {
+      terminationReason = "Trial " + sequence + " is available and awaiting results.";
+      break;
+    }
+    playedTrials.push(trial);
+
+    if (trial.complicationSix === "both-comply") {
+      retreatStatus = "prohibited";
+      if (sequence < 3) {
+        terminationReason = "Mutual withdrawal completed Trial " + sequence + "; continue to Trial " + (sequence + 1) + ".";
+        continue;
+      }
+      contractComplete = true;
+      terminationReason = "Mutual withdrawal completed the final warehouse trial; Retreat was prohibited.";
+      break;
+    }
+    if (trial.complicationSix === "escobar-complies-ravens-refuse") {
+      ravensDetained = true;
+      retreatStatus = "prohibited";
+      contractComplete = true;
+      terminationReason = "Ravens refused Escobar’s withdrawal order, were detained, and ended the contract.";
+      break;
+    }
+    if (trial.complicationSix === "escobar-refuses-ravens-comply") {
+      escobarDetained = true;
+      escobarBrokeContract = true;
+      retreatStatus = "prohibited";
+      contractComplete = true;
+      terminationReason = "Escobar refused the withdrawal order, broke contract, and ended the contract.";
+      break;
+    }
+    if (trial.complicationSix === "both-refuse") {
+      ravensDetained = true;
+      escobarDetained = true;
+      escobarBrokeContract = true;
+      retreatStatus = "prohibited";
+      contractComplete = true;
+      terminationReason = "Both sides refused the withdrawal order, were detained, and ended the contract.";
+      break;
+    }
+
+    if (trial.tacticalWinner === "not-recorded") {
+      terminationReason = "Trial " + sequence + " was played, but its tactical winner is not recorded.";
+      break;
+    }
+    if (trial.tacticalWinner === "ravens") {
+      if (trial.ravensDecision === "revenge") {
+        retreatTriggerTrial = sequence;
+        retreatStatus = normalized.retreatResult === "not-recorded"
+          ? "pending"
+          : normalized.retreatResult === "ravens" ? "played-ravens-won" : "played-no-raven-victory";
+        availableSequences.push(4);
+        if (normalized.retreatResult === "not-recorded") {
+          terminationReason = "Ravens chose revenge after Trial " + sequence + "; Retreat is pending.";
+        } else {
+          contractComplete = true;
+          terminationReason = "The Retreat triggered after Trial " + sequence + " has concluded.";
+        }
+        break;
+      }
+      if (trial.ravensDecision === "cargo-departure" || trial.ravensDecision === "stop") {
+        retreatStatus = "declined";
+        contractComplete = true;
+        terminationReason = trial.ravensDecision === "cargo-departure"
+          ? "Ravens departed with the cargo; the contract ended without Retreat."
+          : "Ravens chose no further tracks; the contract ended without Retreat.";
+        break;
+      }
+      terminationReason = "Ravens won Trial " + sequence + "; record whether they depart, stop, or seek revenge.";
+      break;
+    }
+
+    if (sequence === 3) {
+      contractComplete = true;
+      terminationReason = "All three warehouse trials have concluded without a Raven Retreat trigger.";
+      break;
+    }
+    terminationReason = "Trial " + sequence + " did not produce a Raven victory; continue to Trial " + (sequence + 1) + ".";
+  }
+
+  const ravensMeetingWins = playedTrials.filter(trial => trial.tacticalWinner === "ravens").length;
+  const escobarMeetingWins = playedTrials.filter(trial => trial.tacticalWinner === "escobar").length;
+  const completionValuesKnown = playedTrials.every(trial => trial.escobarCompletion !== "not-recorded");
+  const escobarSuccessfulTracks = playedTrials.filter(trial => trial.escobarCompletion === "successful").length;
+  const escobarRequiredTracks = Math.ceil(playedTrials.length / 2);
+  const explicitNoVictor = ravensDetained || (
+    ravensMeetingWins > escobarMeetingWins &&
+    (retreatStatus === "declined" || retreatStatus === "played-no-raven-victory")
+  );
+  let escobarVictory = false;
+  let ravensVictory = false;
+  let outcome = "pending";
+  if (contractComplete) {
+    if (explicitNoVictor) {
+      outcome = "no-victor";
+    } else if (!completionValuesKnown || playedTrials.length === 0) {
+      outcome = "pending";
+    } else {
+      escobarVictory = !escobarBrokeContract && escobarSuccessfulTracks >= escobarRequiredTracks;
+      ravensVictory = normalized.retreatResult === "ravens";
+      outcome = escobarVictory && ravensVictory
+        ? "both-contracts-successful"
+        : escobarVictory
+          ? "escobar-wins"
+          : ravensVictory
+            ? "ravens-win"
+            : "no-victor";
+    }
+  }
+
+  return {
+    ...normalized,
+    availableSequences: [...new Set(availableSequences)],
+    playedMeetingEngagements: playedTrials.length,
+    ravensMeetingWins,
+    escobarMeetingWins,
+    escobarSuccessfulTracks,
+    escobarRequiredTracks,
+    retreatStatus,
+    retreatTriggerTrial,
+    contractComplete,
+    terminationReason,
+    ravensDetained,
+    escobarDetained,
+    escobarBrokeContract,
+    explicitNoVictor,
+    escobarVictory,
+    ravensVictory,
+    outcome
+  };
+}
+
 export const GENERAL_RULES = [
   {
     title: "Commander",
@@ -1094,6 +1303,7 @@ export const FACTION_COLORS = {
   "Draconis Combine": "#D94343",
   "Capellan Confederation": "#2E9D68",
   "Clan Sea Fox": "#2A9FBE",
+  "Raven Alliance": "#2A9FBE",
   "Mercenary": "#B6783D",
   "Corporate": "#DE7C22",
   "Local": "#7B95A5",
@@ -2036,6 +2246,82 @@ const malloryRestrictedFacility = {
   sourceRefs: ["Draconis Reach p. 139", "Current Draconis Reach master errata"]
 };
 
+export const ALTA_VISTA_PROVISIONAL_RULES = [
+  "ALTA-AMB-001 — Leaving with cargo ends progression but is not Raven contract victory; Ravens must win Retreat.",
+  "ALTA-AMB-002 — Escobar and Ravens contract victories are evaluated independently, except where the source imposes no victor.",
+  "ALTA-AMB-003 — A successful Command Complication 6 withdrawal is a successful track completion, distinct from tactical victory; prohibited Retreat is not declined Retreat.",
+  "ALTA-AMB-004 — Escobar’s required completions use the Meeting Engagements actually played: 1 of 1, 1 of 2, or 2 of 3."
+];
+
+export const ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION = "User-supplied clarification: when both players leave under Command Complication 6, the contract continues normally with the next Meeting Engagement if one remains.";
+
+export const ALTA_VISTA_COMMAND_COMPLICATIONS = {
+  note: "The Escobar player rolls according to Escobar’s Command Rights: once for Liaison Command, twice for House Command, or three times for Integrated Command. Reroll duplicate results of 4, 5, or 6. This is not a separate roll by each player.",
+  rows: [
+    { roll: "1–2", name: "No Complication", text: "No additional effect." },
+    { roll: "3", name: "Minefields", text: "Each player may select up to 20 BSP of Minefield assets per Scale. All minefields must be visible and placed within or adjacent to a building. A minefield detonation inside or adjacent to a building automatically damages that building." },
+    { roll: "4", name: "Late Arrivals", text: "Half of each player’s units by number, rounded up, are delayed. Those units enter from their own home edge during the Movement Phase of Turn 2." },
+    { roll: "5", name: "Glare", text: "A ranged attack receives a +1 Target Number modifier when the attacker’s line of sight passes within 1 hex (Alpha Strike: 2 inches) of a building, or when the target is within that distance of a building." },
+    { roll: "6", name: "Withdrawal Order", text: "Beginning in the End Phase of BattleTech Turn 3 (Alpha Strike Turn 2), roll 2D6. The order triggers on 4 or less, increasing the target number by 1 each subsequent turn. Escobar then orders all participants off the battlefield immediately. Record each player’s response in the Alta Vista campaign panel; Retreat is prohibited for every response to this order." }
+  ],
+  ref: "Draconis Reach pp. 80–81; current Draconis Reach master errata"
+};
+
+const altaMeetingBase = TRACKS.find(track => track.id === "meeting-engagement");
+const altaRetreatBase = TRACKS.find(track => track.id === "retreat");
+
+export const altaVistaMeetingVariant = sequence => ({
+  page: 80,
+  pageRef: "pp. 80–81",
+  displayName: "Warehouse Trial " + sequence + " · Meeting Engagement",
+  type: "Alta Vista Warehouse Trial",
+  summary: "The Ravens attack one of Alta Vista’s three warehouse complexes while Escobar defends it.",
+  setupDetails: [
+    "Tactical roles: Ravens are the Attacker; Escobar is the Defender.",
+    "Terrain: Light Urban. This trial concerns warehouse complex " + sequence + " of the three complexes available in the campaign.",
+    "Treat every unlabeled building as Medium, CF 30 and two levels high in BattleTech; CF 4 and 2 inches high in Alpha Strike.",
+    "Building preservation bonus: if no buildings are destroyed in this track, Escobar offers 100 Support Points to each side. This campaign payment is separate from tactical Victory Points.",
+    "Temporary hire — Raven: War Crow Prime, 2,835 BV / 56 PV, 2 Edge, Piloting 3 / Gunnery 3 (Alpha Strike Skill 3), 200 SP for this track.",
+    "Temporary hire — Roland D’Isque: Kintaro KTO-19b, 1,265 BV / 39 PV, 1 Edge, Marksman Edge Ability, Piloting 5 / Gunnery 3 (Alpha Strike Skill 4), 50 SP for this track.",
+    "Before each track, either player may pay to hire one available temporary pilot. If one player chooses Raven or Roland D’Isque, the other may hire only the other pilot. Roll 2D6 for priority; high roll chooses first and ties are rerolled. Record hires in the campaign panel."
+  ],
+  special: [
+    ...altaMeetingBase.special,
+    "Campaign progression: a normal Raven tactical victory presents the choices to depart with cargo, stop, or seek revenge. Revenge immediately triggers Retreat; the other choices end progression without Raven contract victory. A non-Raven result continues to the next warehouse trial if one remains.",
+    "Command Complication 6 separates successful completion from tactical victory. Mutual compliance awards both sides successful completion and Raven tactical victory, prohibits Retreat, and continues to the next warehouse trial when one remains.",
+    "The browser records building preservation, temporary hires, survivors, and battlefield carryover as bounded campaign state; it does not add Support Points or manage unit rosters automatically."
+  ],
+  commandComplications: ALTA_VISTA_COMMAND_COMPLICATIONS,
+  sourceRefs: ["Draconis Reach pp. 78–81", "Meeting Engagement pp. 170–171", "Shared rules pp. 167–168", "Current Draconis Reach master errata"]
+});
+
+export const altaVistaRetreatVariant = () => ({
+  page: 174,
+  pageRef: "pp. 174–175",
+  displayName: "Immediate Revenge · Retreat",
+  type: "Alta Vista Conditional Retreat",
+  summary: "After a normal Raven warehouse victory, the Ravens pursue Escobar immediately using the surviving forces and battlefield.",
+  setup: [
+    "Retain the immediately preceding Meeting Engagement’s mapsheets, Light Urban terrain, battlefield alignment, and applicable battlefield carryover.",
+    "Escobar remains the Defender and the Ravens remain the Attacker. Escobar selects the same short home edge used in the preceding trial; the Ravens use the opposite short edge.",
+    "Only the Raven force surviving the immediately preceding Meeting Engagement participates. It enters from the Raven home edge during the Movement Phase of Turn 2, following the standard Retreat Attacker timing.",
+    "Place Escobar’s surviving preceding-track force in the center of the play area before Turn 1. Escobar may add other available units up to the applicable Scale limit; added units enter from the Raven home edge during the Movement Phase of Turn 1, following the standard Retreat Defender timing."
+  ],
+  setupDetails: [
+    "Alta Vista’s surviving-force and center-placement instructions override conflicting standard Retreat deployment instructions.",
+    "Only a temporary hire that survived the immediately preceding warehouse trial can carry into Retreat. No fresh temporary hire is available for Retreat.",
+    "Use the bounded survivor and battlefield-carryover notes in the campaign panel to reproduce the preceding tactical state; the browser does not manage individual rosters or mapsheets."
+  ],
+  objectives: altaRetreatBase.objectives,
+  special: [
+    ...altaRetreatBase.special,
+    "No Alta Vista Command Complications are rolled during Retreat.",
+    "When Retreat concludes, the Alta Vista contract ends and the campaign panel evaluates contract victory."
+  ],
+  commandComplications: null,
+  sourceRefs: ["Draconis Reach pp. 78–81", "Retreat pp. 174–175", "Shared rules pp. 167–168", "Current Draconis Reach master errata"]
+});
+
 export const HOT_SPOTS = [
   {
     id: "achernar",
@@ -2072,13 +2358,20 @@ export const HOT_SPOTS = [
     name: "Alta Vista",
     region: "Clan Sea Fox",
     terrain: "Light Urban",
-    source: "Draconis Reach pp. 80–81",
-    note: "The source allows repeated Meeting Engagement tracks and a conditional extraction choice. The selector exposes the standard Meeting Engagement sequence; the source note remains in the reference card.",
-    sides: [factionSide("escobar", "Escobar", "Local"), factionSide("ravens", "Ravens", "Clan Sea Fox")],
+    source: "Draconis Reach pp. 78–81",
+    note: "Alta Vista contains up to three warehouse Meeting Engagements and an immediate conditional Retreat. Later scenarios appear only when campaign results make them available. Four contract-victory interpretations are marked as provisional project rulings.",
+    campaignState: {
+      kind: "alta-vista",
+      title: "Alta Vista warehouse campaign record",
+      note: "Record faction choice, tactical results, successful completions, the withdrawal order, temporary hires, and the bounded carryover needed for a conditional Retreat. Tactical victory, successful completion, and contract victory are distinct.",
+      sourceRefs: ["Draconis Reach pp. 78–81", "Shared rules pp. 167–168", "Meeting Engagement pp. 170–171", "Retreat pp. 174–175", "Current Draconis Reach master errata"]
+    },
+    sides: [factionSide("escobar", "Escobar", "Mercenary"), factionSide("ravens", "Ravens", "Mercenary")],
     tracks: [
-      fixedHotSpotTrack(1, "meeting-engagement", "ravens", "escobar"),
-      fixedHotSpotTrack(2, "meeting-engagement", "ravens", "escobar"),
-      fixedHotSpotTrack(3, "meeting-engagement", "ravens", "escobar", { label: "Track 3 · optional source continuation" })
+      fixedHotSpotTrack(1, "meeting-engagement", "ravens", "escobar", { label: "Warehouse Trial 1", variant: altaVistaMeetingVariant(1) }),
+      fixedHotSpotTrack(2, "meeting-engagement", "ravens", "escobar", { label: "Warehouse Trial 2", variant: altaVistaMeetingVariant(2) }),
+      fixedHotSpotTrack(3, "meeting-engagement", "ravens", "escobar", { label: "Warehouse Trial 3", variant: altaVistaMeetingVariant(3) }),
+      fixedHotSpotTrack(4, "retreat", "ravens", "escobar", { label: "Immediate Retreat", variant: altaVistaRetreatVariant() })
     ]
   },
   {
