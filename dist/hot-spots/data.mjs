@@ -99,6 +99,97 @@ export function adjustDaharEarnedVp(earnedVp, affected = false) {
   return affected && earned > 0 ? Math.max(0, earned - 20) : earned;
 }
 
+export const LE_BLANC_MAPSHEET_TABLE = Object.freeze([
+  ["1–2", "Corporate Campus", "MapPack: City"],
+  ["3–4", "Business District", "MapPack: City"],
+  ["5", "Family Quarters", "MapPack: City"],
+  ["6", "Shopping District", "MapPack: City"]
+]);
+
+export const LE_BLANC_TEMPORARY_HIRES = Object.freeze([
+  {
+    id: "weeper",
+    name: "Weeper",
+    identity: "Rowan Moore",
+    unit: "Lament LMT-2R",
+    bv: "1,999",
+    pv: "43",
+    gunnery: "4",
+    piloting: "5",
+    alphaStrikeSkill: "4",
+    edge: "1",
+    abilities: "—",
+    restriction: "No tactical alignment restriction.",
+    source: "Draconis Reach p. 89"
+  },
+  {
+    id: "kyodai",
+    name: "Kyodai",
+    identity: "Local criminal-underground MechWarrior",
+    unit: "Hitotsume Kozo HKZ-1F",
+    bv: "1,998",
+    pv: "42",
+    gunnery: "4",
+    piloting: "3",
+    alphaStrikeSkill: "3",
+    edge: "3",
+    abilities: "Melee Specialist Edge Ability",
+    restriction: "Draconis Combine-aligned players only. A Mercenary participating for Operation Sundown remains eligible by contract alignment.",
+    source: "Draconis Reach p. 89"
+  }
+]);
+
+export const LE_BLANC_COMMAND_COMPLICATIONS = Object.freeze({
+  ref: "Draconis Reach pp. 30, 89; current official master errata",
+  note: "Approved provisional timing: before either Le Blanc track, each player rolls independently. Apply that player’s selected Command Rights modifier: Independent +0, Liaison +1, House +2, Integrated +3. This both-tracks timing is a project interpretation pending official clarification, not official errata.",
+  rows: [
+    { roll: "1–3", name: "No Complication", text: "No additional effect." },
+    { roll: "4", name: "Unprepared for a Sandstorm", text: "The affected player pays 25 SP per unit deployed in this track, or each such unit reduces its Run/Flank speed by 1 MP (Alpha Strike: MV −2 inches). Battlefield Support assets lose 1 MP. The browser presents this tactical alternative but does not administer Support Points." },
+    { roll: "5", name: "Undersupplied", text: "BattleTech: begin with half ammunition in every ammunition critical slot. Alpha Strike: after Turn 3, reduce the damage rating by 1 for each unit without the ENE special." },
+    { roll: "6", name: "Local Partisan Support", text: "The opposing player receives free Battlefield Support per Scale for this track only. Use the recipient’s tactical role to select the Attacker Opponent or Defender Opponent package shown below." },
+    { roll: "7", name: "Unexpected Sandstorm", text: "Battlefield-wide. BattleTech: all attacks receive +1 target number at medium range and +2 at long range. Alpha Strike: all weapon attacks receive +1 target number at medium or long range." },
+    { roll: "8+", name: "Roll Twice", text: "Approved shared provisional ruling: make exactly two secondary rolls with the same Command Rights modifier. Ignore secondary Roll Twice results, apply duplicate effects once, do not reroll duplicates, and do not recurse." }
+  ]
+});
+
+export const LE_BLANC_PARTISAN_PACKAGES = Object.freeze({
+  attacker: [
+    "2 × Scale Motorized Conventional Infantry (Rifle; Gunnery 5; no anti-’Mech Skill; Alpha Strike Skill 5)",
+    "2 × Scale Galleon GAL-100 (Gunnery 5; Piloting 6; Alpha Strike Skill 5)"
+  ],
+  defender: [
+    "2 × Scale MG Nest emplacements — official erratum (BattleTech: CF 10, Armor 5, five light machine guns in front, Gunnery 5; Alpha Strike: CF 3, Armor 1, damage 1/1/0, MV 0 inches, TMM +0, Skill 5)",
+    "1 × Scale Foot Conventional Infantry (Rifle; Gunnery 5; no anti-’Mech Skill; Alpha Strike Skill 5)",
+    "2 × Scale Galleon GAL-100 (Gunnery 5; Piloting 6; Alpha Strike Skill 5)"
+  ]
+});
+
+export const LE_BLANC_PROVISIONAL_RULES = Object.freeze([
+  "LEBLANC-AMB-001 — Temporary Hire eligibility remains unresolved and outside this tactical browser. The cards are reference only; consult pp. 29 and 89 for availability, eligibility, force limits, costs, repairs, and replacement.",
+  "LEBLANC-AMB-002 — A modified 8+ produces exactly two secondary rolls with the same modifier. Ignore secondary 8+ results, apply duplicates once, do not reroll duplicates, and do not recurse. This is an approved project-wide provisional interpretation.",
+  "LEBLANC-AMB-003 — Command Complications apply before both Le Blanc tracks. This is an approved provisional project interpretation pending official clarification, not official errata."
+]);
+
+export function leBlancCommandModifier(rights = "liaison") {
+  return rights === "liaison" ? 1 : rights === "house" ? 2 : rights === "integrated" ? 3 : 0;
+}
+
+export function resolveLeBlancComplications(selection = {}, rights = "liaison") {
+  const modifier = leBlancCommandModifier(rights);
+  const die = value => {
+    if (value === "" || value === null || value === undefined) return null;
+    const number = Math.trunc(Number(value));
+    return number >= 1 && number <= 6 ? number : null;
+  };
+  const initialRaw = die(selection.initial);
+  const initial = initialRaw === null ? null : initialRaw + modifier;
+  if (initial === null) return { modifier, initial: null, secondary: [], effects: [], pendingSecondary: false };
+  if (initial < 8) return { modifier, initial, secondary: [], effects: initial >= 4 && initial <= 7 ? [initial] : [], pendingSecondary: false };
+  const secondary = [die(selection.secondaryOne), die(selection.secondaryTwo)].map(value => value === null ? null : value + modifier);
+  const effects = [...new Set(secondary.filter(value => value >= 4 && value <= 7))];
+  return { modifier, initial, secondary, effects, pendingSecondary: secondary.some(value => value === null) };
+}
+
 export function achernarInitialDefectors(scale = 1) {
   return Math.min(3, Math.max(1, Number(scale) || 1)) * 2;
 }
@@ -1753,7 +1844,48 @@ const pascagoulaTrack1Variant = {
   ]
 };
 
-const leBlancTrack1Variant = {
+const leBlancSharedSpecial = [
+  "Successful track completion: a player must complete at least one objective and earn more objective VP than the opposing player. Equal VP means neither player successfully completes the track.",
+  "Contract victory — reference only: successful completion of the final track wins the contract. Track 1 determines which final track is played but does not itself win the contract. If neither player successfully completes the final track, neither meets the printed contract-victory condition.",
+  "Temporary Hires — tactical reference only: the cards below provide unit and pilot information for an already-hired unit. Consult Draconis Reach pp. 29 and 89 and current errata for availability, eligibility, per-track requirements, force limits, corrected Support Point costs and bonuses, repairs, and replacement. This browser does not interpret the unresolved threshold difference or administer hiring.",
+  "Official Le Blanc errata: Track 2 uses the ‘Otherwise the Federated Suns’ fallback; Complication 6 provides two MG Nest emplacements, not ‘Two 6 MG’; all four printed Warchest Point references for Weeper and Kyodai are Support Points.",
+  ...LE_BLANC_PROVISIONAL_RULES
+];
+
+const leBlancReferenceTables = [
+  { title: "Le Blanc Mapsheets (1D6)", headers: ["Roll", "Mapsheet", "Source"], rows: LE_BLANC_MAPSHEET_TABLE },
+  { title: "Complication 6 · Attacker Opponent support per Scale", headers: ["Recipient role", "Current-track support"], rows: LE_BLANC_PARTISAN_PACKAGES.attacker.map(item => ["Attacker", item]) },
+  { title: "Complication 6 · Defender Opponent support per Scale", headers: ["Recipient role", "Current-track support"], rows: LE_BLANC_PARTISAN_PACKAGES.defender.map(item => ["Defender", item]) }
+];
+
+function leBlancOverlay(trackId, existing = {}) {
+  const base = TRACKS.find(track => track.id === trackId);
+  const pageRef = base?.pageRef || "p. " + base?.page;
+  return {
+    ...existing,
+    setupDetails: [
+      ...(existing.setupDetails || base?.setupDetails || []),
+      "BattleTech mapsheets: roll on the Le Blanc 1D6 table for each required mapsheet. Preserve the selected standard track’s specific battlefield dimensions and map quantity; Retreat’s two/four-mapsheet footprint takes precedence over the general Scale count.",
+      "Alpha Strike terrain: every Le Blanc-specific mapsheet is from MapPack: City. Use the base terrain of the selected City mapsheet under the p. 154 terrain procedure; do not substitute Desert terrain solely because Le Blanc’s primary planetary terrain is Desert."
+    ],
+    special: [...(existing.special || base?.special || []), ...leBlancSharedSpecial],
+    commandComplications: LE_BLANC_COMMAND_COMPLICATIONS,
+    referenceTables: leBlancReferenceTables,
+    temporaryHires: LE_BLANC_TEMPORARY_HIRES,
+    sourceRefs: [
+      "Draconis Reach pp. 86–89 (contracts 124704A–B)",
+      base?.name + " " + pageRef,
+      "Successful tracks pp. 26, 29",
+      "Command Rights p. 28 and complications pp. 30, 89",
+      "Mapsheets p. 89 and Alpha Strike terrain p. 154",
+      "Temporary Hires pp. 29, 89",
+      "Shared rules pp. 167–168",
+      "Current official master errata — p. 88 fallback; p. 89 MG Nests and Support Points"
+    ]
+  };
+}
+
+const leBlancTrack1Variant = leBlancOverlay("objective-raid", {
   displayName: "Objective Raid · Wreck the Place",
   summary: "An Objective Raid in which the Attacker destroys the Defender’s medium objective buildings.",
   setup: [
@@ -1774,9 +1906,10 @@ const leBlancTrack1Variant = {
     "Objective buildings: medium buildings are immobile (−4 target number modifier) and can sustain 30 damage (AS: 4 damage) before being destroyed.",
     "Track End: after the end of any turn when at least one side has no units in play, or after the end of Turn 12 (Turn 10 in Alpha Strike).",
     "Salvage: the Attacker may not claim salvage. The Defender claims salvage if they successfully complete the track; otherwise all salvage returns to its owners."
-  ],
-  sourceRefs: ["Draconis Reach p. 88", "Objective Raid p. 171"]
-};
+  ]
+});
+
+const leBlancFinalVariant = trackId => leBlancOverlay(trackId);
 
 const protectionCommandComplications = {
   ref: "Draconis Reach pp. 30, 111",
@@ -2516,13 +2649,26 @@ export const HOT_SPOTS = [
     name: "Le Blanc",
     region: "Federated Suns",
     terrain: "Desert",
-    source: "Draconis Reach pp. 88–89",
+    source: "Draconis Reach pp. 86–89",
+    note: "The browser consolidates Le Blanc’s current-track tactical rules. Contract timeline and victory are reference only; no campaign history, Temporary Hire eligibility, hiring, payment, repair, replacement, or strategic administration is performed.",
+    campaignState: {
+      kind: "le-blanc",
+      title: "Le Blanc current-mission setup",
+      sourceRefs: ["Draconis Reach pp. 86–89", "Successful tracks pp. 26, 29", "Current official master errata"]
+    },
     sides: [factionSide("draconis-combine", "Draconis Combine", "Draconis Combine"), factionSide("federated-suns", "Federated Suns", "Federated Suns")],
     tracks: [
       fixedHotSpotTrack(1, "objective-raid", "draconis-combine", "federated-suns", { displayName: "Objective Raid · Wreck the Place", variant: leBlancTrack1Variant }),
       winnerDependentTrack(2, [1], {
-        "draconis-combine": { trackId: "strike", attacker: "draconis-combine", defender: "federated-suns" },
-        "federated-suns": { trackId: "retreat", attacker: "federated-suns", defender: "draconis-combine" }
+        yes: { trackId: "strike", attacker: "draconis-combine", defender: "federated-suns", variant: leBlancFinalVariant("strike") },
+        no: { trackId: "retreat", attacker: "federated-suns", defender: "draconis-combine", variant: leBlancFinalVariant("retreat") }
+      }, {
+        previousOutcomeLabel: "Did the Draconis Combine successfully complete Track 1?",
+        previousOutcomeOptions: [
+          { value: "yes", label: "Yes — play Strike" },
+          { value: "no", label: "No — play Retreat (Federated Suns success or neither side)" }
+        ],
+        previousOutcomeHint: "Pending is not treated as No. Official errata: otherwise the Federated Suns initiates Retreat."
       })
     ]
   },

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { adjustDaharEarnedVp, achernarInitialDefectors, ALTA_VISTA_COMMAND_COMPLICATIONS, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_MAPSHEET_TABLE, DAHAR_PROVISIONAL_RULES, DAHAR_TRACK_RESULTS, evaluateAltaVistaCampaign, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, resolveDaharComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
+import { adjustDaharEarnedVp, achernarInitialDefectors, ALTA_VISTA_COMMAND_COMPLICATIONS, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_MAPSHEET_TABLE, DAHAR_PROVISIONAL_RULES, DAHAR_TRACK_RESULTS, evaluateAltaVistaCampaign, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_MAPSHEET_TABLE, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LE_BLANC_TEMPORARY_HIRES, MISSION_OPFOR_OVERRIDES, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, resolveDaharComplications, resolveLeBlancComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
 
 const expected = ["Assault", "Breakthrough", "Defend", "Flank", "Meeting Engagement", "Objective Raid", "Pursuit", "Pushback", "Recon", "Retreat", "Strike"];
 assert.deepEqual(TRACKS.map(track => track.name), expected, "all eleven Draconis Reach standard tracks are present");
@@ -158,7 +158,46 @@ assert.match(leBlancVariant.setup.join(" "), /destructible/);
 assert.match(leBlancVariant.special.join(" "), /immobile/);
 assert.match(leBlancVariant.special.join(" "), /30 damage \(AS: 4 damage\)/);
 assert.doesNotMatch(leBlancVariant.special.join(" "), /component|grab and load|carrying reduces/i);
-assert.deepEqual(leBlancVariant.sourceRefs, ["Draconis Reach p. 88", "Objective Raid p. 171"]);
+assert.equal(leBlanc.source, "Draconis Reach pp. 86–89");
+assert.equal(leBlanc.campaignState.kind, "le-blanc");
+assert.deepEqual(leBlanc.tracks[1].previousOutcomeOptions.map(option => option.value), ["yes", "no"]);
+assert.equal(leBlanc.tracks[1].outcomes.yes.trackId, "strike");
+assert.deepEqual([leBlanc.tracks[1].outcomes.yes.attacker, leBlanc.tracks[1].outcomes.yes.defender], ["draconis-combine", "federated-suns"]);
+assert.equal(leBlanc.tracks[1].outcomes.no.trackId, "retreat");
+assert.deepEqual([leBlanc.tracks[1].outcomes.no.attacker, leBlanc.tracks[1].outcomes.no.defender], ["federated-suns", "draconis-combine"]);
+for (const variant of [leBlancVariant, leBlanc.tracks[1].outcomes.yes.variant, leBlanc.tracks[1].outcomes.no.variant]) {
+  assert.equal(variant.commandComplications, LE_BLANC_COMMAND_COMPLICATIONS);
+  assert.equal(variant.temporaryHires, LE_BLANC_TEMPORARY_HIRES);
+  assert.deepEqual(variant.referenceTables[0].rows, LE_BLANC_MAPSHEET_TABLE);
+  assert.match(variant.setupDetails.join(" "), /MapPack: City|City mapsheet/i);
+  assert.match(variant.special.join(" "), /Successful track completion.*final track wins.*Temporary Hires.*reference only/i);
+  assert.match(variant.sourceRefs.join(" "), /pp\. 86–89.*pp\. 26, 29.*p\. 154.*official master errata/i);
+}
+assert.match(leBlanc.tracks[1].outcomes.yes.variant.special.join(" "), /Turn 10 \(Turn 8 in Alpha Strike\)/);
+assert.match(leBlanc.tracks[1].outcomes.no.variant.special.join(" "), /after the end of Turn 10/);
+assert.deepEqual(LE_BLANC_MAPSHEET_TABLE.map(row => row[1]), ["Corporate Campus", "Business District", "Family Quarters", "Shopping District"]);
+assert.ok(LE_BLANC_MAPSHEET_TABLE.every(row => row[2] === "MapPack: City"));
+assert.deepEqual(LE_BLANC_TEMPORARY_HIRES.map(hire => [hire.name, hire.unit, hire.bv, hire.pv]), [
+  ["Weeper", "Lament LMT-2R", "1,999", "43"],
+  ["Kyodai", "Hitotsume Kozo HKZ-1F", "1,998", "42"]
+]);
+assert.match(LE_BLANC_TEMPORARY_HIRES[1].abilities, /Melee Specialist/);
+assert.match(LE_BLANC_TEMPORARY_HIRES[1].restriction, /Mercenary.*Operation Sundown/);
+assert.equal(LE_BLANC_COMMAND_COMPLICATIONS.rows.length, 6);
+assert.deepEqual(LE_BLANC_COMMAND_COMPLICATIONS.rows.map(row => row.roll), ["1–3", "4", "5", "6", "7", "8+"]);
+assert.match(LE_BLANC_COMMAND_COMPLICATIONS.rows[1].text, /25 SP.*Run\/Flank.*MV −2.*assets lose 1 MP/);
+assert.match(LE_BLANC_COMMAND_COMPLICATIONS.rows[2].text, /half ammunition.*after Turn 3.*ENE/);
+assert.match(LE_BLANC_COMMAND_COMPLICATIONS.rows[4].text, /Battlefield-wide.*medium range.*long range/);
+assert.match(LE_BLANC_PARTISAN_PACKAGES.defender.join(" "), /2 × Scale MG Nest.*CF 10.*CF 3.*1\/1\/0/);
+assert.match(LE_BLANC_PARTISAN_PACKAGES.attacker.join(" "), /Motorized Conventional Infantry.*Galleon GAL-100/);
+assert.equal(LE_BLANC_PROVISIONAL_RULES.length, 3);
+for (const [rights, modifier] of [["independent", 0], ["liaison", 1], ["house", 2], ["integrated", 3]]) {
+  assert.equal(resolveLeBlancComplications({ initial: 1 }, rights).modifier, modifier);
+}
+assert.deepEqual(resolveLeBlancComplications({ initial: 6, secondaryOne: 1, secondaryTwo: 2 }, "house").effects, [4], "modified secondary no-complication and direct effect resolve correctly");
+assert.deepEqual(resolveLeBlancComplications({ initial: 5, secondaryOne: 3, secondaryTwo: 3 }, "integrated").effects, [6], "duplicate secondary effects apply once");
+assert.deepEqual(resolveLeBlancComplications({ initial: 5, secondaryOne: 4, secondaryTwo: 5 }, "integrated").effects, [7], "secondary Roll Twice is ignored");
+assert.equal(resolveLeBlancComplications({ initial: 5, secondaryOne: 5, secondaryTwo: 6 }, "integrated").effects.length, 0, "secondary 8+ results do not recurse");
 const newIvaarsen = HOT_SPOTS.find(item => item.id === "new-ivaarsen");
 assert.deepEqual(newIvaarsen.tracks.map(track => [track.sequence, track.trackId, track.attacker, track.defender]), [
   [1, "strike", "stephensons", "isf"],
@@ -207,6 +246,12 @@ for (const term of ["campaignState", "campaignTrackValues", "campaignBuildingTot
 }
 assert.ok(css.includes("command-complications-table") && css.includes("complication-roll"), "Command Complications table has focused responsive styling");
 assert.ok(css.includes("campaign-state-card") && css.includes("campaign-fields"), "cross-track campaign state has focused responsive styling");
+for (const term of ["renderLeBlancMissionState", "data-leblanc-faction", "data-leblanc-rights", "data-leblanc-complication", "resolveLeBlancComplications", "previousOutcomeOptions", "temporaryHires", "renderTemporaryHires", "Current-track successful completion", "No campaign history"]) {
+  assert.ok((app + data).includes(term), "Le Blanc tactical implementation includes " + term);
+}
+assert.ok(app.includes('"Mercenary": "mercenary-pirate"'), "Le Blanc mercenary participants resolve to the Mercenary/Pirate OpFor table");
+assert.ok(css.includes("hire-reference-card") && css.includes("hire-card-grid") && css.includes("hire-card-divider"), "Temporary Hire cards use the focused nutrition-label-inspired layout");
+assert.match(css, /@media[\s\S]*hire-card-grid \{ grid-template-columns: 1fr;/, "Temporary Hire cards stack at the mobile breakpoint");
 assert.ok(html.includes("master errata") && html.includes("topic,90893.0.html"), "current Draconis Reach master errata is identified in the source verification panel");
 assert.ok(css.includes("@media") && css.includes("flex-wrap: wrap"), "responsive layout rules remain present");
 assert.ok(HOT_SPOTS.length >= 10, "the location selector includes the Draconis Reach mission briefs currently mapped");
@@ -797,7 +842,7 @@ assert.ok(app.includes("availableHotSpotTracks") && app.includes("evaluateAltaVi
 assert.ok(app.includes("data-alta-trial-field") && app.includes("data-alta-root-field"), "Alta Vista campaign controls are wired");
 assert.ok(app.includes("state.mode") && app.includes("renderCampaignState"), "campaign state remains independent of Attacker/Defender/Both display mode");
 assert.ok(css.includes("campaign-wide-field"), "Alta Vista bounded carryover notes have responsive full-width styling");
-assert.match(html, /dahar-tactical-scope/, "the current implementation uses a fresh asset cache key");
+assert.match(html, /le-blanc-tactical-scope/, "the current implementation uses a fresh asset cache key");
 
 const dahar = HOT_SPOTS.find(item => item.id === "dahar-iv");
 assert.ok(dahar, "Dahar IV is available as a Hot Spot");
