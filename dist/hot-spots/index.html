@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#10151f">
   <title>Mission Foundry — Hot Spots: Draconis Reach</title>
-  <link rel="stylesheet" href="styles.css?v=lucerne-tactical-scope">
+  <link rel="stylesheet" href="styles.css?v=usability-final-ux16-19">
 </head>
 <body>
   <header class="topbar">
@@ -21,16 +21,11 @@
       <div class="eyebrow">HOT SPOTS MISSION BROWSER</div>
       <h1>Keep the track<br><em>in view.</em></h1>
       <p>Choose the Hot Spot location, track sequence, and military side. The standard mission track and Attacker/Defender roles resolve from the source briefing while the rules panel stays beside the objective table.</p>
-      <div class="source-strip">
-        <span>PRIMARY SOURCE</span><strong>Draconis Reach pp. 167–175</strong>
-        <span>ERRATA REVIEW</span><strong>Draconis Reach pre-v1 · Hinterlands v2.41 not applied</strong>
-      </div>
     </section>
 
-    <section class="hotspot-panel panel" aria-label="Hot Spot mission setup">
-      <div class="panel-heading">
-        <div><span class="panel-kicker">HOT SPOT SETUP</span><h2>Choose the location and sequence</h2></div>
-      </div>
+    <details class="hotspot-panel panel hotspot-setup-disclosure" id="hotspot-setup" aria-label="Hot Spot mission setup" open>
+      <summary><div><span class="panel-kicker">HOT SPOT SETUP</span><h2>Choose the location and track</h2><span id="hotspot-setup-summary" class="setup-summary"></span></div><span class="setup-disclosure-label" aria-hidden="true"></span></summary>
+      <div class="hotspot-setup-body">
       <div class="hotspot-grid">
         <div class="control-group">
           <label for="hot-spot-select">Hot Spot location</label>
@@ -57,27 +52,29 @@
         </div>
         <p id="scale-restriction-note" class="scale-restriction-note" hidden></p>
       </div>
+      <div id="battlefield-configuration"></div>
+      <div id="complication-configuration"></div>
       <label class="option-toggle" for="taking-one-for-team">
         <input type="checkbox" id="taking-one-for-team">
         <span class="option-checkmark"></span>
         <span><strong>Taking one for the team</strong><small>Show a generated opposing force using the selected military side and Force Scale.</small></span>
       </label>
       <div id="opfor-display"></div>
-    </section>
+      </div>
+    </details>
 
     <section class="controls panel" aria-label="Mission display controls">
       <div class="control-group track-display">
-        <strong id="derived-track-title" class="derived-track-title">Objective Raid</strong>
+        <h2 id="derived-track-title" class="derived-track-title">Objective Raid</h2>
       </div>
       <div class="control-group control-status">
-        <span class="label">Tracking view</span>
-        <div class="mode-switch" role="group" aria-label="Tracking view">
+        <div class="mode-switch" role="group" aria-label="Score display">
           <button type="button" class="mode-button" data-mode="attacker">Attacker only</button>
           <button type="button" class="mode-button" data-mode="defender">Defender only</button>
           <button type="button" class="mode-button active" data-mode="both">Both sides</button>
         </div>
       </div>
-      <button type="button" id="reset-button" class="button danger">Reset track</button>
+      <button type="button" id="reset-button" class="button danger">Reset Objectives</button>
     </section>
 
     <div class="app-grid">
@@ -126,18 +123,20 @@
       </section>
     </div>
 
-    <section class="errata-panel panel">
+    <section class="errata-panel panel" id="rules-sources">
       <div class="panel-heading">
-        <div><span class="panel-kicker">SOURCE VERIFICATION</span><h3>Printed rules and errata remain distinct</h3></div>
+        <div><span class="panel-kicker">RULES SOURCES</span><h3>Sourcebook and incorporated errata</h3></div>
       </div>
-      <p>Draconis Reach pp. 167–175 are the authoritative standard-track text for this browser. The current Draconis Reach master errata was reviewed for scenario corrections, including Pascagoula pp. 104–105. The supplied Hot Spots Hinterlands v2.41 errata targets older Hinterlands page numbers and is not applied to these Draconis Reach records.</p>
-      <p class="reference-line">Source files: Hot Spots: Draconis Reach — First Printing; Hot Spots Hinterlands Errata v2.41; Hot Spots Hinterlands Update; Hinterlands Second Printing. Official master errata: battletech.com/forums/index.php/topic,90893.0.html.</p>
+      <ul class="rule-list source-list"><li><strong>Sourcebook:</strong> Hot Spots: Draconis Reach, First Printing.</li><li><strong>Errata incorporated:</strong> official master errata list revision 11 November 2026. No formal version number has been published.</li><li><strong>Official forum last checked:</strong> 25 November 2026.</li></ul>
+      <p>The incorporated revision date identifies the rules update used by this browser; the later check date records when the forum was most recently reviewed.</p>
+      <p><a href="https://www.battletech.com/forums/index.php/topic,90893.0.html" target="_blank" rel="noreferrer">Open the official Draconis Reach master errata thread</a>.</p>
+      <p class="provisional-rule" role="note"><span class="sr-only">Provisional interpretation: </span>Amber text indicates a provisional rules interpretation pending official clarification.</p>
     </section>
   </main>
 
   <footer class="footer"><span>MISSION FOUNDRY</span><span>Hot Spots: Draconis Reach · Local rules reference</span><span>LOCAL v0.1</span></footer>
   <noscript>This browser requires JavaScript for mission selection and objective scoring.</noscript>
-  <script type="module" src="app.mjs?v=lucerne-tactical-scope"></script>
+  <script type="module" src="app.mjs?v=usability-final-ux16-19"></script>
 </body>
 </html>
 

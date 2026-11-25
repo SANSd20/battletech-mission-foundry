@@ -56,21 +56,21 @@ export const DAHAR_INDUSTRIALMECH_TABLE = Object.freeze([
 
 export const DAHAR_COMMAND_COMPLICATIONS = Object.freeze({
   ref: "Draconis Reach p. 84",
-  note: "Each player rolls separately for every played track. Add the selected Command Rights modifier: Independent +0, Liaison +1, House +2, Integrated +2. Result 8 uses the approved provisional two-roll procedure shown in the tactical setup panel.",
+  note: "Resolve each force independently for every played track, then select every resulting effect below. Command Rights modifiers are Independent +0, Liaison +1, House +2, and Integrated +2.",
   rows: [
     { roll: "1–3", name: "No Complication", text: "No additional effect." },
     { roll: "4", name: "Sandstorm", text: "All attacks suffer an additional +1 to-hit modifier at medium range and +2 at long range." },
     { roll: "5", name: "Heatwave", text: "All BattleMechs generate 1 additional Heat per turn. All ground vehicles suffer −1 MP to Flank Speed; Battlefield Support assets suffer −1 movement. Infantry cannot be used in this track." },
     { roll: "6", name: "Abandoned Mine", text: "The opposing player may place 1D6 sinkhole tokens (Alpha Strike: 2-inch AOE markers). Each is depth 6 (Alpha Strike: 12 inches). A unit entering one falls to the bottom and, if it survives, is effectively crippled for objectives and repairs." },
     { roll: "7", name: "Orders Are Gibberish", text: "The affected player receives −20 VP once for each objective that earns VP. For repeatable objectives, deduct 20 once from the objective total, not from every instance." },
-    { roll: "8", name: "Roll Twice", text: "Approved provisional interpretation: roll exactly twice more with the same Command Rights modifier. Ignore secondary 8s and duplicate effects; do not reroll and do not recurse." }
+    { roll: "8", name: "Roll Twice", text: "Roll exactly twice more with the same Command Rights modifier. Ignore secondary 8s and duplicate effects; do not reroll and do not recurse." }
   ]
 });
 
 export const DAHAR_PROVISIONAL_RULES = Object.freeze([
-  "DAHAR-AMB-001 — Use sidebar contract identifiers 105112A and 105112B; treat Mission Brief identifier 105070A–B as a presumed printing error. This is not official errata.",
-  "DAHAR-AMB-002 — Equal successful-track totals after Month 3 produce a contract draw. Duplicate rolls preserve success streaks; played tactical draws reset both streaks. This is an approved project interpretation.",
-  "DAHAR-AMB-003 — A modified 8 generates exactly two secondary rolls with the same modifier. Secondary 8s and duplicate effects are ignored; no rerolls or recursion. This is an approved project interpretation."
+  "Use sidebar contract identifiers 105112A and 105112B; treat Mission Brief identifier 105070A–B as a presumed printing error.",
+  "Equal successful-track totals after Month 3 produce a contract draw. Duplicate rolls preserve success streaks; played tactical draws reset both streaks.",
+  "A modified 8 generates exactly two secondary rolls with the same modifier. Secondary 8s and duplicate effects are ignored; no rerolls or recursion."
 ]);
 
 export function daharCommandModifier(rights = "liaison") {
@@ -140,15 +140,15 @@ export const LE_BLANC_TEMPORARY_HIRES = Object.freeze([
 ]);
 
 export const LE_BLANC_COMMAND_COMPLICATIONS = Object.freeze({
-  ref: "Draconis Reach pp. 30, 89; current official master errata",
-  note: "Approved provisional timing: before either Le Blanc track, each player rolls independently. Apply that player’s selected Command Rights modifier: Independent +0, Liaison +1, House +2, Integrated +3. This both-tracks timing is a project interpretation pending official clarification, not official errata.",
+  ref: "Draconis Reach pp. 30, 89",
+  note: "Before either Le Blanc track, resolve each force independently and select every resulting effect below. Command Rights modifiers are Independent +0, Liaison +1, House +2, and Integrated +3.",
   rows: [
     { roll: "1–3", name: "No Complication", text: "No additional effect." },
     { roll: "4", name: "Unprepared for a Sandstorm", text: "The affected player pays 25 SP per unit deployed in this track, or each such unit reduces its Run/Flank speed by 1 MP (Alpha Strike: MV −2 inches). Battlefield Support assets lose 1 MP. The browser presents this tactical alternative but does not administer Support Points." },
     { roll: "5", name: "Undersupplied", text: "BattleTech: begin with half ammunition in every ammunition critical slot. Alpha Strike: after Turn 3, reduce the damage rating by 1 for each unit without the ENE special." },
     { roll: "6", name: "Local Partisan Support", text: "The opposing player receives free Battlefield Support per Scale for this track only. Use the recipient’s tactical role to select the Attacker Opponent or Defender Opponent package shown below." },
     { roll: "7", name: "Unexpected Sandstorm", text: "Battlefield-wide. BattleTech: all attacks receive +1 target number at medium range and +2 at long range. Alpha Strike: all weapon attacks receive +1 target number at medium or long range." },
-    { roll: "8+", name: "Roll Twice", text: "Approved shared provisional ruling: make exactly two secondary rolls with the same Command Rights modifier. Ignore secondary Roll Twice results, apply duplicate effects once, do not reroll duplicates, and do not recurse." }
+    { roll: "8+", name: "Roll Twice", text: "Make exactly two secondary rolls with the same Command Rights modifier. Ignore secondary Roll Twice results, apply duplicate effects once, do not reroll duplicates, and do not recurse." }
   ]
 });
 
@@ -158,16 +158,15 @@ export const LE_BLANC_PARTISAN_PACKAGES = Object.freeze({
     "2 × Scale Galleon GAL-100 (Gunnery 5; Piloting 6; Alpha Strike Skill 5)"
   ],
   defender: [
-    "2 × Scale MG Nest emplacements — official erratum (BattleTech: CF 10, Armor 5, five light machine guns in front, Gunnery 5; Alpha Strike: CF 3, Armor 1, damage 1/1/0, MV 0 inches, TMM +0, Skill 5)",
+    "2 × Scale MG Nest emplacements (BattleTech: CF 10, Armor 5, five light machine guns in front, Gunnery 5; Alpha Strike: CF 3, Armor 1, damage 1/1/0, MV 0 inches, TMM +0, Skill 5)",
     "1 × Scale Foot Conventional Infantry (Rifle; Gunnery 5; no anti-’Mech Skill; Alpha Strike Skill 5)",
     "2 × Scale Galleon GAL-100 (Gunnery 5; Piloting 6; Alpha Strike Skill 5)"
   ]
 });
 
 export const LE_BLANC_PROVISIONAL_RULES = Object.freeze([
-  "LEBLANC-AMB-001 — Temporary Hire eligibility remains unresolved and outside this tactical browser. The cards are reference only; consult pp. 29 and 89 for availability, eligibility, force limits, costs, repairs, and replacement.",
-  "LEBLANC-AMB-002 — A modified 8+ produces exactly two secondary rolls with the same modifier. Ignore secondary 8+ results, apply duplicates once, do not reroll duplicates, and do not recurse. This is an approved project-wide provisional interpretation.",
-  "LEBLANC-AMB-003 — Command Complications apply before both Le Blanc tracks. This is an approved provisional project interpretation pending official clarification, not official errata."
+  "Temporary Hire eligibility remains unresolved. Consult pp. 29 and 89 for availability, eligibility, force limits, costs, repairs, and replacement.",
+  "A modified 8+ produces exactly two secondary rolls with the same modifier. Ignore secondary 8+ results, apply duplicates once, do not reroll duplicates, and do not recurse."
 ]);
 
 export function leBlancCommandModifier(rights = "liaison") {
@@ -213,7 +212,7 @@ export const LUCERNE_TEMPORARY_HIRES = Object.freeze([
     edge: "3",
     abilities: "Jumping Jack Edge Ability",
     restriction: "Associated with Eclipse Expeditions. Hiring eligibility and administration remain with the players.",
-    source: "Draconis Reach p. 93; official errata replaces the Ronin and Spider SDR-7K"
+    source: "Draconis Reach p. 93"
   },
   {
     id: "steve-kendricks",
@@ -233,24 +232,21 @@ export const LUCERNE_TEMPORARY_HIRES = Object.freeze([
 ]);
 
 export const LUCERNE_COMMAND_COMPLICATIONS = Object.freeze({
-  ref: "Draconis Reach pp. 30, 92–93; current official master errata",
-  note: "Apply only to Lucerne standard tracks. Each player rolls independently and applies their selected Command Rights modifier: Independent +0, Liaison +1, House +2, Integrated +3. Bio-Gen Raid uses Enough Chaos and does not roll random complications.",
+  ref: "Draconis Reach pp. 30, 92–93",
+  note: "Apply only to Lucerne standard tracks. Resolve each force independently and select every resulting effect below. Command Rights modifiers are Independent +0, Liaison +1, House +2, and Integrated +3. Bio-Gen Raid uses Enough Chaos instead.",
   rows: [
     { roll: "1–3", name: "No Complication", text: "No complication applies." },
     { roll: "4", name: "Conflicting Orders", text: "The affected mercenaries suffer a −2 Initiative penalty for the first two turns of the battle." },
     { roll: "5–6", name: "Voracious Reptile Swarms", text: "For each affected player, randomly place 1D3 neutral swarms per mapsheet. Each BattleTech swarm covers one central hex and every adjacent hex and is 1 level high (Alpha Strike: 6-inch AOE and 1 inch high); swarms may not share a center hex. At the end of each Movement Phase each swarm moves 2 hexes in a random direction (Alpha Strike: 4 inches), stopping at level 3+ hills or depth 2+ water (Alpha Strike: more than 2 inches elevation change or water at least 2 inches deep). Non-energy ranged attacks into or through a swarm receive +1 target number regardless of the number of swarm hexes; energy attacks receive +2 (Alpha Strike: +1 to non-ENE attacks and +2 to ENE attacks). An Asset occupying a swarm hex during the Weapon Attack Phase takes 1D6 damage (Alpha Strike: 0* damage). Swarms are immune to damage, but an Anti-Infantry (AI) weapon hit on the occupied hex prevents that swarm’s damage for the turn." },
     { roll: "7", name: "Heavy Rainfall", text: "Battlefield-wide beginning on Round 3. BattleTech: all weapon attacks receive +1 target number and all units receive +1 target number to Piloting Skill checks. Alpha Strike: all weapon attacks and bog down checks receive +1 target number." },
-    { roll: "8+", name: "Roll Twice", text: "Approved Lucerne provisional procedure: resolve exactly two secondary results using the same Command Rights modifier. Reroll secondary 8+ results and duplicate actual complication effects; accept duplicate No Complication results. Results 5 and 6 are the same swarm effect. Replacement rolls use the same modifier, do not recurse, and continue until a different effect or No Complication is obtained." }
+    { roll: "8+", name: "Roll Twice", text: "Resolve exactly two secondary results using the same Command Rights modifier. Reroll secondary 8+ results and duplicate actual complication effects; accept duplicate No Complication results. Results 5 and 6 are the same swarm effect. Replacement rolls use the same modifier, do not recurse, and continue until a different effect or No Complication is obtained." }
   ]
 });
 
 export const LUCERNE_PROVISIONAL_RULES = Object.freeze([
-  "LUCERNE-PROGRESSION-AMB-001 — Reference only: six months is the provisional maximum duration; six completed tracks end the contract early; Bio-Gen Raid occurs only if the sixth track is reached. The printed minimum-intensity discrepancy remains unresolved, and the browser does not administer progression.",
-  "LUCERNE-DEPLOYMENT-AMB-001 — Preserve the printed half-force and 50-percent wording. No rounding, asset-counting, or automated deployment interpretation is imposed.",
-  "LUCERNE-OBJECTIVE-AMB-001 — Rough Up the Place retains the printed ‘50 percent of the opponent’s force’ wording with manual completion. No BV/PV, unit-count, starting-force, or asset qualifier is added.",
-  "LUCERNE-ROLLTWICE-AMB-001 — Apply the same modifier to initial, secondary, and replacement rolls; resolve exactly two secondary effects; reroll secondary 8+ and duplicate actual effects; accept duplicate No Complication; results 5 and 6 are one effect; do not recurse.",
-  "LUCERNE-DUALSWARM-AMB-001 — Each affected player independently generates 1D3 neutral swarms per mapsheet. If both players receive the effect, use 2D3 per mapsheet and keep every center hex unique.",
-  "LUCERNE-ENHANCEDSWARM-AMB-001 — Preserve the printed enhanced-swarm wording. Exact spawn placement and timing, nearest-unit ties, Alpha Strike movement conversion, and additional targeting procedures remain tabletop adjudications."
+  "Six months is the provisional maximum duration; six completed tracks end the contract early; Bio-Gen Raid occurs only if the sixth track is reached. The printed minimum-intensity discrepancy remains unresolved.",
+  "Apply the same modifier to initial, secondary, and replacement rolls; resolve exactly two secondary effects; reroll secondary 8+ and duplicate actual effects; accept duplicate No Complication; results 5 and 6 are one effect; do not recurse.",
+  "Each affected player independently generates 1D3 neutral swarms per mapsheet. If both players receive the effect, use 2D3 per mapsheet and keep every center hex unique."
 ]);
 
 export function lucerneCommandModifier(rights = "independent") {
@@ -1618,7 +1614,7 @@ const winnerDependentTrack = (sequence, requires, outcomes, extra = {}) => ({
 
 const achernarCommandComplications = {
   ref: "Draconis Reach pp. 76–77",
-  note: "At the start of each track, each player rolls 1D6. Tybalt has Independent Command Rights and adds no modifier. Home Guard has Liaison Command Rights and adds 1. The browser displays the complete table without selecting or applying a result automatically.",
+  note: "At the start of each track, resolve each force independently and select every resulting effect below. Tybalt adds no modifier; Home Guard adds 1.",
   rows: [
     { roll: "1", name: "Republic Spider", text: "An SDR-8R Spider (Gunnery 3, Piloting 4; Alpha Strike Skill 3) enters from a random map edge perpendicular to the Defender’s edge. The player who lost first-turn Initiative controls it initially. Each turn, if only one player damaged the Spider during the previous turn, control goes to the player who did not damage it; if both or neither damaged it, control goes to the player who lost Initiative. If both players roll this complication, the Spider improves to Gunnery 2, Piloting 3; Alpha Strike Skill 2." },
     { roll: "2–3", name: "No Complication", text: "No complication applies." },
@@ -1631,8 +1627,7 @@ const achernarCommandComplications = {
 
 const achernarVictoryRules = [
   "Achernar contract victory — Tybalt: if at least one defector vehicle survives all tracks, Tybalt wins the contract. If all defector vehicles are destroyed, Tybalt can still claim victory by winning both the Strike and Retreat scenarios.",
-  "Achernar contract victory — Home Guard: Home Guard automatically wins if Tybalt does not meet its victory qualifications. Home Guard is also victorious if it destroys five or more Battlefield Support units granted to Tybalt through the Command Complications table.",
-  "Provisional project ruling — user approved pending official forum clarification: evaluate the two contracts independently. If both sides satisfy their conditions, both contracts are successful. Tybalt’s Strike-and-Retreat alternative is available only when Track 3 is Strike; if Track 3 is Meeting Engagement, Breakthrough, or Defend, Tybalt must preserve at least one defector vehicle. This is not official errata or a developer ruling."
+  "Achernar contract victory — Home Guard: Home Guard automatically wins if Tybalt does not meet its victory qualifications. Home Guard is also victorious if it destroys five or more Battlefield Support units granted to Tybalt through the Command Complications table."
 ];
 
 function achernarVariant(trackId, sequence) {
@@ -1642,7 +1637,7 @@ function achernarVariant(trackId, sequence) {
     ? ["Defector vehicles do not join Tybalt during Tracks 1–2."]
     : sequence === 3
       ? ["Defector force: Tybalt receives two J. Edgar Hover Tanks per Scale in every Track 3 branch, regardless of Tybalt’s tactical role. The crews use Gunnery 4 / Piloting 5 in BattleTech and Skill 4 in Alpha Strike. These same vehicles continue into every later track; reduce their number when one is destroyed."]
-      : ["Defector carryover: Tybalt receives only the J. Edgar Hover Tanks that survived the previous track. Do not restore destroyed vehicles or grant a fresh complement. Record the surviving count in the Achernar campaign panel."];
+      : ["Defector carryover: Tybalt receives only the J. Edgar Hover Tanks that survived the previous track. Do not restore destroyed vehicles or grant a fresh complement. Select the number entering the current track below."];
   return {
     setupDetails,
     scaleNotesByScale: sequence === 3 ? {
@@ -1655,8 +1650,7 @@ function achernarVariant(trackId, sequence) {
     sourceRefs: [
       "Draconis Reach pp. 74–77",
       base?.name + " " + pageRef,
-      "Shared rules pp. 167–168",
-      "Current Draconis Reach master errata"
+      "Shared rules pp. 167–168"
     ]
   };
 }
@@ -1674,13 +1668,7 @@ function daharVariant(trackId) {
     ],
     special: [
       ...(base?.special || []),
-      "Successful track completion: a side must complete at least one objective and earn more finalized, adjusted objective VP than the opponent. Equal VP means neither side successfully completes the track.",
-      "Campaign procedure — reference only: at the beginning of each of the three months, roll twice on the Mission Table and play the two results in rolled order. The browser does not roll, store, gate, or validate the contract history; select the current tactical track directly.",
-      "Duplicate procedure — reference only: each track type may be played only once during the contract. A later duplicate produces no track and is not rerolled. Track previous results and duplicate eligibility outside this tactical browser.",
-      "Dahar contract victory — reference only: two consecutive successfully completed played tracks win the contract immediately and cause the opposing commander to concede. Otherwise, after the Month 3 opportunities resolve, the side with more successful tracks wins.",
-      "Approved provisional victory interpretation — reference only: equal successful-track totals after Month 3 produce a contract draw; a duplicate/no-track result preserves the existing consecutive-success streak; a played tactical track on which neither side succeeds breaks both streaks. This browser reports only the currently selected track’s tactical result and does not evaluate contract victory.",
-      "Contract identifiers: display 105112A (Garrison) and 105112B (Raid), using the individual contract sidebars. Mission Brief identifier 105070A–B is documented as a presumed printing error, not official errata.",
-      "Official erratum, p. 82: Garrison Salvage Rights are 20% (5), not the printed 25% (5). Strategic salvage administration remains outside this tactical browser."
+      "Successful track completion: a side must complete at least one objective and earn more finalized, adjusted objective VP than the opponent. Equal VP means neither side successfully completes the track."
     ],
     commandComplications: DAHAR_COMMAND_COMPLICATIONS,
     referenceTables: [
@@ -1692,8 +1680,7 @@ function daharVariant(trackId) {
       base?.name + " " + pageRef,
       "Successful tracks pp. 26, 29",
       "Command Rights p. 28 and complications p. 30",
-      "Shared rules pp. 167–168",
-      "Current Draconis Reach master errata — p. 82 Salvage Rights 20% (5)"
+      "Shared rules pp. 167–168"
     ]
   };
 }
@@ -1995,11 +1982,7 @@ const pascagoulaTrack1Variant = {
 };
 
 const leBlancSharedSpecial = [
-  "Successful track completion: a player must complete at least one objective and earn more objective VP than the opposing player. Equal VP means neither player successfully completes the track.",
-  "Contract victory — reference only: successful completion of the final track wins the contract. Track 1 determines which final track is played but does not itself win the contract. If neither player successfully completes the final track, neither meets the printed contract-victory condition.",
-  "Temporary Hires — tactical reference only: the cards below provide unit and pilot information for an already-hired unit. Consult Draconis Reach pp. 29 and 89 and current errata for availability, eligibility, per-track requirements, force limits, corrected Support Point costs and bonuses, repairs, and replacement. This browser does not interpret the unresolved threshold difference or administer hiring.",
-  "Official Le Blanc errata: Track 2 uses the ‘Otherwise the Federated Suns’ fallback; Complication 6 provides two MG Nest emplacements, not ‘Two 6 MG’; all four printed Warchest Point references for Weeper and Kyodai are Support Points.",
-  ...LE_BLANC_PROVISIONAL_RULES
+  "Successful track completion: a player must complete at least one objective and earn more objective VP than the opposing player. Equal VP means neither player successfully completes the track."
 ];
 
 const leBlancReferenceTables = [
@@ -2029,8 +2012,7 @@ function leBlancOverlay(trackId, existing = {}) {
       "Command Rights p. 28 and complications pp. 30, 89",
       "Mapsheets p. 89 and Alpha Strike terrain p. 154",
       "Temporary Hires pp. 29, 89",
-      "Shared rules pp. 167–168",
-      "Current official master errata — p. 88 fallback; p. 89 MG Nests and Support Points"
+      "Shared rules pp. 167–168"
     ]
   };
 }
@@ -2062,16 +2044,11 @@ const leBlancTrack1Variant = leBlancOverlay("objective-raid", {
 const leBlancFinalVariant = trackId => leBlancOverlay(trackId);
 
 const lucerneSharedSpecial = [
-  "Successful track completion: a player must complete at least one objective and earn more objective VP than the opponent. Equal VP means neither player successfully completes the track.",
-  "Contract victory — reference only: compare successfully completed tracks when the contract ends; the side with more is the victor and equal totals produce no victor. The browser evaluates only the current tactical track and does not keep campaign success totals.",
-  "Campaign progression — reference only, using official errata: during each of no more than six months, roll 1D6 on the Track Table to determine the number of tracks, then roll to determine the selected unique standard track or tracks; duplicate track-type results produce no track. Bio-Gen Raid is the mandatory sixth played track if that point is reached. The browser does not administer months, duplicates, history, or contract termination.",
-  "Temporary Hires — tactical reference only: the cards below provide unit and pilot information for already-hired units. Consult Draconis Reach pp. 29, 92–93 and official errata for eligibility, availability, costs, bonuses, repairs, and replacement; the browser performs no hiring administration.",
-  "Official Lucerne errata: use the corrected monthly track procedure; select mapsheets with 1D6 on Grasslands Table 1 rather than 2D6; replace the Ronin with Saki; and replace the Spider SDR-7K (752 BV / 27 PV) with the Venom SDR-9KB (769 BV / 28 PV).",
-  ...LUCERNE_PROVISIONAL_RULES
+  "Successful track completion: a player must complete at least one objective and earn more objective VP than the opponent. Equal VP means neither player successfully completes the track."
 ];
 
 const lucerneReferenceTables = [
-  { title: "Lucerne Mapsheets · corrected 1D6 Grasslands Table 1", headers: ["Roll", "Mapsheet", "Source"], rows: LUCERNE_MAPSHEET_TABLE }
+  { title: "Lucerne Mapsheets · 1D6 Grasslands Table 1", headers: ["Roll", "Mapsheet", "Source"], rows: LUCERNE_MAPSHEET_TABLE }
 ];
 
 function lucerneOverlay(trackId, { includeComplications = true } = {}) {
@@ -2080,22 +2057,21 @@ function lucerneOverlay(trackId, { includeComplications = true } = {}) {
   return {
     setupDetails: [
       ...(base?.setupDetails || []),
-      "BattleTech mapsheets — official errata: beginning with the Attacker, roll 1D6 on Grasslands Table 1 for every mapsheet required and ignore duplicate results. Scale 1 normally uses one mapsheet; Scales 2–3 normally use two. Any explicit selected-track battlefield footprint takes precedence.",
+      "BattleTech mapsheets: beginning with the Attacker, roll 1D6 on Grasslands Table 1 for every mapsheet required and ignore duplicate results. Scale 1 normally uses one mapsheet; Scales 2–3 normally use two. Any explicit selected-track battlefield footprint takes precedence.",
       "Alpha Strike terrain: use the base terrain type of the selected mapsheet, or the majority of selected mapsheets, under the p. 154 terrain-placement procedure. Lucerne remains classified as Wooded planetary terrain, but the contract uses the corrected Grasslands mapsheet table."
     ],
     special: [...(base?.special || []), ...lucerneSharedSpecial],
     commandComplications: includeComplications ? LUCERNE_COMMAND_COMPLICATIONS : null,
     referenceTables: lucerneReferenceTables,
     temporaryHires: LUCERNE_TEMPORARY_HIRES,
-    temporaryHireNote: "Use these cards only after the players have resolved hiring under Draconis Reach pp. 29 and 92–93. The browser does not determine eligibility, availability, costs, bonuses, repairs, or replacement.",
+    temporaryHireNote: "Use these cards after the players resolve hiring under Draconis Reach pp. 29 and 92–93. Eligibility, availability, costs, bonuses, repairs, and replacement follow those rules.",
     sourceRefs: [
       "Draconis Reach pp. 90–93 (contracts 906245A–B)",
       base?.name + " " + pageRef,
       "Successful tracks pp. 26, 29",
       "General tactical procedure and salvage pp. 30–31",
       "Grasslands Mapsheet Table 1 p. 150 and Alpha Strike terrain p. 154",
-      "Shared rules pp. 167–168",
-      "Current official master errata — p. 92 progression and mapsheets; p. 93 Saki and Venom SDR-9KB"
+      "Shared rules pp. 167–168"
     ]
   };
 }
@@ -2693,24 +2669,24 @@ const malloryRestrictedFacility = {
 };
 
 export const ALTA_VISTA_PROVISIONAL_RULES = [
-  "ALTA-AMB-001 — Leaving with cargo ends progression but is not Raven contract victory; Ravens must win Retreat.",
-  "ALTA-AMB-002 — Escobar and Ravens contract victories are evaluated independently, except where the source imposes no victor.",
-  "ALTA-AMB-003 — A successful Command Complication 6 withdrawal is a successful track completion, distinct from tactical victory; prohibited Retreat is not declined Retreat.",
-  "ALTA-AMB-004 — Escobar’s required completions use the Meeting Engagements actually played: 1 of 1, 1 of 2, or 2 of 3."
+  "Leaving with cargo ends progression but is not Raven contract victory; Ravens must win Retreat.",
+  "Escobar and Ravens contract victories are evaluated independently, except where the source imposes no victor.",
+  "A successful Withdrawal Order is a successful track completion, distinct from tactical victory; prohibited Retreat is not declined Retreat.",
+  "Escobar’s required completions use the Meeting Engagements actually played: 1 of 1, 1 of 2, or 2 of 3."
 ];
 
-export const ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION = "User-supplied clarification: when both players leave under Command Complication 6, the contract continues normally with the next Meeting Engagement if one remains.";
+export const ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION = "When both players leave under Withdrawal Order, the contract continues normally with the next Meeting Engagement if one remains.";
 
 export const ALTA_VISTA_COMMAND_COMPLICATIONS = {
-  note: "The Escobar player rolls according to Escobar’s Command Rights: once for Liaison Command, twice for House Command, or three times for Integrated Command. Reroll duplicate results of 4, 5, or 6. This is not a separate roll by each player.",
+  note: "Resolve complications for Escobar only, then select every resulting effect below. Escobar rolls once for Liaison Command, twice for House Command, or three times for Integrated Command; reroll duplicate results of 4, 5, or 6.",
   rows: [
     { roll: "1–2", name: "No Complication", text: "No additional effect." },
     { roll: "3", name: "Minefields", text: "Each player may select up to 20 BSP of Minefield assets per Scale. All minefields must be visible and placed within or adjacent to a building. A minefield detonation inside or adjacent to a building automatically damages that building." },
     { roll: "4", name: "Late Arrivals", text: "Half of each player’s units by number, rounded up, are delayed. Those units enter from their own home edge during the Movement Phase of Turn 2." },
     { roll: "5", name: "Glare", text: "A ranged attack receives a +1 Target Number modifier when the attacker’s line of sight passes within 1 hex (Alpha Strike: 2 inches) of a building, or when the target is within that distance of a building." },
-    { roll: "6", name: "Withdrawal Order", text: "Beginning in the End Phase of BattleTech Turn 3 (Alpha Strike Turn 2), roll 2D6. The order triggers on 4 or less, increasing the target number by 1 each subsequent turn. Escobar then orders all participants off the battlefield immediately. Record each player’s response in the Alta Vista campaign panel; Retreat is prohibited for every response to this order." }
+    { roll: "6", name: "Withdrawal Order", text: "Beginning in the End Phase of BattleTech Turn 3 (Alpha Strike Turn 2), roll 2D6. The order triggers on 4 or less, increasing the target number by 1 each subsequent turn. Escobar then orders all participants off the battlefield immediately. Record each player’s current response below; Retreat is prohibited for every response to this order." }
   ],
-  ref: "Draconis Reach pp. 80–81; current Draconis Reach master errata"
+  ref: "Draconis Reach pp. 80–81"
 };
 
 const altaMeetingBase = TRACKS.find(track => track.id === "meeting-engagement");
@@ -2729,16 +2705,16 @@ export const altaVistaMeetingVariant = sequence => ({
     "Building preservation bonus: if no buildings are destroyed in this track, Escobar offers 100 Support Points to each side. This campaign payment is separate from tactical Victory Points.",
     "Temporary hire — Raven: War Crow Prime, 2,835 BV / 56 PV, 2 Edge, Piloting 3 / Gunnery 3 (Alpha Strike Skill 3), 200 SP for this track.",
     "Temporary hire — Roland D’Isque: Kintaro KTO-19b, 1,265 BV / 39 PV, 1 Edge, Marksman Edge Ability, Piloting 5 / Gunnery 3 (Alpha Strike Skill 4), 50 SP for this track.",
-    "Before each track, either player may pay to hire one available temporary pilot. If one player chooses Raven or Roland D’Isque, the other may hire only the other pilot. Roll 2D6 for priority; high roll chooses first and ties are rerolled. Record hires in the campaign panel."
+    "Before each track, either player may pay to hire one available temporary pilot. If one player chooses Raven or Roland D’Isque, the other may hire only the other pilot. Roll 2D6 for priority; high roll chooses first and ties are rerolled."
   ],
   special: [
     ...altaMeetingBase.special,
     "Campaign progression: a normal Raven tactical victory presents the choices to depart with cargo, stop, or seek revenge. Revenge immediately triggers Retreat; the other choices end progression without Raven contract victory. A non-Raven result continues to the next warehouse trial if one remains.",
     "Command Complication 6 separates successful completion from tactical victory. Mutual compliance awards both sides successful completion and Raven tactical victory, prohibits Retreat, and continues to the next warehouse trial when one remains.",
-    "The browser records building preservation, temporary hires, survivors, and battlefield carryover as bounded campaign state; it does not add Support Points or manage unit rosters automatically."
+    "Players record building preservation, temporary hires, survivors, and battlefield carryover with their campaign records."
   ],
   commandComplications: ALTA_VISTA_COMMAND_COMPLICATIONS,
-  sourceRefs: ["Draconis Reach pp. 78–81", "Meeting Engagement pp. 170–171", "Shared rules pp. 167–168", "Current Draconis Reach master errata"]
+  sourceRefs: ["Draconis Reach pp. 78–81", "Meeting Engagement pp. 170–171", "Shared rules pp. 167–168"]
 });
 
 export const altaVistaRetreatVariant = () => ({
@@ -2756,16 +2732,16 @@ export const altaVistaRetreatVariant = () => ({
   setupDetails: [
     "Alta Vista’s surviving-force and center-placement instructions override conflicting standard Retreat deployment instructions.",
     "Only a temporary hire that survived the immediately preceding warehouse trial can carry into Retreat. No fresh temporary hire is available for Retreat.",
-    "Use the bounded survivor and battlefield-carryover notes in the campaign panel to reproduce the preceding tactical state; the browser does not manage individual rosters or mapsheets."
+    "Use the surviving forces, mapsheets, alignment, terrain, damage, and ammunition state from the immediately preceding warehouse trial."
   ],
   objectives: altaRetreatBase.objectives,
   special: [
     ...altaRetreatBase.special,
     "No Alta Vista Command Complications are rolled during Retreat.",
-    "When Retreat concludes, the Alta Vista contract ends and the campaign panel evaluates contract victory."
+    "When Retreat concludes, the Alta Vista contract ends."
   ],
   commandComplications: null,
-  sourceRefs: ["Draconis Reach pp. 78–81", "Retreat pp. 174–175", "Shared rules pp. 167–168", "Current Draconis Reach master errata"]
+  sourceRefs: ["Draconis Reach pp. 78–81", "Retreat pp. 174–175", "Shared rules pp. 167–168"]
 });
 
 export const HOT_SPOTS = [
@@ -2775,28 +2751,28 @@ export const HOT_SPOTS = [
     region: "Capellan Confederation",
     terrain: "Wooded",
     source: "Draconis Reach pp. 74–77",
-    note: "The browser applies the contract’s Command Complications to every track, introduces the defector J. Edgar force in Track 3, and preserves its surviving count through Tracks 4–5. Contract victory uses the user-approved provisional project ruling pending official forum clarification.",
-    campaignState: {
-      kind: "achernar",
-      title: "Achernar defector and victory record",
-      note: "Record the persistent defector force and contract-victory inputs. Survivor counts are limited by the Track 3 allocation for the selected Scale and by the preceding track’s survivors. Victory interpretation is a user-approved provisional project ruling pending official forum clarification, not official errata or a developer ruling.",
-      sourceRefs: ["Draconis Reach pp. 74–77", "Current Draconis Reach master errata"]
+    note: "Tybalt and Home Guard contest five linked tactical tracks on Achernar.",
+    contractReference: {
+      summary: ["Tybalt and Home Guard are player-controlled Mercenary forces.", "Source: Draconis Reach pp. 74–77."],
+      progression: ["Track 2 depends on the Track 1 winner. Track 3 depends on the winners of Tracks 1 and 2. Tracks 4 and 5 use surviving defector vehicles from the preceding track."],
+      victory: ["Tybalt wins if at least one defector vehicle survives all tracks, or—when Track 3 was Strike—by winning both Strike and Retreat.", "Home Guard wins automatically if Tybalt does not qualify, and also wins if it destroys five or more Battlefield Support units granted to Tybalt by Command Complications."],
+      provisional: ["Evaluate the two contracts independently. If both sides meet their conditions, both contracts succeed. Tybalt’s Strike-and-Retreat alternative is available only when Track 3 was Strike."]
     },
     sides: [factionSide("tybalt", "Tybalt", "Mercenary"), factionSide("home-guard", "Home Guard", "Mercenary")],
     tracks: [
-      fixedHotSpotTrack(1, "meeting-engagement", "tybalt", "home-guard", { variant: achernarVariant("meeting-engagement", 1) }),
+      fixedHotSpotTrack(1, "meeting-engagement", "tybalt", "home-guard", { label: "Track 1 · Meeting Engagement", variant: achernarVariant("meeting-engagement", 1) }),
       winnerDependentTrack(2, [1], {
         tybalt: { trackId: "pursuit", attacker: "tybalt", defender: "home-guard", variant: achernarVariant("pursuit", 2) },
         "home-guard": { trackId: "recon", attacker: "home-guard", defender: "tybalt", variant: achernarVariant("recon", 2) }
-      }),
+      }, { label: "Track 2 · Pursuit or Recon" }),
       winnerDependentTrack(3, [1, 2], {
         "tybalt|tybalt": { trackId: "strike", attacker: "tybalt", defender: "home-guard", variant: achernarVariant("strike", 3) },
         "tybalt|home-guard": { trackId: "meeting-engagement", attacker: "home-guard", defender: "tybalt", variant: achernarVariant("meeting-engagement", 3) },
         "home-guard|tybalt": { trackId: "breakthrough", attacker: "tybalt", defender: "home-guard", variant: achernarVariant("breakthrough", 3) },
         "home-guard|home-guard": { trackId: "defend", attacker: "tybalt", defender: "home-guard", variant: achernarVariant("defend", 3) }
-      }),
-      fixedHotSpotTrack(4, "breakthrough", "tybalt", "home-guard", { variant: achernarVariant("breakthrough", 4) }),
-      fixedHotSpotTrack(5, "retreat", "home-guard", "tybalt", { variant: achernarVariant("retreat", 5) })
+      }, { label: "Track 3 · conditional tactical track" }),
+      fixedHotSpotTrack(4, "breakthrough", "tybalt", "home-guard", { label: "Track 4 · Breakthrough", variant: achernarVariant("breakthrough", 4) }),
+      fixedHotSpotTrack(5, "retreat", "home-guard", "tybalt", { label: "Track 5 · Retreat", variant: achernarVariant("retreat", 5) })
     ]
   },
   {
@@ -2805,12 +2781,12 @@ export const HOT_SPOTS = [
     region: "Clan Sea Fox",
     terrain: "Light Urban",
     source: "Draconis Reach pp. 78–81",
-    note: "Alta Vista contains up to three warehouse Meeting Engagements and an immediate conditional Retreat. Later scenarios appear only when campaign results make them available. Four contract-victory interpretations are marked as provisional project rulings.",
-    campaignState: {
-      kind: "alta-vista",
-      title: "Alta Vista warehouse campaign record",
-      note: "Record faction choice, tactical results, successful completions, the withdrawal order, temporary hires, and the bounded carryover needed for a conditional Retreat. Tactical victory, successful completion, and contract victory are distinct.",
-      sourceRefs: ["Draconis Reach pp. 78–81", "Shared rules pp. 167–168", "Meeting Engagement pp. 170–171", "Retreat pp. 174–175", "Current Draconis Reach master errata"]
+    note: "Select the current warehouse trial or the conditional immediate Retreat.",
+    contractReference: {
+      summary: ["Escobar defends Alta Vista’s warehouse complexes against the Ravens.", "Source: Draconis Reach pp. 78–81."],
+      progression: ["Play up to three warehouse Meeting Engagements. A normal Raven victory may lead to immediate Retreat only if the Ravens choose revenge. Withdrawal Order outcomes prohibit Retreat."],
+      victory: ["Raven contract victory requires winning the conditional Retreat. Escobar’s required successful completions depend on the number of Meeting Engagements actually played."],
+      provisional: ALTA_VISTA_PROVISIONAL_RULES
     },
     sides: [factionSide("escobar", "Escobar", "Mercenary"), factionSide("ravens", "Ravens", "Mercenary")],
     tracks: [
@@ -2826,22 +2802,19 @@ export const HOT_SPOTS = [
     region: "Federated Suns",
     terrain: "Desert",
     source: "Draconis Reach pp. 82–85",
-    trackSelectorLabel: "Current tactical track",
-    note: "Contracts 105112A–B. Select the current 1D6 Mission Table result. The initial Recon choice is only a navigation default, not a recorded die roll. Campaign rolls, duplicate enforcement, prior results, success streaks, and overall contract victory are tracked outside this tactical browser.",
+    trackSelectorLabel: "Track",
+    note: "Select the current tactical track directly.",
+    contractReference: {
+      summary: ["105112A · Dahar Garrison · Duke Romy Sandoval-Dobson · Federated Suns employer alignment · Mercenary force.", "105112B · Dahar Raid · Felix Kurita · Draconis Combine employer alignment · Mercenary force.", "Three months. Source: Draconis Reach pp. 82–85."],
+      progression: ["At the beginning of each month, roll twice on the Mission Table and play valid tracks in rolled order. Each track type may be played only once; a duplicate produces no track and is not rerolled."],
+      victory: ["Two consecutive successfully completed played tracks win the contract immediately. Otherwise, after Month 3, the side with more successfully completed tracks wins."],
+      provisional: DAHAR_PROVISIONAL_RULES
+    },
     sides: [
       { ...factionSide("garrison", "Dahar Garrison", "Mercenary"), contract: "105112A", employer: "Duke Romy Sandoval-Dobson", employerAlignment: "Federated Suns" },
       { ...factionSide("raid", "Dahar Raid", "Mercenary"), contract: "105112B", employer: "Felix Kurita", employerAlignment: "Draconis Combine" }
     ],
-    tracks: [{
-      sequence: 1,
-      label: "Selected Mission Table result",
-      resultLabel: "Track to play (source 1D6 result)",
-      results: DAHAR_TRACK_RESULTS.map(result => ({
-        ...result,
-        label: result.roll + " · " + result.label,
-        variant: daharVariant(result.trackId)
-      }))
-    }]
+    tracks: DAHAR_TRACK_RESULTS.map((result, index) => ({ ...result, sequence: index + 1, label: result.label, variant: daharVariant(result.trackId) }))
   },
   {
     id: "le-blanc",
@@ -2849,11 +2822,12 @@ export const HOT_SPOTS = [
     region: "Federated Suns",
     terrain: "Desert",
     source: "Draconis Reach pp. 86–89",
-    note: "The browser consolidates Le Blanc’s current-track tactical rules. Contract timeline and victory are reference only; no campaign history, Temporary Hire eligibility, hiring, payment, repair, replacement, or strategic administration is performed.",
-    campaignState: {
-      kind: "le-blanc",
-      title: "Le Blanc current-mission setup",
-      sourceRefs: ["Draconis Reach pp. 86–89", "Successful tracks pp. 26, 29", "Current official master errata"]
+    note: "Track 2 is selected from the outcome of Track 1.",
+    contractReference: {
+      summary: ["124704A · Operation Sundown · Draconis Combine Mustered Soldiery—Professional Soldiery Liaison · Tai-i Rebecca Anderson · Raid · three months.", "124704B · Le Blanc Garrison · Armed Forces of the Federated Suns—Department of Mercenary Relations · Leftenant Giles Durand · Garrison · three months.", "Le Blanc, Federated Suns · Desert · Intensity 2. Source: Draconis Reach pp. 86–89."],
+      progression: ["Months 1–2 cover preparation, travel, garrison duty, infiltration, and intelligence gathering. Both tactical tracks occur in Month 3. Track 2 is Strike when the Draconis Combine successfully completes Track 1; otherwise it is Retreat."],
+      victory: ["Successful completion of the final track wins the contract."],
+      provisional: LE_BLANC_PROVISIONAL_RULES
     },
     sides: [factionSide("draconis-combine", "Draconis Combine", "Draconis Combine"), factionSide("federated-suns", "Federated Suns", "Federated Suns")],
     tracks: [
@@ -2867,7 +2841,7 @@ export const HOT_SPOTS = [
           { value: "yes", label: "Yes — play Strike" },
           { value: "no", label: "No — play Retreat (Federated Suns success or neither side)" }
         ],
-        previousOutcomeHint: "Pending is not treated as No. Official errata: otherwise the Federated Suns initiates Retreat."
+        previousOutcomeHint: "Pending is not treated as No. Otherwise, the Federated Suns initiates Retreat."
       })
     ]
   },
@@ -2877,19 +2851,16 @@ export const HOT_SPOTS = [
     region: "Draconis Combine",
     terrain: "Wooded",
     source: "Draconis Reach pp. 90–93",
-    note: "Select the current Lucerne tactical outcome directly. Bio-Gen Raid is the mandatory sixth played track if reached, not a seventh campaign battle. Monthly progression, duplicate enforcement, success totals, and contract termination remain reference-only tabletop responsibilities.",
-    campaignState: {
-      kind: "lucerne",
-      title: "Lucerne current-mission setup",
-      sourceRefs: ["Draconis Reach pp. 90–93", "Successful tracks pp. 26, 29", "Current official master errata"]
+    trackSelectorLabel: "Track",
+    note: "Select the current tactical track directly. Bio-Gen Raid is the mandatory sixth played track if reached.",
+    contractReference: {
+      summary: ["906245A · Bio-Gen Retainer · Bio-Gen Industries · CEO Marie Valentina · Garrison/Retainer/Defense.", "906245B · Eclipse Expeditions Special Operations · Eclipse Expeditions LLC · Guildmaster Phil Newsted · Expedition/Raid.", "PZH2, Lucerne · Wooded · six months · Intensity 2–6 tracks. Source: Draconis Reach pp. 90–93."],
+      progression: ["Each month, roll on the Track Table to determine the number of tracks, then determine the unique standard tracks played. Bio-Gen Raid is the mandatory sixth played track if that point is reached."],
+      victory: ["The side with more successfully completed tracks wins; equal totals produce no victor."],
+      provisional: LUCERNE_PROVISIONAL_RULES
     },
     sides: [factionSide("bio-gen", "Bio-Gen", "Mercenary"), factionSide("eclipse", "Eclipse Expeditions", "Mercenary")],
-    tracks: [{
-      sequence: 1,
-      label: "Selected tactical track",
-      resultLabel: "Lucerne tactical outcome",
-      results: LUCERNE_TRACK_RESULTS
-    }]
+    tracks: LUCERNE_TRACK_RESULTS.map((result, index) => ({ ...result, sequence: index + 1, label: result.label }))
   },
   {
     id: "melcher",

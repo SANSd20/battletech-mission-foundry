@@ -1,4 +1,4 @@
-import { adjustDaharEarnedVp, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_PROVISIONAL_RULES, evaluateAltaVistaCampaign, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_PROVISIONAL_RULES, MISSION_OPFOR_OVERRIDES, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, RECON_DENY_ATTACKER_OBJECTIVE_IDS, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=lucerne-tactical-scope";
+import { adjustDaharEarnedVp, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_PROVISIONAL_RULES, evaluateAltaVistaCampaign, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_PROVISIONAL_RULES, MISSION_OPFOR_OVERRIDES, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, RECON_DENY_ATTACKER_OBJECTIVE_IDS, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=usability-final-ux16-19";
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -27,9 +27,12 @@ const state = {
   mode: "both",
   takingOneForTeam: false,
   opforRoll: 1,
+  opforForceTypes: {},
   progress: {},
   vpSelections: {},
   campaignState: {},
+  complicationSelections: {},
+  tacticalInputs: {},
   daharMission: null,
   leBlancMission: null,
   lucerneMission: null
@@ -118,6 +121,74 @@ function currentHotSpot() {
   return HOT_SPOTS.find(hotSpot => hotSpot.id === state.hotSpotId) || HOT_SPOTS[0];
 }
 
+const interactiveComplicationContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne"]);
+
+function complicationRowKey(row, index) {
+  return "effect-" + index + "-" + row.roll;
+}
+
+function isNoComplicationRow(row) {
+  return /no complication/i.test(row.name);
+}
+
+function isRollTwiceRow(row) {
+  return /roll twice/i.test(row.name);
+}
+
+function currentComplicationTable() {
+  return resolvedHotSpotStep()?.variant?.commandComplications || null;
+}
+
+function currentComplicationProfile(table = currentComplicationTable()) {
+  const hotSpot = currentHotSpot();
+  if (!table?.rows?.length || !interactiveComplicationContracts.has(hotSpot.id)) return null;
+  if (hotSpot.id === "alta-vista" && state.trackId === "retreat") return null;
+  if (hotSpot.id === "lucerne" && state.trackId === "bio-gen-raid") return null;
+  const participants = hotSpot.id === "alta-vista"
+    ? hotSpot.sides.filter(side => side.id === "escobar")
+    : hotSpot.sides;
+  return { hotSpot, table, participants };
+}
+
+function complicationSelectionKey() {
+  const step = currentHotSpotStep();
+  return [state.hotSpotId, step?.sequence || 1, state.trackId || "pending"].join("::");
+}
+
+function complicationSelectionState(table = currentComplicationTable()) {
+  const profile = currentComplicationProfile(table);
+  if (!profile) return null;
+  const key = complicationSelectionKey();
+  if (!state.complicationSelections[key]) {
+    const noComplicationIndex = profile.table.rows.findIndex(isNoComplicationRow);
+    const defaultKey = noComplicationIndex >= 0 ? complicationRowKey(profile.table.rows[noComplicationIndex], noComplicationIndex) : null;
+    const draft = Object.fromEntries(profile.participants.map(side => [side.id, defaultKey ? [defaultKey] : []]));
+    state.complicationSelections[key] = { expanded: true, appliedOnce: false, draft, applied: Object.fromEntries(profile.participants.map(side => [side.id, []])) };
+  }
+  return state.complicationSelections[key];
+}
+
+function clearComplicationSelections(hotSpotId) {
+  for (const key of Object.keys(state.complicationSelections)) {
+    if (key.startsWith(hotSpotId + "::")) delete state.complicationSelections[key];
+  }
+}
+
+function appliedComplicationRows(forceId, table = currentComplicationTable()) {
+  const selection = complicationSelectionState(table);
+  if (!selection?.appliedOnce) return [];
+  const keys = new Set(selection.applied[forceId] || []);
+  return table.rows.filter((row, index) => keys.has(complicationRowKey(row, index)));
+}
+
+function appliedComplicationNamed(forceId, name, table = currentComplicationTable()) {
+  return appliedComplicationRows(forceId, table).some(row => row.name === name);
+}
+
+function renderProvisionalRules(rules) {
+  return rules.map(rule => '<span class="provisional-rule" role="note"><span class="sr-only">Provisional interpretation: </span>' + esc(rule) + '</span>').join("");
+}
+
 function currentHotSpotStep() {
   const hotSpot = currentHotSpot();
   const tracks = availableHotSpotTracks(hotSpot);
@@ -126,10 +197,6 @@ function currentHotSpotStep() {
 }
 
 function availableHotSpotTracks(hotSpot = currentHotSpot()) {
-  if (hotSpot.campaignState?.kind === "alta-vista") {
-    const evaluation = evaluateAltaVistaCampaign(state.campaignState[hotSpot.id]?.record || {});
-    return hotSpot.tracks.filter(track => evaluation.availableSequences.includes(track.sequence));
-  }
   return hotSpot.tracks;
 }
 
@@ -140,19 +207,35 @@ function selectionKey(sequence) {
 function sideById(sideId) {
   const hotSpot = currentHotSpot();
   const side = hotSpot.sides.find(item => item.id === sideId) || null;
-  if (side && hotSpot.id === "le-blanc") {
-    const faction = leBlancMissionState().participatingFactions[side.id] || side.faction;
-    return { ...side, faction, color: FACTION_COLORS[faction] || FACTION_COLORS.Local };
+  return side;
+}
+
+const simplifiedContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne"]);
+
+function generatedOpForConfiguration() {
+  const hotSpot = currentHotSpot();
+  const selected = sideById(state.selectedSide[hotSpot.id]);
+  if (!simplifiedContracts.has(hotSpot.id)) return { side: selected, faction: selected?.faction, choices: [] };
+  const opposing = hotSpot.sides.find(side => side.id !== selected?.id) || null;
+  let choices = [];
+  let faction = opposing?.faction;
+  if (hotSpot.id === "le-blanc") {
+    choices = [{ value: "house", label: "House Military" }, { value: "mercenary", label: "Mercenary" }];
+    const type = state.opforForceTypes[hotSpot.id + "::" + opposing?.id] || "house";
+    faction = type === "mercenary" ? "Mercenary" : opposing?.faction;
+  } else if (hotSpot.id === "alta-vista" && opposing?.id === "ravens") {
+    choices = [{ value: "clan", label: "Raven Alliance" }, { value: "mercenary", label: "Mercenary" }];
+    const type = state.opforForceTypes[hotSpot.id + "::" + opposing.id] || "clan";
+    faction = type === "mercenary" ? "Mercenary" : "Raven Alliance";
+  } else {
+    faction = "Mercenary";
   }
-  if (!side || hotSpot.id !== "alta-vista" || side.id !== "ravens") return side;
-  const selected = normalizeAltaVistaCampaignState(state.campaignState[hotSpot.id]?.record || {}).ravenFaction;
-  const faction = selected === "raven-alliance" ? "Raven Alliance" : selected === "mercenary" ? "Mercenary" : "Faction not selected";
-  return { ...side, faction, color: FACTION_COLORS[faction] || FACTION_COLORS.Local };
+  return { side: opposing, faction, choices };
 }
 
 function currentOpForTable() {
-  const selected = sideById(state.selectedSide[currentHotSpot().id]);
-  const tableId = opforTableByFaction[selected?.faction];
+  const configuration = generatedOpForConfiguration();
+  const tableId = opforTableByFaction[configuration.faction];
   return tableId ? OPPOSING_FORCE_TABLES[tableId] : null;
 }
 
@@ -338,7 +421,7 @@ function renderAchernarCampaignState(container, definition) {
       '<label class="campaign-field"><span>Qualifying Tybalt BSP units destroyed by Home Guard</span><input type="number" min="0" value="' + normalized.qualifyingSupportDestroyed + '" data-achernar-field="qualifyingSupportDestroyed"></label>' +
       strikeField +
       '<label class="campaign-field"><span>Retreat winner</span><select data-achernar-field="retreatWinner">' + achernarWinnerOptions(normalized.retreatWinner) + '</select></label>' +
-    '</div><div class="campaign-state-summary"><strong>Contract victory check</strong><span class="campaign-contract-outcome">' + esc(achernarOutcomeText(victory.outcome)) + '</span>' + achernarVictoryStatus("Tybalt", victory.tybalt) + achernarVictoryStatus("Home Guard", victory.homeGuard) + '<span>Home Guard’s five-unit condition counts only Battlefield Support units granted to Tybalt by the Achernar Command Complications table. Defector J. Edgar vehicles do not count toward this total.</span><span class="campaign-ruling">Provisional project ruling approved by the user pending official forum clarification; not official errata or a developer ruling.</span></div>' +
+    '</div><div class="campaign-state-summary"><strong>Contract victory check</strong><span class="campaign-contract-outcome">' + esc(achernarOutcomeText(victory.outcome)) + '</span>' + achernarVictoryStatus("Tybalt", victory.tybalt) + achernarVictoryStatus("Home Guard", victory.homeGuard) + '<span>Home Guard’s five-unit condition counts only Battlefield Support units granted to Tybalt by the Achernar Command Complications table. Defector J. Edgar vehicles do not count toward this total.</span>' + renderProvisionalRules(["Evaluate the two contracts independently. If both sides meet their conditions, both contracts succeed. Tybalt’s Strike-and-Retreat alternative is available only when Track 3 was Strike."]) + '</div>' +
     '<div class="reference-citation">Source: ' + esc(definition.sourceRefs.join(" · ")) + '</div></section>';
 }
 
@@ -377,12 +460,14 @@ function renderAltaVistaCampaignState(container, definition) {
   const decisionOptions = [["pending", "Pending"], ["cargo-departure", "Depart with cargo"], ["stop", "Choose no further tracks"], ["revenge", "Seek revenge — trigger Retreat"]];
   const hireOptions = [["none", "No hire"], ["raven", "Raven — War Crow Prime (200 SP)"], ["roland", "Roland D’Isque — Kintaro KTO-19b (50 SP)"]];
   const buildingOptions = [["not-recorded", "Not recorded"], ["preserved", "No buildings destroyed — 100 SP each"], ["destroyed", "One or more buildings destroyed"]];
+  const withdrawalActive = appliedComplicationNamed("escobar", "Withdrawal Order");
+  const withdrawalField = withdrawalActive ? '<label class="campaign-field"><span>Withdrawal order</span><select data-alta-trial-field="complicationSix" data-alta-trial-index="' + trialIndex + '">' + altaOptions(withdrawalOptions, trial.complicationSix) + '</select></label>' : "";
   const trialFields = isMeeting ? '<div class="campaign-fields"><div class="campaign-track-label">Warehouse Trial ' + selectedSequence + ' record</div>' +
     '<label class="campaign-field"><span>Trial played</span><select data-alta-trial-field="played" data-alta-trial-index="' + trialIndex + '">' + altaOptions([["false", "Not yet"], ["true", "Played"]], String(trial.played)) + '</select></label>' +
     '<label class="campaign-field"><span>Tactical winner</span><select data-alta-trial-field="tacticalWinner" data-alta-trial-index="' + trialIndex + '">' + altaOptions(winnerOptions, trial.tacticalWinner) + '</select></label>' +
     '<label class="campaign-field"><span>Escobar completion</span><select data-alta-trial-field="escobarCompletion" data-alta-trial-index="' + trialIndex + '">' + altaOptions(completionOptions, trial.escobarCompletion) + '</select></label>' +
     '<label class="campaign-field"><span>Ravens completion</span><select data-alta-trial-field="ravensCompletion" data-alta-trial-index="' + trialIndex + '">' + altaOptions(completionOptions, trial.ravensCompletion) + '</select></label>' +
-    '<label class="campaign-field"><span>Withdrawal order</span><select data-alta-trial-field="complicationSix" data-alta-trial-index="' + trialIndex + '">' + altaOptions(withdrawalOptions, trial.complicationSix) + '</select></label>' +
+    withdrawalField +
     '<label class="campaign-field"><span>Raven decision after normal win</span><select data-alta-trial-field="ravensDecision" data-alta-trial-index="' + trialIndex + '"' + (trial.complicationSix !== "not-triggered" ? " disabled" : "") + '>' + altaOptions(decisionOptions, trial.ravensDecision) + '</select></label>' +
     '<label class="campaign-field"><span>Escobar temporary hire</span><select data-alta-trial-field="escobarHire" data-alta-trial-index="' + trialIndex + '">' + altaOptions(hireOptions, trial.escobarHire, trial.ravensHire) + '</select></label>' +
     '<label class="campaign-field"><span>Ravens temporary hire</span><select data-alta-trial-field="ravensHire" data-alta-trial-index="' + trialIndex + '">' + altaOptions(hireOptions, trial.ravensHire, trial.escobarHire) + '</select></label>' +
@@ -395,11 +480,11 @@ function renderAltaVistaCampaignState(container, definition) {
 
   container.innerHTML = '<section class="campaign-state-card"><div class="campaign-state-head"><div><div class="panel-kicker">CONDITIONAL CONTRACT PROGRESSION</div><h3>' + esc(definition.title) + '</h3></div><button type="button" class="campaign-reset-button" data-reset-campaign="alta-vista">Reset campaign state</button></div>' +
     '<p class="campaign-state-note">' + esc(definition.note) + '</p>' +
-    '<div class="campaign-fields"><div class="campaign-track-label">Contract setup</div><label class="campaign-field"><span>Ravens participating faction</span><select data-alta-root-field="ravenFaction">' + altaOptions([["not-recorded", "Choose faction"], ["mercenary", "Mercenary"], ["raven-alliance", "Raven Alliance"]], evaluation.ravenFaction) + '</select></label><label class="campaign-field"><span>Escobar Command Rights</span><select data-alta-root-field="escobarCommandRights">' + altaOptions([["liaison", "Liaison — roll once"], ["house", "House — roll twice"], ["integrated", "Integrated — roll three times"]], evaluation.escobarCommandRights) + '</select></label></div>' +
+    '<div class="campaign-fields"><div class="campaign-track-label">Contract setup</div><label class="campaign-field"><span>Ravens participating faction</span><select data-alta-root-field="ravenFaction">' + altaOptions([["not-recorded", "Choose faction"], ["mercenary", "Mercenary"], ["raven-alliance", "Raven Alliance"]], evaluation.ravenFaction) + '</select></label><div class="campaign-field campaign-static-field"><span>Escobar complications</span><strong>Resolve for Escobar only; Command Rights modifiers remain a tabletop reference.</strong></div></div>' +
     trialFields + retreatField +
     '<div class="campaign-state-summary"><strong>Progression</strong><span>' + esc(evaluation.terminationReason) + '</span><span>Available scenarios: ' + esc(evaluation.availableSequences.map(value => value === 4 ? "Retreat" : "Trial " + value).join(" · ")) + '</span><span>Retreat status: ' + esc(evaluation.retreatStatus) + '</span>' + trialSummaries + '</div>' +
     '<div class="campaign-state-summary"><strong>Contract victory check</strong><span class="campaign-contract-outcome">' + esc(altaOutcomeText(evaluation.outcome)) + '</span><span>Meeting Engagements played: ' + evaluation.playedMeetingEngagements + ' · Escobar successful completions: ' + evaluation.escobarSuccessfulTracks + ' / ' + evaluation.escobarRequiredTracks + ' required</span><span>Detained — Ravens: ' + (evaluation.ravensDetained ? "yes" : "no") + ' · Escobar: ' + (evaluation.escobarDetained ? "yes" : "no") + ' · Escobar contract broken: ' + (evaluation.escobarBrokeContract ? "yes" : "no") + '</span></div>' +
-    '<div class="campaign-state-summary"><strong>Project rulings</strong>' + ALTA_VISTA_PROVISIONAL_RULES.map(rule => '<span class="campaign-ruling">' + esc(rule) + '</span>').join("") + '<span>' + esc(ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION) + '</span></div>' +
+    '<div class="campaign-state-summary"><strong>Rules notes</strong>' + renderProvisionalRules(ALTA_VISTA_PROVISIONAL_RULES) + '<span>' + esc(ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION) + '</span></div>' +
     '<div class="reference-citation">Source: ' + esc(definition.sourceRefs.join(" · ")) + '</div></section>';
 }
 
@@ -437,23 +522,20 @@ function renderDaharMissionState(container) {
   const entry = daharMissionState();
   const resolved = resolvedHotSpotStep();
   const selectedTrack = resolved?.displayName || currentTrack()?.name || "Selected track";
-  const rightsFields = ["garrison", "raid"].map(side => '<label class="campaign-field"><span>' + (side === "garrison" ? "Garrison" : "Raid") + ' Command Rights</span><select data-dahar-rights="' + side + '">' + daharOptions([["independent", "Independent +0"], ["liaison", "Liaison +1"], ["house", "House +2"], ["integrated", "Integrated +2"]], entry.commandRights[side]) + '</select></label>').join("");
   const finalized = entry.finalized
     ? '<div class="campaign-state-summary"><strong>Current tactical result</strong><span>Scale ' + entry.scale + ' · Attacker ' + entry.attackerVp + ' VP · Defender ' + entry.defenderVp + ' VP</span><span>' + (entry.successfulSide === "neither" ? "Neither side successfully completed this track." : esc(sideById(entry.successfulSide)?.name || entry.successfulSide) + " successfully completed this track.") + '</span><span>This result is not added to campaign history and does not evaluate overall contract victory.</span></div>'
     : "";
 
-  container.innerHTML = '<section class="campaign-state-card dahar-tactical"><div class="campaign-state-head"><div><div class="panel-kicker">CURRENT MISSION TACTICAL SETUP</div><h3>Dahar IV · ' + esc(selectedTrack) + '</h3></div></div>' +
+  container.innerHTML = '<section class="campaign-state-card dahar-tactical"><div class="campaign-state-head"><div><div class="panel-kicker">CURRENT MISSION TACTICAL SETUP</div><h3>' + esc(selectedTrack) + '</h3></div></div>' +
     '<p class="campaign-state-note">Configure only the currently selected tactical mission. Changing the selected track resets these mission-specific controls; no monthly history or campaign progression is stored.</p>' +
-    '<div class="campaign-state-summary"><strong>Contract identifiers and participating forces</strong><span>105112A · Dahar Garrison · employer Duke Romy Sandoval-Dobson (Federated Suns) · participating faction Mercenary</span><span>105112B · Dahar Raid · employer Felix Kurita (Draconis Combine) · participating faction Mercenary</span><span class="campaign-ruling">Mission Brief p. 84 prints 105070A–B. The approved provisional project interpretation uses the individual sidebar identifiers 105112A–B; this is not official errata.</span></div>' +
-    '<div class="campaign-fields"><div class="campaign-track-label">Current mission support and complications</div>' + rightsFields +
-    daharComplicationControls("garrison", entry, entry.commandRights.garrison, 1) +
-    daharComplicationControls("raid", entry, entry.commandRights.raid, 1) +
+    '<div class="campaign-state-summary"><strong>Contract identifiers and participating forces</strong><span>105112A · Dahar Garrison · employer Duke Romy Sandoval-Dobson (Federated Suns) · participating faction Mercenary</span><span>105112B · Dahar Raid · employer Felix Kurita (Draconis Combine) · participating faction Mercenary</span>' + renderProvisionalRules(["Use the individual contract sidebar identifiers 105112A–B; Mission Brief p. 84 prints 105070A–B."]) + '</div>' +
+    '<div class="campaign-fields"><div class="campaign-track-label">Current mission support</div>' +
     daharEquipmentControls("garrison", entry, 1) +
     daharEquipmentControls("raid", entry, 1) +
     '<div class="campaign-field campaign-wide-field campaign-finalize"><span>Current-track successful completion</span><strong>Current adjusted score: Attacker ' + trackScore("attacker") + ' · Defender ' + trackScore("defender") + '</strong><small>A side succeeds only if it completed at least one objective and has more adjusted VP. Equal adjusted VP means neither side succeeds. Finalize only when this tactical track is complete.</small><button type="button" data-dahar-finalize="current">Finalize current tactical score</button></div></div>' + finalized +
     '<div class="campaign-state-summary"><strong>Campaign procedure and victory — reference only</strong><span>The contract lasts three months. At the beginning of each month, roll 1D6 twice: the first roll determines the first track and the second roll determines the second track. Play valid tracks in the order rolled.</span><span class="campaign-ruling"><strong>Each track type may only be played once during the entire contract.</strong> A duplicate produces no track and is not rerolled. The contract therefore contains one to six played tracks, subject to early victory.</span><span>Two consecutive successfully completed played tracks win the contract immediately and cause the opposing player to concede. If neither player achieves early victory, the player with more successfully completed tracks after the third month wins.</span><span>The browser does not roll, store, gate, validate, total, or evaluate this campaign history. Previously played tracks and duplicate results are maintained externally.</span></div>' +
-    '<div class="campaign-state-summary"><strong>Approved provisional rules and scope</strong>' + DAHAR_PROVISIONAL_RULES.map(rule => '<span class="campaign-ruling">' + esc(rule) + '</span>').join("") + '<span>Scale 4+ support, Regular Military Command eligibility administration, and strategic compensation, repairs, transportation, purchase, and salvage administration are outside the current tactical browser scope.</span></div>' +
-    '<div class="reference-citation">Source: Draconis Reach pp. 82–85 · Successful tracks pp. 26, 29 · Command Rights p. 28 · Battlefield setup p. 30 · Current Draconis Reach master errata</div></section>';
+    '<div class="campaign-state-summary"><strong>Rules notes</strong>' + renderProvisionalRules(DAHAR_PROVISIONAL_RULES) + '<span>Scale 4+ support, Regular Military Command eligibility administration, and strategic compensation, repairs, transportation, purchase, and salvage administration are outside the current tactical browser scope.</span></div>' +
+    '<div class="reference-citation">Source: Draconis Reach pp. 82–85 · Successful tracks pp. 26, 29 · Command Rights p. 28 · Battlefield setup p. 30</div></section>';
 }
 
 function leBlancOptions(options, selected, placeholder = null) {
@@ -501,18 +583,14 @@ function renderLeBlancMissionState(container) {
     const house = sideId === "draconis-combine" ? "Draconis Combine" : "Federated Suns";
     return '<label class="campaign-field"><span>' + esc(side.name) + ' participating faction</span><select data-leblanc-faction="' + esc(sideId) + '">' + leBlancOptions([[house, house], ["Mercenary", "Mercenary"]], mission.participatingFactions[sideId]) + '</select><small>Contract alignment and employer do not change.</small></label>';
   }).join("");
-  const rightsFields = ["draconis-combine", "federated-suns"].map(sideId => {
-    const side = currentHotSpot().sides.find(item => item.id === sideId);
-    return '<label class="campaign-field"><span>' + esc(side.name) + ' Command Rights</span><select data-leblanc-rights="' + esc(sideId) + '">' + leBlancOptions([["independent", "Independent +0"], ["liaison", "Liaison +1"], ["house", "House +2"], ["integrated", "Integrated +3"]], mission.commandRights[sideId]) + '</select></label>';
-  }).join("");
-  container.innerHTML = '<section class="campaign-state-card leblanc-tactical"><div class="campaign-state-head"><div><div class="panel-kicker">CURRENT MISSION TACTICAL SETUP</div><h3>Le Blanc · ' + esc(currentTrack()?.name || "Track pending") + '</h3></div><button type="button" class="campaign-reset-button" data-reset-leblanc="true">Reset Le Blanc setup</button></div>' +
-    '<p class="campaign-state-note">Configure only the selected tactical mission. Participating faction and Command Rights are independent for each contract side. Complication rolls reset when the selected tactical outcome changes; objective scoring remains track-specific.</p>' +
+  container.innerHTML = '<section class="campaign-state-card leblanc-tactical"><div class="campaign-state-head"><div><div class="panel-kicker">CURRENT MISSION TACTICAL SETUP</div><h3>' + esc(currentTrack()?.name || "Track pending") + '</h3></div><button type="button" class="campaign-reset-button" data-reset-leblanc="true">Reset Le Blanc setup</button></div>' +
+    '<p class="campaign-state-note">Configure only the selected tactical mission. Participating faction and resolved complications are independent for each contract side; objective scoring remains track-specific.</p>' +
     '<div class="campaign-state-summary"><strong>Contract references</strong><span>124704A · Operation Sundown · Draconis Combine Mustered Soldiery—Professional Soldiery Liaison · Tai-i Rebecca Anderson · Raid · three months · default Liaison Command</span><span>124704B · Le Blanc Garrison · Armed Forces of the Federated Suns—Department of Mercenary Relations · Leftenant Giles Durand · Garrison · three months · default Integrated Command</span><span>Le Blanc, Federated Suns · primary planetary terrain Desert · Intensity 2. Months 1–2 are preparation, travel, garrison duty, infiltration, and intelligence gathering; both tactical tracks occur in Month 3.</span></div>' +
-    '<div class="campaign-fields"><div class="campaign-track-label">Participating forces and Command Rights</div>' + factionFields + rightsFields + '<div class="campaign-track-label">Current-track Command Complications</div>' + leBlancComplicationControls("draconis-combine", mission) + leBlancComplicationControls("federated-suns", mission) + '</div>' +
+    '<div class="campaign-fields"><div class="campaign-track-label">Participating forces</div>' + factionFields + '</div>' +
     '<div class="campaign-state-summary"><strong>Current-track successful completion</strong><span>' + esc(leBlancCurrentResultText()) + '</span><span>A player succeeds only after completing at least one objective and earning more VP than the opponent. Equal VP means neither succeeds.</span></div>' +
     '<div class="campaign-state-summary"><strong>Contract victory — reference only</strong><span>Successful completion of the final track wins the contract. Track 1 only selects Strike or Retreat. If neither player successfully completes the final track, neither meets the printed condition.</span><span>No campaign history, Temporary Hire eligibility, hiring, payment, repair, replacement, or Support Point accounting is performed.</span></div>' +
-    '<div class="campaign-state-summary"><strong>Approved ambiguity dispositions</strong>' + LE_BLANC_PROVISIONAL_RULES.map(rule => '<span class="campaign-ruling">' + esc(rule) + '</span>').join("") + '</div>' +
-    '<div class="reference-citation">Source: Draconis Reach pp. 86–89 · successful tracks pp. 26, 29 · Command Rights p. 28 · complications pp. 30, 89 · current official master errata</div></section>';
+    '<div class="campaign-state-summary"><strong>Rules notes</strong>' + renderProvisionalRules(LE_BLANC_PROVISIONAL_RULES) + '<span>Command Complications are resolved before both tracks under the general procedure on p. 30.</span></div>' +
+    '<div class="reference-citation">Source: Draconis Reach pp. 86–89 · successful tracks pp. 26, 29 · Command Rights p. 28 · complications pp. 30, 89</div></section>';
 }
 
 function lucerneEffectName(effect) {
@@ -556,31 +634,18 @@ function lucerneCurrentResultText() {
 }
 
 function renderLucerneMissionState(container) {
-  const mission = lucerneMissionState();
   const bioGenRaid = currentTrack()?.id === "bio-gen-raid";
-  const rightsFields = ["bio-gen", "eclipse"].map(sideId => {
-    const side = currentHotSpot().sides.find(item => item.id === sideId);
-    return '<label class="campaign-field"><span>' + esc(side.name) + ' Command Rights</span><select data-lucerne-rights="' + esc(sideId) + '">' + leBlancOptions([["independent", "Independent +0"], ["liaison", "Liaison +1"], ["house", "House +2"], ["integrated", "Integrated +3"]], mission.commandRights[sideId]) + '</select></label>';
-  }).join("");
-  const complicationResults = ["bio-gen", "eclipse"].map(sideId => resolveLucerneComplications(mission.complications[sideId], mission.commandRights[sideId]));
-  const swarmPlayers = complicationResults.filter(result => result.effects.includes(5)).length;
-  const swarmSummary = !bioGenRaid && swarmPlayers
-    ? '<div class="campaign-state-summary"><strong>Current-track ordinary swarm quantity</strong><span>' + swarmPlayers + 'D3 neutral swarms per mapsheet · ' + (swarmPlayers * lucerneMapCount()) + ' independent 1D3 quantity roll' + (swarmPlayers * lucerneMapCount() === 1 ? "" : "s") + ' across ' + lucerneMapCount() + ' mapsheet' + (lucerneMapCount() === 1 ? "" : "s") + ' at Scale ' + state.scale + '.</span><span>No two swarms may share a center hex. Placement, movement, attacks, and damage remain tabletop procedures.</span></div>'
-    : "";
-  const rainfall = !bioGenRaid && complicationResults.some(result => result.effects.includes(7))
-    ? '<div class="campaign-state-summary"><strong>Shared battlefield condition</strong><span>Heavy Rainfall begins on Round 3 and applies battlefield-wide, regardless of which player generated it.</span></div>'
-    : "";
   const complicationFields = bioGenRaid
     ? '<div class="campaign-state-summary"><strong>Enough Chaos</strong><span>Bio-Gen Raid does not roll random Command Complications. Any standard-track complication state was cleared when this track was selected. Building-spawned enhanced swarms still apply.</span></div>'
-    : '<div class="campaign-fields"><div class="campaign-track-label">Current-track Command Complications</div>' + lucerneComplicationControls("bio-gen", mission) + lucerneComplicationControls("eclipse", mission) + '</div>' + swarmSummary + rainfall;
-  container.innerHTML = '<section class="campaign-state-card lucerne-tactical"><div class="campaign-state-head"><div><div class="panel-kicker">CURRENT MISSION TACTICAL SETUP</div><h3>Lucerne · ' + esc(currentTrack()?.name || "Track pending") + '</h3></div><button type="button" class="campaign-reset-button" data-reset-lucerne="true">Reset Lucerne setup</button></div>' +
-    '<p class="campaign-state-note">Configure only the selected tactical track. Both participating forces are Mercenary and use the Mercenary/Pirate OpFor table. Command Rights and complication rolls are independent for each contract side.</p>' +
+    : "";
+  container.innerHTML = '<section class="campaign-state-card lucerne-tactical"><div class="campaign-state-head"><div><div class="panel-kicker">CURRENT MISSION TACTICAL SETUP</div><h3>' + esc(currentTrack()?.name || "Track pending") + '</h3></div><button type="button" class="campaign-reset-button" data-reset-lucerne="true">Reset Lucerne setup</button></div>' +
+    '<p class="campaign-state-note">Configure only the selected tactical track. Both participating forces are Mercenary and use the Mercenary/Pirate OpFor table. Resolved complications are independent for each contract side.</p>' +
     '<div class="campaign-state-summary"><strong>Contract references</strong><span>906245A · Bio-Gen Retainer · Bio-Gen Industries · CEO Marie Valentina · Garrison/Retainer/Defense · default Integrated Command</span><span>906245B · Eclipse Expeditions Special Operations · Eclipse Expeditions LLC · Guildmaster Phil Newsted · Expedition/Raid · default Independent Command</span><span>PZH2, Lucerne · primary planetary terrain Wooded · six months · Intensity 2–6 tracks</span></div>' +
-    '<div class="campaign-fields"><div class="campaign-track-label">Independent Command Rights</div>' + rightsFields + '</div>' + complicationFields +
+    complicationFields +
     '<div class="campaign-state-summary"><strong>Current-track successful completion</strong><span>' + esc(lucerneCurrentResultText()) + '</span><span>A player succeeds only after completing at least one objective and earning more VP than the opponent. Equal VP means neither succeeds.</span></div>' +
     '<div class="campaign-state-summary"><strong>Campaign progression and contract victory — reference only</strong><span>Use the corrected monthly procedure and unique-track rule. Bio-Gen Raid is the mandatory sixth played track if reached, not a seventh battle. The provisional maximum duration is six months; six played tracks end the contract early.</span><span>The side with more successfully completed tracks wins; equal totals produce no victor. The browser does not track months, duplicates, history, success totals, or overall victory.</span></div>' +
-    '<div class="campaign-state-summary"><strong>Approved ambiguity dispositions</strong>' + LUCERNE_PROVISIONAL_RULES.map(rule => '<span class="campaign-ruling">' + esc(rule) + '</span>').join("") + '</div>' +
-    '<div class="reference-citation">Source: Draconis Reach pp. 90–93 · successful tracks pp. 26, 29 · Command Rights p. 28 · complications pp. 30, 92–93 · current official master errata</div></section>';
+    '<div class="campaign-state-summary"><strong>Rules notes</strong>' + renderProvisionalRules(LUCERNE_PROVISIONAL_RULES) + '<span>Printed deployment, objective, and enhanced-swarm details remain tabletop adjudications where the source does not specify a conversion or tie-break.</span></div>' +
+    '<div class="reference-citation">Source: Draconis Reach pp. 90–93 · successful tracks pp. 26, 29 · Command Rights p. 28 · complications pp. 30, 92–93</div></section>';
 }
 
 function selectedWinner(sequence) {
@@ -699,10 +764,8 @@ function daharContractSideForTacticalSide(side) {
 
 function daharGibberishApplies(side) {
   if (currentHotSpot().id !== "dahar-iv") return false;
-  const entry = daharMissionState();
   const contractSide = daharContractSideForTacticalSide(side);
-  if (!contractSide) return false;
-  return resolveDaharComplications(entry[contractSide]?.complication, entry.commandRights[contractSide]).effects.includes(7);
+  return contractSide ? appliedComplicationNamed(contractSide, "Orders Are Gibberish") : false;
 }
 
 function objectiveEarnedVp(objective, side, display = objective) {
@@ -746,6 +809,9 @@ function renderControlState() {
   const resolved = resolvedHotSpotStep();
   const fixedScale = currentHotSpot().fixedScale;
   $("#derived-track-title").textContent = track ? (resolved?.displayName || track.name) : (resolved?.variant?.displayName || "Track pending");
+  const setupSummary = $("#hotspot-setup-summary");
+  const selected = sideById(state.selectedSide[currentHotSpot().id]);
+  if (setupSummary) setupSummary.textContent = [currentHotSpot().name, resolved?.displayName || track?.name || currentHotSpotStep()?.label || "Track pending", selected?.name || "Military side", "Scale " + state.scale].join(" · ");
   Array.from(document.querySelectorAll(".scale-button")).forEach(button => {
     const active = Number(button.dataset.scale) === state.scale;
     button.classList.toggle("active", active);
@@ -794,11 +860,12 @@ function renderOpFor() {
     container.innerHTML = "";
     return;
   }
-  const selected = sideById(state.selectedSide[currentHotSpot().id]);
+  const configuration = generatedOpForConfiguration();
+  const selected = configuration.side;
   const table = currentOpForTable();
   const override = currentMissionOpForOverride();
   if (!selected || (!table && !override)) {
-    container.innerHTML = '<article class="opfor-card opfor-unavailable"><div class="panel-kicker">TAKING ONE FOR THE TEAM</div><h3>No matching OpFor table</h3><p>The selected side is <strong>' + esc(selected?.faction || "unresolved") + '</strong>. Draconis Reach provides OpFor tables for Mercenary/Pirate, Capellan Confederation, Draconis Combine, Federated Suns, and Raven Alliance forces.</p><p class="opfor-rule">Choose a supported military side if you want the generated opposing force shown here.</p></article>';
+    container.innerHTML = '<article class="opfor-card opfor-unavailable"><div class="panel-kicker">TAKING ONE FOR THE TEAM</div><h3>No matching OpFor table</h3><p>The generated opposing force maps to <strong>' + esc(configuration.faction || "unresolved") + '</strong>. Draconis Reach provides OpFor tables for Mercenary/Pirate, Capellan Confederation, Draconis Combine, Federated Suns, and Raven Alliance forces.</p></article>';
     return;
   }
   const scale = currentOpForScale();
@@ -814,13 +881,14 @@ function renderOpFor() {
     return;
   }
   const row = currentOpForRow();
-  const clanNote = selected.faction === "Clan Sea Fox" ? '<p class="opfor-note">The Draconis Reach OpFor chapter provides a Raven Alliance table for the Clan force at Clan Sea Fox locations.</p>' : "";
+  const clanNote = configuration.faction === "Raven Alliance" ? '<p class="opfor-note">Use the Raven Alliance opposing-force table for the generated Raven force.</p>' : "";
+  const forceTypeControl = configuration.choices.length ? '<label class="opfor-type-control"><span>Generated opposing force type</span><select data-opfor-force-type="' + esc(selected.id) + '">' + configuration.choices.map(choice => '<option value="' + esc(choice.value) + '"' + ((state.opforForceTypes[hotSpot.id + "::" + selected.id] || configuration.choices[0].value) === choice.value ? " selected" : "") + '>' + esc(choice.label) + '</option>').join("") + '</select></label>' : "";
   const forceBody = row?.note
     ? '<div class="opfor-instruction"><span>Source instruction for result ' + esc(row.roll) + '</span><strong>' + esc(row.note) + '</strong><small>Follow that source instruction to build the full force.</small></div>'
     : '<div class="opfor-force-grid"><div><span>Primary force</span><ul>' + forceList(row?.primary) + '</ul></div><div><span>Support force</span><ul>' + forceList(row?.support) + '</ul></div><div><span>Alternate force</span><ul>' + forceList(row?.alternate) + '</ul></div></div>';
   container.innerHTML =
-    '<article class="opfor-card"><div class="opfor-card-head"><div><span class="panel-kicker">TAKING ONE FOR THE TEAM</span><h3>Generated opposing force</h3><p>' + esc(table.label) + ' · Scale ' + esc(String(state.scale)) + ' · Result ' + esc(row?.roll || "—") + '</p></div><label class="opfor-roll-control" for="opfor-roll"><span>Your 1D6 roll</span><select id="opfor-roll" aria-label="Your 1D6 roll">' + opforRollOptions() + '</select></label></div>' +
-    '<div class="opfor-card-meta"><span>Military side: <strong>' + esc(selected.name) + '</strong></span><span>Faction table: <strong>' + esc(table.label) + '</strong></span><span>Source p. ' + esc(String(scale?.sourcePage || "—")) + '</span></div>' +
+    '<article class="opfor-card"><div class="opfor-card-head"><div><span class="panel-kicker">TAKING ONE FOR THE TEAM</span><h3>Generated opposing force</h3><p>' + esc(selected.name) + ' · ' + esc(table.label) + ' · Scale ' + esc(String(state.scale)) + ' · Result ' + esc(row?.roll || "—") + '</p></div><label class="opfor-roll-control" for="opfor-roll"><span>Your 1D6 roll</span><select id="opfor-roll" aria-label="Your 1D6 roll">' + opforRollOptions() + '</select></label></div>' +
+    forceTypeControl + '<div class="opfor-card-meta"><span>Generated opponent: <strong>' + esc(selected.name) + '</strong></span><span>Faction table: <strong>' + esc(table.label) + '</strong></span><span>Source p. ' + esc(String(scale?.sourcePage || "—")) + '</span></div>' +
     '<div class="opfor-result"><div class="opfor-result-label">1D6 result</div><output>' + esc(String(state.opforRoll)) + '</output><span>Choose the result you rolled at the table.</span></div>' +
     clanNote + forceBody +
     '<p class="opfor-rule">Use the Primary Force. Add the Support Force when the required Battlefield Support rules are available; otherwise use the Alternate Force for an all-’Mech force.</p>' +
@@ -835,7 +903,7 @@ function renderHotSpotSetup() {
   const selected = sideById(state.selectedSide[hotSpot.id]);
   $("#hot-spot-select").innerHTML = HOT_SPOTS.map(item => '<option value="' + esc(item.id) + '">' + esc(item.name) + " · " + esc(item.region) + "</option>").join("");
   $("#hot-spot-select").value = hotSpot.id;
-  $("#hot-spot-track-label").textContent = hotSpot.trackSelectorLabel || "Track sequence";
+  $("#hot-spot-track-label").textContent = hotSpot.trackSelectorLabel || "Track";
   $("#hot-spot-track-select").innerHTML = availableTracks.map(item => '<option value="' + item.sequence + '">' + esc(item.label) + "</option>").join("");
   $("#hot-spot-track-select").value = String(step?.sequence || "");
   $("#hot-spot-side-select").innerHTML = hotSpot.sides.map(side => {
@@ -843,6 +911,8 @@ function renderHotSpotSetup() {
     return '<option value="' + esc(side.id) + '">' + esc(displaySide.name) + " · " + esc(displaySide.faction) + "</option>";
   }).join("");
   $("#hot-spot-side-select").value = selected?.id || "";
+  const setupSummary = $("#hotspot-setup-summary");
+  if (setupSummary) setupSummary.textContent = [hotSpot.name, resolved?.displayName || currentTrack()?.name || step?.label || "Track pending", selected?.name || "Military side", "Scale " + state.scale].join(" · ");
 
   const winnerControls = [];
   for (const sequence of step?.requires || []) {
@@ -909,16 +979,8 @@ function renderCampaignState() {
   const container = $("#hotspot-campaign-state");
   if (!container) return;
   const hotSpot = currentHotSpot();
-  if (hotSpot.id === "dahar-iv") {
-    renderDaharMissionState(container);
-    return;
-  }
-  if (hotSpot.id === "le-blanc") {
-    renderLeBlancMissionState(container);
-    return;
-  }
-  if (hotSpot.id === "lucerne") {
-    renderLucerneMissionState(container);
+  if (simplifiedContracts.has(hotSpot.id)) {
+    container.innerHTML = "";
     return;
   }
   const definition = campaignDefinition(hotSpot);
@@ -979,6 +1041,29 @@ function scaleNotesFor(track, scale) {
   return notes;
 }
 
+function isBattlefieldConfigurationText(text) {
+  return /^(?:At Scale .*mapsheets|Battlefield size:|Dahar mapsheets:|BattleTech mapsheets:|Alpha Strike(?: terrain)?:|Standard Protection mapsheet table:|Atlantis City option|Atlantis City mapsheet table:|Official mapsheet table|Result \d)/i.test(String(text || ""));
+}
+
+function isBattlefieldConfigurationTable(table) {
+  return /mapsheet|terrain/i.test(table?.title || "");
+}
+
+function battlefieldConfigurationParts(referenceTrack) {
+  const groups = [referenceTrack.setup || [], referenceTrack.setupDetails || [], referenceTrack.scaleNotes || [], referenceTrack.scaleNotesByScale?.[String(state.scale)] || [], referenceTrack.special || []];
+  const items = [...new Set(groups.flat().filter(isBattlefieldConfigurationText))];
+  const tables = (referenceTrack.referenceTables || []).filter(isBattlefieldConfigurationTable);
+  return { items, tables };
+}
+
+function battlefieldSelectionSummary(referenceTrack) {
+  const { tables } = battlefieldConfigurationParts(referenceTrack);
+  const step = currentHotSpotStep();
+  const selectedRolls = (referenceTrack.sourceRolls || []).filter(roll => /map|terrain|battlefield/i.test([roll.id, roll.label, roll.note].join(" ")) && selectedSourceRoll(step?.sequence, roll)).map(roll => sourceRollLabel(step.sequence, roll));
+  const selectedChoices = (referenceTrack.selectionControls || []).filter(selection => /map|terrain|battlefield/i.test([selection.id, selection.label, selection.note].join(" ")) && selectedVariantSelection(step?.sequence, selection)).map(selection => variantSelectionLabel(step.sequence, selection));
+  return [...(tables[0] ? [tables[0].title] : [currentHotSpot().terrain + " battlefield"]), ...selectedRolls, ...selectedChoices].join(" · ");
+}
+
 function displayObjective(objective, variant) {
   const override = variant?.objectiveOverrides?.[objective.id];
   return override ? { ...objective, ...override } : objective;
@@ -1008,18 +1093,171 @@ function renderReferenceObjectives(objectives, variant) {
   return orderMarkup + nonOrders.map(objective => renderReferenceObjective(objective, variant)).join("");
 }
 
-function renderCommandComplications(table) {
-  if (!table?.rows?.length) return "";
+function renderStaticCommandComplications(table) {
   const rows = table.rows.map(row =>
     '<tr><th scope="row"><span class="complication-roll">' + esc(row.roll) + '</span><strong>' + esc(row.name) + '</strong></th><td>' + esc(row.text) + '</td></tr>'
   ).join("");
-  return '<div class="reference-section command-complications-section"><div class="panel-kicker">COMMAND COMPLICATIONS</div><p class="reference-copy">' + esc(table.note) + '</p><div class="shared-rule-table-wrap"><table class="shared-rule-table command-complications-table"><thead><tr><th scope="col">1D6</th><th scope="col">Complication and effect</th></tr></thead><tbody>' + rows + '</tbody></table></div><div class="reference-citation">Source: ' + esc(table.ref) + '</div></div>';
+  return '<div class="shared-rule-table-wrap"><table class="shared-rule-table command-complications-table"><thead><tr><th scope="col">1D6</th><th scope="col">Complication and effect</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
 }
 
-function renderTemporaryHires(hires, note = "Use these cards only after the players have resolved hiring under Draconis Reach pp. 29 and 89. The browser does not determine eligibility, validate force limits, collect corrected Support Point costs, or administer repairs and replacement.") {
+function activeComplicationExtras(profile) {
+  const hotSpotId = profile.hotSpot.id;
+  if (hotSpotId === "lucerne") {
+    const swarmPlayers = profile.participants.filter(side => appliedComplicationNamed(side.id, "Voracious Reptile Swarms", profile.table)).length;
+    if (!swarmPlayers) return "";
+    const rolls = swarmPlayers * lucerneMapCount();
+    return '<div class="active-complication-extra"><strong>Ordinary reptile swarms</strong><span>' + swarmPlayers + 'D3 neutral swarms per mapsheet · ' + rolls + ' independent 1D3 quantity roll' + (rolls === 1 ? "" : "s") + ' across ' + lucerneMapCount() + ' mapsheet' + (lucerneMapCount() === 1 ? "" : "s") + ' at Scale ' + state.scale + '.</span><span>No two swarms may share a center hex. Resolve placement, movement, attacks, and damage at the table.</span></div>';
+  }
+  if (hotSpotId === "le-blanc") {
+    const resolved = resolvedHotSpotStep();
+    return profile.participants.map(side => {
+      if (!appliedComplicationNamed(side.id, "Local Partisan Support", profile.table)) return "";
+      const recipientId = resolved?.attacker === side.id ? resolved?.defender : resolved?.attacker;
+      const recipient = profile.participants.find(item => item.id === recipientId);
+      const recipientRole = resolved?.attacker === recipientId ? "attacker" : "defender";
+      const units = LE_BLANC_PARTISAN_PACKAGES[recipientRole].map(leBlancScaledSupport).map(esc).join(" · ");
+      return '<div class="active-complication-extra"><strong>' + esc(recipient?.name || "Opposing force") + ' receives partisan support</strong><span>' + units + '</span><span>Free support for this track only; the package follows the receiving force’s tactical role.</span></div>';
+    }).join("");
+  }
+  return "";
+}
+
+function renderActiveComplications(profile, selection) {
+  const sharedNames = new Set(["Sandstorm", "Heatwave", "Unexpected Sandstorm", "Heavy Rainfall"]);
+  const effectCards = [];
+  for (const [index, row] of profile.table.rows.entries()) {
+    if (isRollTwiceRow(row)) continue;
+    const key = complicationRowKey(row, index);
+    const affected = profile.participants.filter(side => (selection.applied[side.id] || []).includes(key));
+    if (!affected.length) continue;
+    if (isNoComplicationRow(row)) continue;
+    const shared = sharedNames.has(row.name) || (profile.hotSpot.id === "achernar" && row.name === "Republic Spider" && affected.length > 1);
+    if (shared) {
+      effectCards.push('<article class="active-complication-card shared-effect"><strong>' + esc(row.name) + '</strong><span class="effect-owner">Battlefield-wide · selected for ' + esc(affected.map(side => side.name).join(" and ")) + '</span><p>' + esc(row.text) + '</p></article>');
+      continue;
+    }
+    for (const side of affected) effectCards.push('<article class="active-complication-card"><strong>' + esc(row.name) + '</strong><span class="effect-owner">Affected force: ' + esc(side.name) + '</span><p>' + esc(row.text) + '</p></article>');
+  }
+  const extras = activeComplicationExtras(profile);
+  if (!effectCards.length && !extras) return "";
+  return '<div class="reference-section active-complications" aria-live="polite"><div class="active-complications-head"><div><div class="panel-kicker">ACTIVE COMPLICATIONS</div><p>Applied tactical effects for the current track.</p></div></div><div class="active-complication-grid">' + effectCards.join("") + '</div>' + extras + '</div>';
+}
+
+function renderInteractiveComplications(profile) {
+  const selection = complicationSelectionState(profile.table);
+  if (!selection.expanded && selection.appliedOnce) {
+    const activeCount = profile.table.rows.reduce((total, row, index) => {
+      if (isNoComplicationRow(row) || isRollTwiceRow(row)) return total;
+      const key = complicationRowKey(row, index);
+      return total + profile.participants.filter(side => (selection.applied[side.id] || []).includes(key)).length;
+    }, 0);
+    return '<div class="complication-selection-status"><div><strong>' + (activeCount ? activeCount + ' applied complication' + (activeCount === 1 ? '' : 's') : 'No active complications') + '</strong><span>Selections are applied to the current track. Reopen the table to revise them.</span></div><button type="button" class="complication-edit-button" data-edit-complications="true">Edit</button></div>';
+  }
+  const headerCells = profile.participants.map(side => '<th scope="col">' + esc(side.name) + '</th>').join("");
+  const rows = profile.table.rows.map((row, index) => {
+    const key = complicationRowKey(row, index);
+    const cells = profile.participants.map(side => {
+      if (isRollTwiceRow(row)) return '<td class="complication-reference-only">Reference only</td>';
+      const checked = (selection.draft[side.id] || []).includes(key);
+      return '<td><label class="complication-choice"><input type="checkbox" data-complication-choice="' + esc(key) + '" data-complication-force="' + esc(side.id) + '"' + (checked ? " checked" : "") + '><span>' + (checked ? "Selected" : "Select") + '</span></label></td>';
+    }).join("");
+    return '<tr><th scope="row"><span class="complication-roll">' + esc(row.roll) + '</span><strong>' + esc(row.name) + '</strong><small>' + esc(row.text) + '</small></th>' + cells + '</tr>';
+  }).join("");
+  return '<div class="complication-selector"><div class="complication-selector-head"><p>Select the complications already resolved at the table. Roll Twice is an instruction to resolve additional outcomes outside the browser.</p></div><div class="shared-rule-table-wrap"><table class="shared-rule-table command-complications-table interactive-complications"><thead><tr><th scope="col">Resolved effect</th>' + headerCells + '</tr></thead><tbody>' + rows + '</tbody></table></div><div class="complication-actions"><button type="button" data-apply-complications="true">Apply Complications</button></div></div>';
+}
+
+function renderCommandComplicationsSetup(table) {
+  if (!table?.rows?.length) return "";
+  const profile = currentComplicationProfile(table);
+  const body = profile ? renderInteractiveComplications(profile) : renderStaticCommandComplications(table);
+  return '<section class="setup-configuration-card command-complications-section"><div class="panel-kicker">COMMAND COMPLICATIONS</div><p class="reference-copy">' + esc(table.note) + '</p>' + body + '<div class="reference-citation">Source: ' + esc(table.ref) + '</div></section>';
+}
+
+function renderAppliedComplications(table) {
+  if (!table?.rows?.length) return "";
+  const profile = currentComplicationProfile(table);
+  const selection = profile ? complicationSelectionState(profile.table) : null;
+  return profile && selection?.appliedOnce ? renderActiveComplications(profile, selection) : "";
+}
+
+function renderSetupConfiguration(referenceTrack) {
+  const battlefieldContainer = $("#battlefield-configuration");
+  const complicationContainer = $("#complication-configuration");
+  if (!referenceTrack) {
+    battlefieldContainer.innerHTML = "";
+    complicationContainer.innerHTML = "";
+    return;
+  }
+  const { items, tables } = battlefieldConfigurationParts(referenceTrack);
+  const procedure = items.length
+    ? '<ul class="rule-list">' + items.map(item => '<li>' + esc(item) + '</li>').join("") + '</ul>'
+    : '<p class="reference-copy">No contract-specific mapsheet table or Alpha Strike terrain override applies. Use the selected track’s battlefield rules.</p>';
+  const tableMarkup = tables.map(table => '<div class="setup-battlefield-table"><div class="label">' + esc(table.title) + '</div>' + renderGeneratorTable("", table) + '</div>').join("");
+  battlefieldContainer.innerHTML = '<section class="setup-configuration-card battlefield-configuration-card"><div class="panel-kicker">BATTLEFIELD CONFIGURATION</div><p class="setup-configuration-summary">' + esc(battlefieldSelectionSummary(referenceTrack)) + ' · Scale ' + esc(String(state.scale)) + '</p>' + procedure + tableMarkup + '</section>';
+  complicationContainer.innerHTML = renderCommandComplicationsSetup(referenceTrack.commandComplications);
+
+  const setupSummary = $("#hotspot-setup-summary");
+  const selected = sideById(state.selectedSide[currentHotSpot().id]);
+  const resolved = resolvedHotSpotStep();
+  if (setupSummary) setupSummary.textContent = [currentHotSpot().name, resolved?.displayName || currentTrack()?.name || currentHotSpotStep()?.label || "Track pending", selected?.name || "Military side", "Scale " + state.scale, battlefieldSelectionSummary(referenceTrack)].join(" · ");
+}
+
+function renderTemporaryHires(hires, note = "Use these cards after the players resolve hiring under Draconis Reach pp. 29 and 89. Availability, force limits, Support Point costs, repairs, and replacement follow those rules.") {
   if (!hires?.length) return "";
   const cards = hires.map(hire => '<article class="hire-reference-card"><div class="hire-card-head"><span>NAMED TEMPORARY HIRE</span><h4>' + esc(hire.name) + '</h4><p>' + esc(hire.identity) + '</p></div><div class="hire-card-unit">' + esc(hire.unit) + '</div><div class="hire-card-divider"></div><dl><div><dt>Battle Value</dt><dd>' + esc(hire.bv) + '</dd></div><div><dt>Point Value</dt><dd>' + esc(hire.pv) + '</dd></div></dl><div class="hire-card-divider"></div><dl><div><dt>Gunnery</dt><dd>' + esc(hire.gunnery) + '</dd></div><div><dt>Piloting</dt><dd>' + esc(hire.piloting) + '</dd></div><div><dt>Alpha Strike Skill</dt><dd>' + esc(hire.alphaStrikeSkill) + '</dd></div><div><dt>Edge tokens</dt><dd>' + esc(hire.edge) + '</dd></div></dl><div class="hire-card-divider"></div><div class="hire-card-note"><strong>Special abilities</strong><span>' + esc(hire.abilities) + '</span></div><div class="hire-card-note"><strong>Tactical restriction</strong><span>' + esc(hire.restriction) + '</span></div><div class="hire-card-source">' + esc(hire.source) + '</div></article>').join("");
   return '<div class="reference-section temporary-hire-section"><div class="panel-kicker">NAMED TEMPORARY HIRES · TACTICAL REFERENCE ONLY</div><p class="reference-copy">' + esc(note) + '</p><div class="hire-card-grid">' + cards + '</div></div>';
+}
+
+function tacticalInputKey(name) {
+  return [state.hotSpotId, currentHotSpotStep()?.sequence || 1, state.trackId || "pending", name].join("::");
+}
+
+function renderCurrentTrackInputs() {
+  const hotSpot = currentHotSpot();
+  const step = currentHotSpotStep();
+  if (hotSpot.id === "achernar" && [4, 5].includes(Number(step?.sequence))) {
+    const maximum = state.scale * 2;
+    const key = tacticalInputKey("defector-survivors");
+    const selected = Math.min(maximum, Math.max(0, Number(state.tacticalInputs[key] ?? maximum)));
+    const options = Array.from({ length: maximum + 1 }, (_, value) => '<option value="' + value + '"' + (value === selected ? " selected" : "") + '>' + value + '</option>').join("");
+    return '<div class="reference-section current-track-inputs"><div class="panel-kicker">CURRENT-TRACK DEFECTOR FORCE</div><label><span>Surviving J. Edgar Hover Tanks entering this track</span><select data-achernar-current-survivors="true">' + options + '</select></label><p class="reference-copy">Maximum ' + maximum + ' at Scale ' + state.scale + '. Use only vehicles that survived the preceding track. Gunnery 4 · Piloting 5 · Alpha Strike Skill 4.</p></div>';
+  }
+  if (hotSpot.id === "dahar-iv") {
+    const mission = daharMissionState();
+    const controls = ["garrison", "raid"].map(sideId => {
+      const side = hotSpot.sides.find(item => item.id === sideId);
+      const selections = mission[sideId].repurposedRolls;
+      return '<div class="support-force-group"><strong>' + esc(side.name) + '</strong>' + Array.from({ length: state.scale }, (_, index) => {
+        const options = DAHAR_INDUSTRIALMECH_TABLE.map(row => '<option value="' + esc(row[0]) + '"' + (String(selections[index] ?? "") === row[0] ? " selected" : "") + '>' + esc(row[1] + " · " + row[2] + " BV / " + row[3] + " PV") + '</option>').join("");
+        const selectedRow = DAHAR_INDUSTRIALMECH_TABLE.find(row => String(row[0]) === String(selections[index] ?? ""));
+        const selectedIdentity = selectedRow ? selectedRow[1] + " · " + selectedRow[2] + " BV / " + selectedRow[3] + " PV" : "No IndustrialMech selected.";
+        const identityId = "dahar-unit-identity-" + sideId + "-" + index;
+        return '<label><span>Repurposed unit ' + (index + 1) + '</span><select data-dahar-unit-side="' + sideId + '" data-dahar-unit-index="' + index + '" aria-describedby="' + identityId + '" title="' + esc(selectedIdentity) + '"><option value="">Select resolved IndustrialMech</option>' + options + '</select><span class="selected-unit-identity" id="' + identityId + '">' + esc(selectedIdentity) + '</span></label>';
+      }).join("") + '</div>';
+    }).join("");
+    return '<div class="reference-section current-track-inputs"><div class="panel-kicker">TACTICAL SUPPORT · REPURPOSED EQUIPMENT</div><p class="reference-copy">Each side receives one resolved IndustrialMech MOD per Scale for this mission. Crews use Gunnery 4, Piloting 5, or Alpha Strike Skill 4. These units do not count toward normal Scale limits and deploy with their track force.</p><div class="support-force-grid">' + controls + '</div></div>';
+  }
+  if (hotSpot.id === "alta-vista" && appliedComplicationNamed("escobar", "Withdrawal Order")) {
+    const key = tacticalInputKey("withdrawal-response");
+    const selected = state.tacticalInputs[key] || "not-recorded";
+    const outcomes = {
+      "not-recorded": "Choose the current response when the order triggers.",
+      "both-comply": "Both sides successfully complete the track; the Ravens take the tactical victory. Retreat is prohibited.",
+      "escobar-complies-ravens-refuse": "The Ravens are detained and there is no contract victor. Retreat is prohibited.",
+      "escobar-refuses-ravens-comply": "Escobar breaks contract; there is no contract victor. Retreat is prohibited.",
+      "both-refuse": "Both sides are detained; Escobar breaks contract and there is no contract victor. Retreat is prohibited."
+    };
+    const options = [["not-recorded", "Choose response"], ["both-comply", "Both comply"], ["escobar-complies-ravens-refuse", "Escobar complies; Ravens refuse"], ["escobar-refuses-ravens-comply", "Escobar refuses; Ravens comply"], ["both-refuse", "Both refuse"]].map(([value, label]) => '<option value="' + value + '"' + (selected === value ? " selected" : "") + '>' + label + '</option>').join("");
+    return '<div class="reference-section current-track-inputs"><div class="panel-kicker">WITHDRAWAL ORDER · CURRENT TRACK</div><label><span>Players’ response</span><select data-alta-withdrawal-response="true">' + options + '</select></label><p class="reference-copy">' + esc(outcomes[selected]) + '</p></div>';
+  }
+  return "";
+}
+
+function renderContractReference() {
+  const reference = currentHotSpot().contractReference;
+  if (!reference) return "";
+  const section = (title, items) => items?.length ? '<div><strong>' + esc(title) + '</strong><ul class="rule-list">' + items.map(item => '<li>' + esc(item) + '</li>').join("") + '</ul></div>' : "";
+  return '<details class="reference-section contract-reference"><summary>Contract Reference<span>Campaign progression and victory</span></summary>' + section("Contracts", reference.summary) + section("Progression", reference.progression) + section("Victory", reference.victory) + (reference.provisional?.length ? '<div><strong>Provisional interpretations</strong>' + renderProvisionalRules(reference.provisional) + '</div>' : "") + '</details>';
 }
 
 function renderReference() {
@@ -1028,6 +1266,7 @@ function renderReference() {
   const step = currentHotSpotStep();
   const resolved = resolvedHotSpotStep();
   if (!track) {
+    renderSetupConfiguration(null);
     if (resolved?.variant?.nonPlayable) {
       const variant = resolved.variant;
       const restrictions = (variant.setupDetails || []).map(item => "<li>" + esc(item) + "</li>").join("");
@@ -1037,33 +1276,39 @@ function renderReference() {
       return;
     }
     const pendingText = resolved?.unresolved ? "Choose the previous track winner to resolve this mission." : "The selected source result does not produce a standard tactical track.";
-    $("#mission-reference").innerHTML = '<article class="panel mission-card"><div class="mission-card-head"><div class="eyebrow">HOT SPOT LOCATION · ' + esc(hotSpot.name) + '</div><h2>Track pending</h2><p>' + esc(pendingText) + '</p></div><div class="reference-section"><div class="panel-kicker">LOCATION & SEQUENCE</div><ul class="rule-list"><li>' + esc(hotSpot.name + " · " + hotSpot.region + " · " + hotSpot.terrain) + '</li><li>' + esc(step?.label || "Track") + " · " + esc(hotSpot.source) + '</li></ul></div><div class="reference-section"><div class="panel-kicker">SOURCE NOTE</div><p class="reference-copy">' + esc(hotSpot.note || "Resolve the Hot Spot setup controls above before opening the standard mission reference.") + '</p></div></article>';
+    $("#mission-reference").innerHTML = '<article class="panel mission-card"><div class="mission-card-head"><div class="eyebrow">HOT SPOT LOCATION · ' + esc(hotSpot.name) + '</div><h2>Mission Brief</h2><p>' + esc(pendingText) + '</p></div><div class="reference-section"><div class="panel-kicker">LOCATION & SEQUENCE</div><ul class="rule-list"><li>' + esc(hotSpot.name + " · " + hotSpot.region + " · " + hotSpot.terrain) + '</li><li>' + esc(step?.label || "Track") + " · " + esc(hotSpot.source) + '</li></ul></div><div class="reference-section"><div class="panel-kicker">SOURCE NOTE</div><p class="reference-copy">' + esc(hotSpot.note || "Resolve the Hot Spot setup controls above before opening the standard mission reference.") + '</p></div></article>';
     return;
   }
   const referenceTrack = resolved?.variant ? { ...track, ...resolved.variant } : track;
   const pageReference = referenceTrack.pageRef || "p. " + referenceTrack.page;
-  const scaleNotes = scaleNotesFor(referenceTrack, state.scale);
+  const scaleNotes = scaleNotesFor(referenceTrack, state.scale).filter(note => !isBattlefieldConfigurationText(note));
   const scaleNotesMarkup = scaleNotes.length
     ? scaleNotes.map(note => "<li>" + esc(note) + "</li>").join("")
     : "<li>No additional Scale-dependent exception is recorded for this track.</li>";
-  const setup = referenceTrack.setup.map(item => "<li>" + esc(item) + "</li>").join("");
-  const setupDetails = (referenceTrack.setupDetails || []).map(item => "<li>" + esc(item) + "</li>").join("");
+  const setup = referenceTrack.setup.filter(item => !isBattlefieldConfigurationText(item)).map(item => "<li>" + esc(item) + "</li>").join("");
+  const setupDetails = (referenceTrack.setupDetails || []).filter(item => !isBattlefieldConfigurationText(item)).map(item => "<li>" + esc(item) + "</li>").join("");
   const objectives = renderReferenceObjectives(referenceTrack.objectives, referenceTrack);
-  const special = referenceTrack.special.map(item => "<li>" + esc(item) + "</li>").join("");
-  const commandComplications = renderCommandComplications(referenceTrack.commandComplications);
+  const special = referenceTrack.special.filter(item => !isBattlefieldConfigurationText(item)).map(item => "<li>" + esc(item) + "</li>").join("");
+  const commandComplications = renderAppliedComplications(referenceTrack.commandComplications);
+  const currentTrackInputs = renderCurrentTrackInputs();
+  const contractReference = renderContractReference();
   const temporaryHires = renderTemporaryHires(referenceTrack.temporaryHires, referenceTrack.temporaryHireNote);
-  const referenceTables = (referenceTrack.referenceTables || []).map(table => '<div class="reference-section"><div class="panel-kicker">' + esc(table.title) + '</div>' + renderGeneratorTable("", table) + '</div>').join("");
+  const referenceTables = (referenceTrack.referenceTables || []).filter(table => !isBattlefieldConfigurationTable(table)).map(table => '<div class="reference-section"><div class="panel-kicker">' + esc(table.title) + '</div>' + renderGeneratorTable("", table) + '</div>').join("");
   const sourceReferenceText = referenceTrack.sourceRefs?.join(" · ") || SOURCES.primary + " · selected track " + pageReference;
   const scaleSection = hotSpot.hideScaleSelector ? "" : '<div class="reference-section scale-section"><div class="panel-kicker">SCALE ' + esc(String(state.scale)) + ' VIEW</div><ul class="rule-list">' + scaleNotesMarkup + "</ul></div>";
 
   const attackerSide = sideById(resolved?.attacker);
   const defenderSide = sideById(resolved?.defender);
-  const hotSpotBrief = '<div class="reference-section hot-spot-reference"><div class="panel-kicker">HOT SPOT MISSION BRIEF</div><div class="brief-grid"><div><span>Location</span><strong>' + esc(hotSpot.name) + '</strong><small>' + esc(hotSpot.region + " · " + hotSpot.terrain) + '</small></div><div><span>Sequence</span><strong>' + esc(step?.label || "Track") + '</strong><small>' + esc(referenceTrack.displayName || resolved?.displayName || track.name) + (referenceTrack.type ? " · " + esc(referenceTrack.type) : "") + '</small></div><div style="--side-color:' + esc(attackerSide?.color || FACTION_COLORS.Local) + '"><span>Attacker</span><strong>' + esc(attackerSide?.name || "Attacker") + '</strong><small>' + esc(attackerSide?.faction || "Source-defined role") + '</small></div><div style="--side-color:' + esc(defenderSide?.color || FACTION_COLORS.Local) + '"><span>Defender</span><strong>' + esc(defenderSide?.name || "Defender") + '</strong><small>' + esc(defenderSide?.faction || "Source-defined role") + '</small></div></div>' + (hotSpot.note ? '<p class="reference-note">' + esc(hotSpot.note) + '</p>' : '') + '</div>';
+  const hotSpotBrief = '<div class="reference-section hot-spot-reference"><div class="panel-kicker">HOT SPOT MISSION BRIEF</div><div class="brief-grid"><div><span>Location</span><strong>' + esc(hotSpot.name) + '</strong><small>' + esc(hotSpot.region + " · " + hotSpot.terrain) + '</small></div><div><span>Sequence</span><strong>' + esc(step?.label || "Track") + '</strong></div><div style="--side-color:' + esc(attackerSide?.color || FACTION_COLORS.Local) + '"><span>Attacker</span><strong>' + esc(attackerSide?.name || "Attacker") + '</strong><small>' + esc(attackerSide?.faction || "Source-defined role") + '</small></div><div style="--side-color:' + esc(defenderSide?.color || FACTION_COLORS.Local) + '"><span>Defender</span><strong>' + esc(defenderSide?.name || "Defender") + '</strong><small>' + esc(defenderSide?.faction || "Source-defined role") + '</small></div></div>' + (hotSpot.note ? '<p class="reference-note">' + esc(hotSpot.note) + '</p>' : '') + '</div>';
+
+  renderSetupConfiguration(referenceTrack);
 
   $("#mission-reference").innerHTML =
     '<article class="panel mission-card">' +
-      '<div class="mission-card-head"><div class="eyebrow">SELECTED TRACK · ' + pageReference + (referenceTrack.type ? " · " + esc(referenceTrack.type) : "") + '</div><h2>' + esc(referenceTrack.displayName || resolved?.displayName || track.name) + '</h2><p>' + esc(referenceTrack.summary) + '</p></div>' +
+      '<div class="mission-card-head"><div class="eyebrow">SELECTED TRACK · ' + pageReference + (referenceTrack.type ? " · " + esc(referenceTrack.type) : "") + '</div><h2>Mission Brief</h2><p>' + esc(referenceTrack.summary) + '</p></div>' +
       hotSpotBrief +
+      contractReference +
+      currentTrackInputs +
       '<div class="reference-section"><div class="panel-kicker">BATTLEFIELD & SETUP</div><ul class="rule-list">' + setup + "</ul></div>" +
       (setupDetails ? '<div class="reference-section"><div class="panel-kicker">DEPLOYMENT DETAILS</div><ul class="rule-list">' + setupDetails + "</ul></div>" : "") +
       scaleSection +
@@ -1157,13 +1402,9 @@ function renderAll() {
 }
 
 function resetTrack() {
-  if (currentHotSpot().id === "dahar-iv") state.daharMission = newDaharMissionState();
-  if (currentHotSpot().id === "lucerne") state.lucerneMission = newLucerneMissionState();
-  const prefix = state.hotSpotId + "::";
+  const prefix = state.hotSpotId + "::" + (state.trackSequence[state.hotSpotId] || "") + "::" + (state.trackId || "") + "::";
   Object.keys(state.progress).filter(key => key.startsWith(prefix)).forEach(key => delete state.progress[key]);
   Object.keys(state.vpSelections).filter(key => key.startsWith(prefix)).forEach(key => delete state.vpSelections[key]);
-  Object.keys(state.sourceRollSelections).filter(key => key.startsWith(prefix)).forEach(key => delete state.sourceRollSelections[key]);
-  Object.keys(state.selectionValues).filter(key => key.startsWith(prefix)).forEach(key => delete state.selectionValues[key]);
   renderAll();
 }
 
@@ -1174,6 +1415,7 @@ $("#hot-spot-select").addEventListener("change", event => {
 });
 
 $("#hot-spot-track-select").addEventListener("change", event => {
+  if (interactiveComplicationContracts.has(state.hotSpotId)) clearComplicationSelections(state.hotSpotId);
   state.trackSequence[state.hotSpotId] = Number(event.target.value);
   state.trackId = null;
   renderAll();
@@ -1352,6 +1594,7 @@ $("#hotspot-campaign-state").addEventListener("click", event => {
   if (resetLeBlanc) {
     if (!window.confirm("Reset the current Le Blanc tactical setup?")) return;
     state.leBlancMission = newLeBlancMissionState();
+    clearComplicationSelections("le-blanc");
     renderAll();
     return;
   }
@@ -1359,18 +1602,16 @@ $("#hotspot-campaign-state").addEventListener("click", event => {
   if (resetLucerne) {
     if (!window.confirm("Reset the current Lucerne tactical setup?")) return;
     state.lucerneMission = newLucerneMissionState();
+    clearComplicationSelections("lucerne");
     renderAll();
     return;
   }
   const finalize = event.target.closest("[data-dahar-finalize]");
   if (finalize) {
     const entry = daharMissionState();
-    for (const side of ["garrison", "raid"]) {
-      const complication = resolveDaharComplications(entry[side].complication, entry.commandRights[side]);
-      if (complication.initial === null || complication.pendingSecondary) {
-        window.alert("Record complete Command Complication rolls for both players before finalizing this track.");
-        return;
-      }
+    if (!complicationSelectionState()?.appliedOnce) {
+      window.alert("Apply the resolved Command Complications before finalizing this track.");
+      return;
     }
     const attackerVp = trackScore("attacker");
     const defenderVp = trackScore("defender");
@@ -1393,12 +1634,89 @@ $("#hotspot-campaign-state").addEventListener("click", event => {
   renderAll();
 });
 
+$("#mission-reference").addEventListener("change", event => {
+  if (event.target.dataset.achernarCurrentSurvivors) {
+    state.tacticalInputs[tacticalInputKey("defector-survivors")] = Number(event.target.value);
+    renderReference();
+    return;
+  }
+  if (event.target.dataset.daharUnitSide) {
+    const mission = daharMissionState();
+    mission[event.target.dataset.daharUnitSide].repurposedRolls[Number(event.target.dataset.daharUnitIndex)] = event.target.value || null;
+    renderReference();
+    return;
+  }
+  if (event.target.dataset.altaWithdrawalResponse) {
+    state.tacticalInputs[tacticalInputKey("withdrawal-response")] = event.target.value;
+    renderReference();
+    return;
+  }
+});
+
+$("#hotspot-setup").addEventListener("change", event => {
+  const input = event.target.closest("[data-complication-choice]");
+  if (!input) return;
+  const profile = currentComplicationProfile();
+  const selection = complicationSelectionState(profile?.table);
+  if (!profile || !selection) return;
+  const forceId = input.dataset.complicationForce;
+  const rowKey = input.dataset.complicationChoice;
+  const noComplicationKey = profile.table.rows.map(complicationRowKey).find((key, index) => isNoComplicationRow(profile.table.rows[index]));
+  const chosen = new Set(selection.draft[forceId] || []);
+  if (input.checked) {
+    if (rowKey === noComplicationKey) {
+      chosen.clear();
+      chosen.add(rowKey);
+    } else {
+      chosen.delete(noComplicationKey);
+      chosen.add(rowKey);
+    }
+  } else {
+    chosen.delete(rowKey);
+    if (!chosen.size && noComplicationKey) chosen.add(noComplicationKey);
+  }
+  selection.draft[forceId] = [...chosen];
+  const track = currentTrack();
+  const resolved = resolvedHotSpotStep();
+  renderSetupConfiguration(track ? (resolved?.variant ? { ...track, ...resolved.variant } : track) : null);
+});
+
+$("#hotspot-setup").addEventListener("click", event => {
+  const apply = event.target.closest("[data-apply-complications]");
+  const edit = event.target.closest("[data-edit-complications]");
+  if (!apply && !edit) return;
+  const profile = currentComplicationProfile();
+  const selection = complicationSelectionState(profile?.table);
+  if (!profile || !selection) return;
+  if (edit) {
+    selection.draft = Object.fromEntries(profile.participants.map(side => [side.id, [...(selection.applied[side.id] || [])]]));
+    selection.expanded = true;
+    const track = currentTrack();
+    const resolved = resolvedHotSpotStep();
+    renderSetupConfiguration(track ? (resolved?.variant ? { ...track, ...resolved.variant } : track) : null);
+    return;
+  }
+  selection.applied = Object.fromEntries(profile.participants.map(side => [side.id, [...(selection.draft[side.id] || [])]]));
+  selection.appliedOnce = true;
+  selection.expanded = false;
+  if (profile.hotSpot.id === "alta-vista" && !appliedComplicationNamed("escobar", "Withdrawal Order", profile.table)) {
+    delete state.tacticalInputs[tacticalInputKey("withdrawal-response")];
+  }
+  if (profile.hotSpot.id === "dahar-iv") daharMissionState().finalized = false;
+  renderAll();
+});
+
 $("#taking-one-for-team").addEventListener("change", event => {
   state.takingOneForTeam = event.target.checked;
   renderAll();
 });
 
 $("#opfor-display").addEventListener("change", event => {
+  if (event.target.dataset.opforForceType) {
+    state.opforForceTypes[currentHotSpot().id + "::" + event.target.dataset.opforForceType] = event.target.value;
+    renderOpFor();
+    return;
+  }
   if (event.target.id !== "opfor-roll") return;
   state.opforRoll = Number(event.target.value);
   renderOpFor();
@@ -1412,6 +1730,7 @@ $("#winner-controls").addEventListener("change", event => {
       state.daharMission = newDaharMissionState();
       clearDaharObjectiveState();
     }
+    if (interactiveComplicationContracts.has(currentHotSpot().id)) clearComplicationSelections(currentHotSpot().id);
   }
   if (event.target.dataset.sourceRollId) state.sourceRollSelections[sourceRollKey(event.target.dataset.sourceRollSequence, event.target.dataset.sourceRollId)] = event.target.value;
   if (event.target.dataset.selectionId) state.selectionValues[variantSelectionKey(event.target.dataset.selectionSequence, { id: event.target.dataset.selectionId })] = event.target.value;

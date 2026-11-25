@@ -159,7 +159,8 @@ assert.match(leBlancVariant.special.join(" "), /immobile/);
 assert.match(leBlancVariant.special.join(" "), /30 damage \(AS: 4 damage\)/);
 assert.doesNotMatch(leBlancVariant.special.join(" "), /component|grab and load|carrying reduces/i);
 assert.equal(leBlanc.source, "Draconis Reach pp. 86–89");
-assert.equal(leBlanc.campaignState.kind, "le-blanc");
+assert.equal(leBlanc.campaignState, undefined, "Le Blanc has no player-facing campaign record");
+assert.ok(leBlanc.contractReference, "Le Blanc exposes a collapsed contract reference");
 assert.deepEqual(leBlanc.tracks[1].previousOutcomeOptions.map(option => option.value), ["yes", "no"]);
 assert.equal(leBlanc.tracks[1].outcomes.yes.trackId, "strike");
 assert.deepEqual([leBlanc.tracks[1].outcomes.yes.attacker, leBlanc.tracks[1].outcomes.yes.defender], ["draconis-combine", "federated-suns"]);
@@ -170,8 +171,8 @@ for (const variant of [leBlancVariant, leBlanc.tracks[1].outcomes.yes.variant, l
   assert.equal(variant.temporaryHires, LE_BLANC_TEMPORARY_HIRES);
   assert.deepEqual(variant.referenceTables[0].rows, LE_BLANC_MAPSHEET_TABLE);
   assert.match(variant.setupDetails.join(" "), /MapPack: City|City mapsheet/i);
-  assert.match(variant.special.join(" "), /Successful track completion.*final track wins.*Temporary Hires.*reference only/i);
-  assert.match(variant.sourceRefs.join(" "), /pp\. 86–89.*pp\. 26, 29.*p\. 154.*official master errata/i);
+  assert.match(variant.special.join(" "), /Successful track completion.*complete at least one objective.*more objective VP.*Equal VP/i);
+  assert.match(variant.sourceRefs.join(" "), /pp\. 86–89.*pp\. 26, 29.*p\. 154/i);
 }
 assert.match(leBlanc.tracks[1].outcomes.yes.variant.special.join(" "), /Turn 10 \(Turn 8 in Alpha Strike\)/);
 assert.match(leBlanc.tracks[1].outcomes.no.variant.special.join(" "), /after the end of Turn 10/);
@@ -190,7 +191,8 @@ assert.match(LE_BLANC_COMMAND_COMPLICATIONS.rows[2].text, /half ammunition.*afte
 assert.match(LE_BLANC_COMMAND_COMPLICATIONS.rows[4].text, /Battlefield-wide.*medium range.*long range/);
 assert.match(LE_BLANC_PARTISAN_PACKAGES.defender.join(" "), /2 × Scale MG Nest.*CF 10.*CF 3.*1\/1\/0/);
 assert.match(LE_BLANC_PARTISAN_PACKAGES.attacker.join(" "), /Motorized Conventional Infantry.*Galleon GAL-100/);
-assert.equal(LE_BLANC_PROVISIONAL_RULES.length, 3);
+assert.equal(LE_BLANC_PROVISIONAL_RULES.length, 2);
+assert.doesNotMatch(LE_BLANC_PROVISIONAL_RULES.join(" "), /LEBLANC-AMB|both Le Blanc tracks/i);
 for (const [rights, modifier] of [["independent", 0], ["liaison", 1], ["house", 2], ["integrated", 3]]) {
   assert.equal(resolveLeBlancComplications({ initial: 1 }, rights).modifier, modifier);
 }
@@ -245,14 +247,23 @@ for (const term of ["campaignState", "campaignTrackValues", "campaignBuildingTot
   assert.ok((app + data + html).includes(term), term + " New Ivaarsen cross-track preservation behavior is present");
 }
 assert.ok(css.includes("command-complications-table") && css.includes("complication-roll"), "Command Complications table has focused responsive styling");
+for (const term of ["data-complication-choice", "data-apply-complications", "data-edit-complications", "active-complications", "Apply Complications", "Reference only"]) {
+  assert.ok((app + css).includes(term), "resolved-complication workflow includes " + term);
+}
+assert.ok(app.includes("selection.applied") && app.includes("selection.draft") && app.includes("selection.appliedOnce"), "draft and applied complication states are distinct");
+assert.ok(app.includes('hotSpot.id === "alta-vista" && state.trackId === "retreat"'), "Alta Vista Retreat excludes Command Complications");
+assert.ok(app.includes('hotSpot.id === "lucerne" && state.trackId === "bio-gen-raid"'), "Bio-Gen Raid excludes random Command Complications");
+assert.ok(app.includes('hotSpot.id === "alta-vista"') && app.includes('side.id === "escobar"'), "Alta Vista complications are Escobar-only");
 assert.ok(css.includes("campaign-state-card") && css.includes("campaign-fields"), "cross-track campaign state has focused responsive styling");
-for (const term of ["renderLeBlancMissionState", "data-leblanc-faction", "data-leblanc-rights", "data-leblanc-complication", "resolveLeBlancComplications", "previousOutcomeOptions", "temporaryHires", "renderTemporaryHires", "Current-track successful completion", "No campaign history"]) {
+for (const term of ["previousOutcomeOptions", "temporaryHires", "renderTemporaryHires", "renderContractReference", "data-opfor-force-type"]) {
   assert.ok((app + data).includes(term), "Le Blanc tactical implementation includes " + term);
 }
 assert.ok(app.includes('"Mercenary": "mercenary-pirate"'), "Le Blanc mercenary participants resolve to the Mercenary/Pirate OpFor table");
 assert.ok(css.includes("hire-reference-card") && css.includes("hire-card-grid") && css.includes("hire-card-divider"), "Temporary Hire cards use the focused nutrition-label-inspired layout");
 assert.match(css, /@media[\s\S]*hire-card-grid \{ grid-template-columns: 1fr;/, "Temporary Hire cards stack at the mobile breakpoint");
 assert.ok(html.includes("master errata") && html.includes("topic,90893.0.html"), "current Draconis Reach master errata is identified in the source verification panel");
+assert.match(html, /RULES SOURCES[\s\S]*First Printing[\s\S]*11 November 2026[\s\S]*25 November 2026[\s\S]*Amber text indicates a provisional rules interpretation pending official clarification/);
+assert.ok(css.includes(".provisional-rule") && css.includes(".sr-only"), "provisional rules have visible and assistive semantics");
 assert.ok(css.includes("@media") && css.includes("flex-wrap: wrap"), "responsive layout rules remain present");
 assert.ok(HOT_SPOTS.length >= 10, "the location selector includes the Draconis Reach mission briefs currently mapped");
 const achernar = HOT_SPOTS.find(item => item.id === "achernar");
@@ -281,14 +292,14 @@ assert.deepEqual(achernarOutcomes.map(outcome => [outcome.trackId, outcome.attac
 for (const outcome of achernarOutcomes) {
   assert.ok(outcome.variant, outcome.trackId + " inherits the Achernar overlay");
   assert.equal(outcome.variant.commandComplications.rows.length, 6, outcome.trackId + " exposes every Achernar complication result");
-  assert.match(outcome.variant.commandComplications.note, /each player rolls 1D6.*Tybalt.*no modifier.*Home Guard.*adds 1/i);
+  assert.match(outcome.variant.commandComplications.note, /resolve each force independently.*Tybalt.*no modifier.*Home Guard.*adds 1/i);
   assert.deepEqual(outcome.variant.commandComplications.rows.map(row => row.roll), ["1", "2–3", "4", "5", "6", "7+"]);
   assert.match(outcome.variant.sourceRefs.join(" "), /Draconis Reach pp\. 74–77/);
   assert.match(outcome.variant.sourceRefs.join(" "), /Shared rules pp\. 167–168/);
-  assert.match(outcome.variant.sourceRefs.join(" "), /Current Draconis Reach master errata/);
+  assert.doesNotMatch(outcome.variant.sourceRefs.join(" "), /master errata/i);
   assert.match(outcome.variant.special.join(" "), /at least one defector vehicle survives all tracks/i);
   assert.match(outcome.variant.special.join(" "), /five or more Battlefield Support units granted to Tybalt/i);
-  assert.match(outcome.variant.special.join(" "), /Provisional project ruling.*pending official forum clarification.*not official errata or a developer ruling/i);
+  assert.doesNotMatch(outcome.variant.special.join(" "), /project ruling|pending official clarification/i);
   assert.equal(outcome.variant.objectives, undefined, "Achernar overlay does not replace standard objectives");
 }
 const achernarComplications = achernar.tracks[0].variant.commandComplications;
@@ -309,7 +320,8 @@ for (const outcome of Object.values(achernar.tracks[2].outcomes)) {
 for (const outcome of [achernar.tracks[3], achernar.tracks[4]]) {
   assert.match(outcome.variant.setupDetails.join(" "), /only the J\. Edgar Hover Tanks that survived the previous track.*Do not restore destroyed vehicles/i);
 }
-assert.equal(achernar.campaignState.kind, "achernar", "Achernar uses its bounded cross-track record");
+assert.equal(achernar.campaignState, undefined, "Achernar no longer exposes a historical campaign record");
+assert.ok(achernar.contractReference, "Achernar contract conditions remain available as reference");
 assert.deepEqual([1, 2, 3].map(achernarInitialDefectors), [2, 4, 6], "Achernar allocates two J. Edgar tanks per Scale");
 assert.deepEqual(normalizeAchernarCampaignState({ survivorsAfterTrack3: 7, survivorsAfterTrack4: 5, finalSurvivors: 4 }, 2), {
   initialDefectors: 4,
@@ -724,7 +736,7 @@ const malloryTraining = mallory.tracks.find(track => track.label === "Training S
 assert.match(malloryTraining.setupDetails.join(" "), /Park District/);
 assert.deepEqual(malloryTraining.sourceRefs, ["Draconis Reach pp. 135–139", "Pushback p. 173", "Current Draconis Reach master errata"]);
 assert.ok(html.includes('id="hot-spot-track-label"'), "the sequence selector has a location-specific label target");
-assert.ok(app.includes('hotSpot.trackSelectorLabel || "Track sequence"'), "Mallory’s World changes the selector label without changing other Hot Spots");
+assert.ok(app.includes('hotSpot.trackSelectorLabel || "Track"'), "the shared selector uses player-facing Track terminology while preserving location-specific labels");
 assert.ok(app.includes("if (hotSpot.fixedScale) state.scale = hotSpot.fixedScale"), "Mallory’s World applies its fixed Scale before each render");
 assert.ok(app.includes("button.disabled = Boolean(fixedScale)"), "the Scale selector locks for fixed-Scale Hot Spots and unlocks elsewhere");
 assert.ok(html.includes('id="scale-restriction-note"'), "the fixed-Scale explanation has a dedicated display target");
@@ -752,16 +764,16 @@ for (const warehouse of altaVista.tracks.slice(0, 3)) {
   assert.match(warehouse.variant.setupDetails.join(" "), /Kintaro KTO-19b.*1,265 BV.*39 PV.*1 Edge.*Marksman.*Piloting 5.*Gunnery 3.*Skill 4.*50 SP/i);
   assert.match(warehouse.variant.setupDetails.join(" "), /other may hire only the other pilot.*2D6.*high roll chooses first.*ties are rerolled/i);
   assert.deepEqual(warehouse.variant.objectives || TRACKS.find(track => track.id === "meeting-engagement").objectives, TRACKS.find(track => track.id === "meeting-engagement").objectives);
-  assert.deepEqual(warehouse.variant.sourceRefs, ["Draconis Reach pp. 78–81", "Meeting Engagement pp. 170–171", "Shared rules pp. 167–168", "Current Draconis Reach master errata"]);
+  assert.deepEqual(warehouse.variant.sourceRefs, ["Draconis Reach pp. 78–81", "Meeting Engagement pp. 170–171", "Shared rules pp. 167–168"]);
 }
 assert.deepEqual(ALTA_VISTA_COMMAND_COMPLICATIONS.rows.map(row => row.roll), ["1–2", "3", "4", "5", "6"]);
-assert.match(ALTA_VISTA_COMMAND_COMPLICATIONS.note, /Escobar player.*once.*twice.*three times.*Reroll duplicate results of 4, 5, or 6.*not a separate roll by each player/i);
+assert.match(ALTA_VISTA_COMMAND_COMPLICATIONS.note, /Escobar only.*once.*twice.*three times.*reroll duplicate results of 4, 5, or 6/i);
 assert.match(ALTA_VISTA_COMMAND_COMPLICATIONS.rows[1].text, /20 BSP.*per Scale.*visible.*within or adjacent to a building.*automatically damages/i);
 assert.match(ALTA_VISTA_COMMAND_COMPLICATIONS.rows[2].text, /Half.*rounded up.*home edge.*Turn 2/i);
 assert.match(ALTA_VISTA_COMMAND_COMPLICATIONS.rows[3].text, /\+1 Target Number.*1 hex.*2 inches/i);
 assert.match(ALTA_VISTA_COMMAND_COMPLICATIONS.rows[4].text, /BattleTech Turn 3.*Alpha Strike Turn 2.*2D6.*4 or less.*increasing.*Retreat is prohibited/i);
 assert.equal(ALTA_VISTA_PROVISIONAL_RULES.length, 4);
-assert.match(ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, /User-supplied clarification.*continues normally.*next Meeting Engagement/i);
+assert.match(ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, /both players leave.*continues normally.*next Meeting Engagement/i);
 
 const altaRetreat = altaVista.tracks[3].variant;
 assert.match(altaRetreat.setup.join(" "), /Retain.*mapsheets.*Light Urban terrain.*battlefield alignment.*carryover/i);
@@ -838,11 +850,11 @@ assert.equal(evaluateAltaVistaCampaign({ trials: [altaTrial(), altaTrial()] }).e
 assert.equal(evaluateAltaVistaCampaign({ trials: [altaTrial(), altaTrial(), altaTrial()] }).escobarRequiredTracks, 2);
 assert.equal(normalizeAltaVistaCampaignState({ ravenFaction: "raven-alliance" }).ravenFaction, "raven-alliance");
 assert.ok(app.includes('"Raven Alliance": "raven-alliance"'), "Raven Alliance faction choice maps to the Raven Alliance OpFor table");
-assert.ok(app.includes("availableHotSpotTracks") && app.includes("evaluateAltaVistaCampaign"), "Alta Vista later scenarios are conditionally exposed");
-assert.ok(app.includes("data-alta-trial-field") && app.includes("data-alta-root-field"), "Alta Vista campaign controls are wired");
-assert.ok(app.includes("state.mode") && app.includes("renderCampaignState"), "campaign state remains independent of Attacker/Defender/Both display mode");
-assert.ok(css.includes("campaign-wide-field"), "Alta Vista bounded carryover notes have responsive full-width styling");
-assert.match(html, /lucerne-tactical-scope/, "the current implementation uses the Lucerne asset cache key");
+assert.ok(app.includes("availableHotSpotTracks") && !app.includes("availableAltaVistaTracks"), "all Alta Vista tactical tracks are directly selectable");
+assert.ok(app.includes("data-alta-withdrawal-response"), "Alta Vista exposes only the current Withdrawal Order response when applicable");
+assert.ok(app.includes("state.mode") && app.includes("renderContractReference"), "Alta Vista references remain independent of Attacker/Defender/Both display mode");
+assert.ok(css.includes("contract-reference"), "Alta Vista contract references use shared responsive styling");
+assert.match(html, /usability-final-ux16-19/, "the current implementation uses the final usability asset cache key");
 
 const dahar = HOT_SPOTS.find(item => item.id === "dahar-iv");
 assert.ok(dahar, "Dahar IV is available as a Hot Spot");
@@ -860,18 +872,13 @@ assert.deepEqual(DAHAR_TRACK_RESULTS.map(result => [result.roll, result.trackId,
   [5, "assault", "garrison", "raid"],
   [6, "retreat", "garrison", "raid"]
 ]);
-assert.equal(dahar.tracks.length, 1, "Dahar exposes one independently selectable current tactical mission");
-assert.equal(dahar.tracks[0].label, "Selected Mission Table result");
-assert.equal(dahar.tracks[0].resultLabel, "Track to play (source 1D6 result)");
-for (const opportunity of dahar.tracks) {
-  assert.equal(opportunity.results.length, 6);
-  for (const result of opportunity.results) {
-    assert.equal(result.variant.commandComplications, DAHAR_COMMAND_COMPLICATIONS);
-    assert.equal(result.variant.referenceTables.length, 2);
-    assert.match(result.variant.setupDetails.join(" "), /Dahar mapsheets.*specific standard-track battlefield dimension.*Repurposed Equipment.*two-thirds.*three per Scale/i);
-    assert.match(result.variant.special.join(" "), /Successful track completion.*reference only.*two consecutive.*does not evaluate contract victory.*105112A.*105112B.*20%/i);
-    assert.match(result.variant.sourceRefs.join(" "), /pp\. 82–85.*pp\. 26, 29.*p\. 82 Salvage Rights 20%/i);
-  }
+assert.deepEqual(dahar.tracks.map(track => track.label), ["Recon", "Flank", "Strike", "Meeting Engagement", "Assault", "Retreat"], "Dahar directly lists its six tactical tracks");
+for (const result of dahar.tracks) {
+  assert.equal(result.variant.commandComplications, DAHAR_COMMAND_COMPLICATIONS);
+  assert.equal(result.variant.referenceTables.length, 2);
+  assert.match(result.variant.setupDetails.join(" "), /Dahar mapsheets.*specific standard-track battlefield dimension.*Repurposed Equipment.*two-thirds.*three per Scale/i);
+  assert.match(result.variant.special.join(" "), /Successful track completion/i);
+  assert.match(result.variant.sourceRefs.join(" "), /pp\. 82–85.*pp\. 26, 29/i);
 }
 assert.deepEqual(DAHAR_MAPSHEET_TABLE.map(row => row[1]), ["Mine #1", "Mine #2", "Badlands #1", "Badlands #2", "Washout #1", "Sand Drift #2"]);
 assert.deepEqual(DAHAR_INDUSTRIALMECH_TABLE, [
@@ -905,23 +912,22 @@ assert.equal(adjustDaharEarnedVp(100, true), 80);
 assert.equal(adjustDaharEarnedVp(300, true), 280);
 assert.equal(adjustDaharEarnedVp(300, false), 300);
 
-for (const term of ["renderDaharMissionState", "data-dahar-finalize", "adjustDaharEarnedVp", "completedObjectiveCount", "temporaryEligibility", "secondaryOne", "secondaryTwo", "clearDaharObjectiveState", "Current tactical result"]) {
+for (const term of ["data-dahar-unit-side", "Select resolved IndustrialMech", "adjustDaharEarnedVp", "completedObjectiveCount", "clearDaharObjectiveState", "TACTICAL SUPPORT · REPURPOSED EQUIPMENT"]) {
   assert.ok(app.includes(term), "Dahar browser implementation includes " + term);
 }
-for (const excluded of ["renderDaharCampaignState", "data-dahar-roll-sequence", "evaluateDaharCampaign", "normalizeDaharCampaignState", "Current streaks", "Resolved earlier months"]) {
+for (const excluded of ["data-dahar-roll-sequence", "evaluateDaharCampaign", "normalizeDaharCampaignState", "Current streaks", "Resolved earlier months"]) {
   assert.ok(!app.includes(excluded), "Dahar browser excludes campaign manager behavior: " + excluded);
 }
-assert.match(dahar.note, /tracked outside this tactical browser/i);
-assert.match(dahar.tracks[0].results[0].variant.special.join(" "), /browser does not roll, store, gate, or validate.*duplicate produces no track/i);
+assert.match(dahar.note, /Select the current tactical track directly/i);
+assert.ok(dahar.contractReference, "Dahar progression and victory rules are retained as a collapsed reference");
 assert.ok(app.includes('"Mercenary": "mercenary-pirate"'), "both Dahar mercenary sides resolve to the Mercenary/Pirate OpFor table");
-assert.ok(css.includes("dahar-tactical") && css.includes("campaign-finalize") && css.includes("adjusted-vp"), "Dahar tactical controls and adjusted scoring have focused responsive styles");
+assert.ok(css.includes("current-track-inputs") && css.includes("adjusted-vp"), "Dahar tactical support and adjusted scoring have focused responsive styles");
 
 const lucerne = HOT_SPOTS.find(item => item.id === "lucerne");
 assert.ok(lucerne, "Lucerne is available as a Hot Spot");
 assert.equal(lucerne.source, "Draconis Reach pp. 90–93", "Lucerne uses the complete contract source range");
-assert.equal(lucerne.campaignState.kind, "lucerne", "Lucerne exposes bounded current-mission tactical state");
-assert.equal(lucerne.tracks.length, 1, "Lucerne provides independent current-track selection without campaign gating");
-assert.equal(lucerne.tracks[0].results, LUCERNE_TRACK_RESULTS);
+assert.equal(lucerne.campaignState, undefined, "Lucerne has no player-facing campaign record");
+assert.deepEqual(lucerne.tracks.map(track => track.label), ["Recon", "Breakthrough", "Objective Raid", "Pushback", "Pursuit", "Assault", "Bio-Gen Raid · mandatory sixth played track"], "Lucerne directly lists all seven tactical tracks and identifies the mandatory sixth battle");
 assert.deepEqual(LUCERNE_TRACK_RESULTS.map(result => [result.trackId, result.attacker, result.defender]), [
   ["recon", "eclipse", "bio-gen"],
   ["breakthrough", "eclipse", "bio-gen"],
@@ -932,7 +938,8 @@ assert.deepEqual(LUCERNE_TRACK_RESULTS.map(result => [result.trackId, result.att
   ["bio-gen-raid", "eclipse", "bio-gen"]
 ], "all seven Lucerne tactical outcomes use the corrected roles");
 assert.deepEqual(lucerne.sides.map(side => [side.id, side.faction]), [["bio-gen", "Mercenary"], ["eclipse", "Mercenary"]], "both participating Lucerne forces are Mercenary");
-assert.match(lucerne.note, /mandatory sixth played track.*not a seventh campaign battle.*reference-only/i);
+assert.match(lucerne.note, /mandatory sixth played track if reached/i);
+assert.match(lucerne.contractReference.progression.join(" "), /Track Table.*unique standard tracks.*mandatory sixth played track/i);
 
 assert.deepEqual(LUCERNE_MAPSHEET_TABLE, [
   ["1", "Grassland #1", "Beginner Box"],
@@ -948,7 +955,7 @@ for (const result of LUCERNE_TRACK_RESULTS) {
   assert.match(result.variant.setupDetails.join(" "), /Alpha Strike terrain.*p\. 154.*Wooded planetary terrain.*Grasslands mapsheet table/i);
   assert.equal(result.variant.temporaryHires, LUCERNE_TEMPORARY_HIRES);
   assert.match(result.variant.temporaryHireNote, /pp\. 29 and 92–93.*eligibility.*costs.*repairs.*replacement/i);
-  assert.match(result.variant.sourceRefs.join(" "), /pp\. 90–93.*p\. 150.*p\. 154.*official master errata/i);
+  assert.match(result.variant.sourceRefs.join(" "), /pp\. 90–93.*p\. 150.*p\. 154/i);
 }
 for (const result of LUCERNE_TRACK_RESULTS.slice(0, 6)) assert.equal(result.variant.commandComplications, LUCERNE_COMMAND_COMPLICATIONS, result.label + " uses Lucerne complications");
 assert.equal(LUCERNE_TRACK_RESULTS[6].variant.commandComplications, null, "Bio-Gen Raid excludes random Command Complications");
@@ -957,7 +964,7 @@ assert.deepEqual(LUCERNE_TEMPORARY_HIRES.map(hire => [hire.name, hire.unit, hire
   ["Saki", "Venom SDR-9KB", "769", "28", "3", "2", "3", "3", "Jumping Jack Edge Ability"],
   ["Steve Kendricks", "Firefly FFL-5A", "996", "26", "3", "3", "3", "3", "Cautious Edge Ability"]
 ], "Lucerne Temporary Hire cards use source and errata-corrected values");
-assert.match(LUCERNE_TEMPORARY_HIRES[0].source, /official errata.*Ronin.*Spider SDR-7K/i);
+assert.equal(LUCERNE_TEMPORARY_HIRES[0].source, "Draconis Reach p. 93");
 
 const bioGenRaid = SPECIAL_TRACKS.find(track => track.id === "bio-gen-raid");
 assert.ok(bioGenRaid, "Bio-Gen Raid is a standalone custom track");
@@ -1003,11 +1010,9 @@ const pendingReplacement = resolveLucerneComplications({ initial: 5, secondaryOn
 assert.deepEqual(pendingReplacement.replacementNeeds, [true, false], "secondary 8+ prompts for a replacement without recursion");
 assert.equal(pendingReplacement.pendingSecondary, true);
 
-assert.equal(LUCERNE_PROVISIONAL_RULES.length, 6, "all six approved Lucerne ambiguity dispositions are presented");
-for (const id of ["LUCERNE-PROGRESSION-AMB-001", "LUCERNE-DEPLOYMENT-AMB-001", "LUCERNE-OBJECTIVE-AMB-001", "LUCERNE-ROLLTWICE-AMB-001", "LUCERNE-DUALSWARM-AMB-001", "LUCERNE-ENHANCEDSWARM-AMB-001"]) {
-  assert.ok(LUCERNE_PROVISIONAL_RULES.some(rule => rule.includes(id)), id + " is retained as a provisional disposition");
-}
-for (const term of ["renderLucerneMissionState", "data-lucerne-rights", "data-lucerne-complication", "data-lucerne-replacements", "resolveLucerneComplications", "data-reset-lucerne", "Enough Chaos", "Current-track ordinary swarm quantity", "Shared battlefield condition", "Recon Deny remains projected until Turn 8", "No campaign history"]) {
+assert.equal(LUCERNE_PROVISIONAL_RULES.length, 3, "only genuine Lucerne interpretations are presented as provisional");
+assert.doesNotMatch(LUCERNE_PROVISIONAL_RULES.join(" "), /LUCERNE-.*-AMB-001/);
+for (const term of ["renderContractReference", "Enough Chaos", "Recon Deny remains projected until Turn 8", "bio-gen-raid"]) {
   assert.ok(app.includes(term), "Lucerne browser behavior includes " + term);
 }
 assert.match(app, /Bio-Gen Retainer.*CEO Marie Valentina.*Garrison\/Retainer\/Defense.*Integrated Command/);
@@ -1015,8 +1020,49 @@ assert.match(app, /Eclipse Expeditions Special Operations.*Guildmaster Phil News
 assert.match(app, /both participating forces are Mercenary.*Mercenary\/Pirate OpFor table/i);
 assert.match(app, /same completed-objective|Current score: Attacker|currently successfully completes the track/);
 assert.match(app, /renderTemporaryHires\(referenceTrack\.temporaryHires, referenceTrack\.temporaryHireNote\)/, "Temporary Hire cards accept contract-aware hiring guidance");
-assert.match(html, /lucerne-tactical-scope/, "Lucerne uses a fresh browser asset cache key");
+assert.match(html, /usability-final-ux16-19/, "Lucerne uses the final usability browser asset cache key");
 assert.ok(css.includes("campaign-field input") && css.includes("hire-card-grid") && css.includes("@media"), "Lucerne controls and reused Temporary Hire cards retain responsive styling");
+
+assert.match(html, /<details[^>]+id="hotspot-setup"[^>]+open>/, "Hot Spot Setup starts expanded");
+assert.match(html, /id="hotspot-setup-summary"/, "collapsed Hot Spot Setup has a persistent summary target");
+assert.match(html, /id="battlefield-configuration"/, "Hot Spot Setup contains the shared battlefield configuration region");
+assert.match(html, /id="complication-configuration"/, "Hot Spot Setup contains the shared complication configuration region");
+assert.match(html, /<h2 id="derived-track-title" class="derived-track-title">/, "the resolved track has one prominent gameplay heading");
+assert.doesNotMatch(html, />Tracking view</i, "the redundant visible Tracking View label is removed");
+assert.doesNotMatch(html, /class="source-strip"|PRIMARY SOURCE|ERRATA INCORPORATED/, "the redundant top source banner is removed");
+assert.match(html, /RULES SOURCES[\s\S]*First Printing[\s\S]*11 November 2026[\s\S]*25 November 2026[\s\S]*topic,90893\.0\.html/, "the centralized Rules Sources section retains the complete source and errata record");
+assert.match(html, /aria-label="Score display"/, "the score-side controls retain an accessible group name");
+assert.match(app, /mission-card-head.*<h2>Mission Brief<\/h2>/, "Mission Brief replaces the duplicate track heading in the reference card");
+assert.doesNotMatch(app, /mission-card-head.*<h2>Track pending<\/h2>/, "unresolved conditional tracks also use Mission Brief instead of a duplicate status heading");
+assert.match(css, /\.panel \{[^}]*color: var\(--ink\)/, "light panels explicitly reset inherited dark-theme text to a dark foreground");
+assert.match(css, /\.contract-reference > summary \{[^}]*color: var\(--ink\)/, "Contract Reference uses dark text on its light panel");
+assert.match(css, /\.support-force-group \{[^}]*color: var\(--ink\)/, "Dahar support headings use dark text on light cards");
+assert.match(css, /\.reference-citation \{[^}]*color: #53616c/, "source citations use an AA-safe muted foreground on light panels");
+assert.match(css, /\.complication-reference-only \{[^}]*color: #53616c/, "complication reference-only labels use an AA-safe muted foreground");
+assert.match(app, /aria-describedby/, "Dahar selectors describe their complete selected IndustrialMech identity");
+assert.match(app, /selected-unit-identity/, "Dahar displays each complete selected IndustrialMech identity outside the native selector");
+assert.match(app, /<span>Sequence<\/span><strong>'.*step\?\.label.*<\/strong><\/div>/, "Sequence displays only the source sequence label");
+assert.match(app, /currentHotSpot\(\)\.name.*resolved\?\.displayName.*selected\?\.name.*"Scale " \+ state\.scale/s, "the setup summary includes location, track, military side, and Scale");
+const renderOpForBody = app.match(/function renderOpFor\(\) \{([\s\S]*?)\n\}\n\nfunction renderHotSpotSetup/)?.[1] || "";
+assert.match(renderOpForBody, /const configuration = generatedOpForConfiguration\(\);\s+const selected = configuration\.side;/, "generated OpFor rendering uses the resolved opposing side and faction configuration");
+assert.match(css, /hotspot-setup-disclosure:not\(\[open\]\).*Expand setup/s, "collapsed setup exposes a visible expand control");
+assert.match(css, /setup-disclosure-label::before \{ content: "Collapse setup"/, "expanded setup exposes a visible collapse control");
+const resetTrackBody = app.match(/function resetTrack\(\) \{([\s\S]*?)\n\}/)?.[1] || "";
+assert.match(resetTrackBody, /state\.trackSequence\[state\.hotSpotId\].*state\.trackId/s, "Reset Objectives is scoped to the current Hot Spot sequence and resolved track");
+assert.match(resetTrackBody, /state\.progress/, "Reset Objectives clears objective progress");
+assert.match(resetTrackBody, /state\.vpSelections/, "Reset Objectives clears objective VP selections");
+for (const preservedState of ["clearComplicationSelections", "tacticalInputs", "opforForceTypes", "daharMission", "lucerneMission", "sourceRollSelections", "selectionValues"]) {
+  assert.ok(!resetTrackBody.includes(preservedState), "Reset Objectives preserves " + preservedState);
+}
+assert.match(app, /function renderSetupConfiguration\(referenceTrack\)/, "battlefield and complication configuration share the Hot Spot Setup renderer");
+assert.match(app, /battlefieldConfigurationParts\(referenceTrack\)/, "mapsheet and Alpha Strike terrain material is partitioned from gameplay rules");
+assert.match(app, /filter\(table => !isBattlefieldConfigurationTable\(table\)\)/, "mapsheet tables are not duplicated in the gameplay reference");
+assert.match(app, /renderCommandComplicationsSetup\(referenceTrack\.commandComplications\)/, "Command Complications selection renders in Hot Spot Setup");
+assert.match(app, /renderAppliedComplications\(referenceTrack\.commandComplications\)/, "the gameplay reference renders only applied complication effects");
+assert.match(app, /if \(!effectCards\.length && !extras\) return "";/, "the gameplay area omits an empty active-effects panel");
+assert.match(app, /\$\("#hotspot-setup"\)\.addEventListener\("change"/, "complication selection is handled from Hot Spot Setup");
+assert.doesNotMatch(renderOpForBody, /data-complication-choice/, "generated OpFor rendering remains separate from complication selection");
+assert.ok(css.includes("setup-configuration-card") && css.includes("complication-selection-status"), "battlefield and complication setup remain responsive and visibly grouped");
 
 for (const hotSpot of HOT_SPOTS) {
   assert.ok(hotSpot.sides.length >= 2, hotSpot.name + " has opposing sides");
