@@ -190,6 +190,127 @@ export function resolveLeBlancComplications(selection = {}, rights = "liaison") 
   return { modifier, initial, secondary, effects, pendingSecondary: secondary.some(value => value === null) };
 }
 
+export const LUCERNE_MAPSHEET_TABLE = Object.freeze([
+  ["1", "Grassland #1", "Beginner Box"],
+  ["2", "Grassland #2", "A Game of Armored Combat"],
+  ["3", "Grassland #3", "A Game of Armored Combat"],
+  ["4", "Woodland", "MapPack: Grasslands"],
+  ["5", "Open Terrain #2", "MapPack: Grasslands"],
+  ["6", "Open Terrain #3", "MapPack: Grasslands"]
+]);
+
+export const LUCERNE_TEMPORARY_HIRES = Object.freeze([
+  {
+    id: "saki",
+    name: "Saki",
+    identity: "Eclipse Expeditions temporary hire",
+    unit: "Venom SDR-9KB",
+    bv: "769",
+    pv: "28",
+    gunnery: "3",
+    piloting: "2",
+    alphaStrikeSkill: "3",
+    edge: "3",
+    abilities: "Jumping Jack Edge Ability",
+    restriction: "Associated with Eclipse Expeditions. Hiring eligibility and administration remain with the players.",
+    source: "Draconis Reach p. 93; official errata replaces the Ronin and Spider SDR-7K"
+  },
+  {
+    id: "steve-kendricks",
+    name: "Steve Kendricks",
+    identity: "Bio-Gen temporary hire",
+    unit: "Firefly FFL-5A",
+    bv: "996",
+    pv: "26",
+    gunnery: "3",
+    piloting: "3",
+    alphaStrikeSkill: "3",
+    edge: "3",
+    abilities: "Cautious Edge Ability",
+    restriction: "Associated with Bio-Gen. Hiring eligibility and administration remain with the players.",
+    source: "Draconis Reach p. 93"
+  }
+]);
+
+export const LUCERNE_COMMAND_COMPLICATIONS = Object.freeze({
+  ref: "Draconis Reach pp. 30, 92–93; current official master errata",
+  note: "Apply only to Lucerne standard tracks. Each player rolls independently and applies their selected Command Rights modifier: Independent +0, Liaison +1, House +2, Integrated +3. Bio-Gen Raid uses Enough Chaos and does not roll random complications.",
+  rows: [
+    { roll: "1–3", name: "No Complication", text: "No complication applies." },
+    { roll: "4", name: "Conflicting Orders", text: "The affected mercenaries suffer a −2 Initiative penalty for the first two turns of the battle." },
+    { roll: "5–6", name: "Voracious Reptile Swarms", text: "For each affected player, randomly place 1D3 neutral swarms per mapsheet. Each BattleTech swarm covers one central hex and every adjacent hex and is 1 level high (Alpha Strike: 6-inch AOE and 1 inch high); swarms may not share a center hex. At the end of each Movement Phase each swarm moves 2 hexes in a random direction (Alpha Strike: 4 inches), stopping at level 3+ hills or depth 2+ water (Alpha Strike: more than 2 inches elevation change or water at least 2 inches deep). Non-energy ranged attacks into or through a swarm receive +1 target number regardless of the number of swarm hexes; energy attacks receive +2 (Alpha Strike: +1 to non-ENE attacks and +2 to ENE attacks). An Asset occupying a swarm hex during the Weapon Attack Phase takes 1D6 damage (Alpha Strike: 0* damage). Swarms are immune to damage, but an Anti-Infantry (AI) weapon hit on the occupied hex prevents that swarm’s damage for the turn." },
+    { roll: "7", name: "Heavy Rainfall", text: "Battlefield-wide beginning on Round 3. BattleTech: all weapon attacks receive +1 target number and all units receive +1 target number to Piloting Skill checks. Alpha Strike: all weapon attacks and bog down checks receive +1 target number." },
+    { roll: "8+", name: "Roll Twice", text: "Approved Lucerne provisional procedure: resolve exactly two secondary results using the same Command Rights modifier. Reroll secondary 8+ results and duplicate actual complication effects; accept duplicate No Complication results. Results 5 and 6 are the same swarm effect. Replacement rolls use the same modifier, do not recurse, and continue until a different effect or No Complication is obtained." }
+  ]
+});
+
+export const LUCERNE_PROVISIONAL_RULES = Object.freeze([
+  "LUCERNE-PROGRESSION-AMB-001 — Reference only: six months is the provisional maximum duration; six completed tracks end the contract early; Bio-Gen Raid occurs only if the sixth track is reached. The printed minimum-intensity discrepancy remains unresolved, and the browser does not administer progression.",
+  "LUCERNE-DEPLOYMENT-AMB-001 — Preserve the printed half-force and 50-percent wording. No rounding, asset-counting, or automated deployment interpretation is imposed.",
+  "LUCERNE-OBJECTIVE-AMB-001 — Rough Up the Place retains the printed ‘50 percent of the opponent’s force’ wording with manual completion. No BV/PV, unit-count, starting-force, or asset qualifier is added.",
+  "LUCERNE-ROLLTWICE-AMB-001 — Apply the same modifier to initial, secondary, and replacement rolls; resolve exactly two secondary effects; reroll secondary 8+ and duplicate actual effects; accept duplicate No Complication; results 5 and 6 are one effect; do not recurse.",
+  "LUCERNE-DUALSWARM-AMB-001 — Each affected player independently generates 1D3 neutral swarms per mapsheet. If both players receive the effect, use 2D3 per mapsheet and keep every center hex unique.",
+  "LUCERNE-ENHANCEDSWARM-AMB-001 — Preserve the printed enhanced-swarm wording. Exact spawn placement and timing, nearest-unit ties, Alpha Strike movement conversion, and additional targeting procedures remain tabletop adjudications."
+]);
+
+export function lucerneCommandModifier(rights = "independent") {
+  return rights === "liaison" ? 1 : rights === "house" ? 2 : rights === "integrated" ? 3 : 0;
+}
+
+function lucerneDie(value) {
+  if (value === "" || value === null || value === undefined) return null;
+  const number = Math.trunc(Number(value));
+  return number >= 1 && number <= 6 ? number : null;
+}
+
+function lucerneEffect(value) {
+  if (value === null) return null;
+  if (value <= 3) return "none";
+  if (value === 4) return 4;
+  if (value === 5 || value === 6) return 5;
+  if (value === 7) return 7;
+  return 8;
+}
+
+function resolveLucerneSecondary(raw, replacements, modifier, duplicateEffect = null) {
+  const candidates = [raw, ...(Array.isArray(replacements) ? replacements : [])];
+  let replacementsUsed = 0;
+  for (let index = 0; index < candidates.length; index += 1) {
+    const die = lucerneDie(candidates[index]);
+    if (die === null) return { effective: null, effect: null, replacementsUsed, needsReplacement: false, pending: true };
+    const effective = die + modifier;
+    const effect = lucerneEffect(effective);
+    if (effect !== 8 && (effect === "none" || effect !== duplicateEffect)) {
+      return { effective, effect, replacementsUsed, needsReplacement: false, pending: false };
+    }
+    if (index > 0 || candidates.length > 1) replacementsUsed += 1;
+  }
+  return { effective: null, effect: null, replacementsUsed, needsReplacement: true, pending: true };
+}
+
+export function resolveLucerneComplications(selection = {}, rights = "independent") {
+  const modifier = lucerneCommandModifier(rights);
+  const initialRaw = lucerneDie(selection.initial);
+  const initial = initialRaw === null ? null : initialRaw + modifier;
+  if (initial === null) return { modifier, initial: null, secondary: [], effects: [], pendingSecondary: false, replacementNeeds: [] };
+  const initialEffect = lucerneEffect(initial);
+  if (initialEffect !== 8) {
+    return { modifier, initial, secondary: [], effects: initialEffect === "none" ? [] : [initialEffect], pendingSecondary: false, replacementNeeds: [] };
+  }
+  const first = resolveLucerneSecondary(selection.secondaryOne, selection.replacementOne, modifier);
+  const duplicateEffect = first.pending || first.effect === "none" ? null : first.effect;
+  const second = resolveLucerneSecondary(selection.secondaryTwo, selection.replacementTwo, modifier, duplicateEffect);
+  const effects = [first.effect, second.effect].filter(effect => effect !== null && effect !== "none");
+  return {
+    modifier,
+    initial,
+    secondary: [first, second],
+    effects,
+    pendingSecondary: first.pending || second.pending,
+    replacementNeeds: [first.needsReplacement, second.needsReplacement]
+  };
+}
+
 export function achernarInitialDefectors(scale = 1) {
   return Math.min(3, Math.max(1, Number(scale) || 1)) * 2;
 }
@@ -1753,7 +1874,36 @@ const gameWorldDuelTrack = {
   sourceRefs: gameWorldDuelBaseVariant.sourceRefs
 };
 
-export const SPECIAL_TRACKS = [gameWorldDuelTrack];
+const bioGenRaidTrack = {
+  id: "bio-gen-raid",
+  name: "Bio-Gen Raid",
+  page: 91,
+  pageRef: "pp. 91–92",
+  summary: "Eclipse Expeditions attacks Bio-Gen’s evacuated research campus, destroys its buildings, and releases enhanced reptile swarms.",
+  setup: [
+    "The Defender (Bio-Gen) selects a short edge as its home edge; the Attacker (Eclipse Expeditions) receives the opposite short home edge.",
+    "The Defender places six Medium Level 2 buildings within 4 hexes (Alpha Strike: 8 inches) of the battlefield center. Each building is immobile (−4 target number modifier) and requires 30 damage (Alpha Strike: 4 damage) to destroy. All civilians have been evacuated.",
+    "Attacker: half of the force enters from its home edge at the start of the track. The remaining force enters from an edge perpendicular to its home edge during the Movement Phase of Turn 2.",
+    "Defender: deploy the entire force before Initiative anywhere on the Defender’s half of the battlefield. At least 50 percent must be within 3 hexes (Alpha Strike: 6 inches) of the designated buildings."
+  ],
+  objectives: [
+    { id: "damage-collateral", name: "Damage the Collateral", side: A, vp: 200, text: "Destroy all the buildings." },
+    { id: "rough-up-place", name: "Rough Up the Place", side: BOTH, vp: 100, text: "Destroy/Cripple at least 50 percent of the opponent’s force." },
+    { id: "seek-destroy", name: "Seek and Destroy", side: D, vp: 200, text: "Destroy/Cripple the Commander." }
+  ],
+  special: [
+    "Enhanced reptile swarms: each destroyed building spawns one enhanced swarm. The source does not further define exact spawn placement or timing beyond that trigger.",
+    "BattleTech enhanced swarm: one hex large and 2 levels high. At the end of the Movement Phase, it moves 3 hexes toward the nearest unit. A unit occupying its hex during the Weapon Attack Phase takes 2D6 damage in 2-point clusters unless an Anti-Infantry (AI) weapon hits that hex. Roll 1D6 for damage direction: 1–4 uses the Front Table; 5–6 uses the Rear Table.",
+    "Alpha Strike enhanced swarm: 2-inch AOE and 2 inches high; it deals 1 damage with a physical attack. The source gives no separate Alpha Strike movement conversion.",
+    "Enhanced swarms otherwise follow the ordinary Lucerne swarm rules: inherited prohibited-terrain and attack-modifier rules, immunity to damage, and AI-hit suppression apply except where the enhanced rules explicitly replace them.",
+    "Enough Chaos: do not roll random Command Complications for Bio-Gen Raid. Building-spawned enhanced swarms still apply.",
+    "Track End: after the end of any turn when at least one side has no units in play, or after the end of Turn 12 (Turn 10 in Alpha Strike).",
+    "Salvage: apply the general salvage rules on p. 31. A player that successfully completes the track may claim battlefield salvage; if neither side succeeds, both sides reclaim their own destroyed or crippled units. No Strike or Objective Raid salvage exception applies."
+  ],
+  sourceRefs: ["Draconis Reach pp. 91–92", "General salvage p. 31", "Commander and shared rules p. 167"]
+};
+
+export const SPECIAL_TRACKS = [gameWorldDuelTrack, bioGenRaidTrack];
 
 const gameWorldResults = [
   { id: "carcassonne", label: "Carcassonne", trackId: "game-world-duel", attacker: "duelist-one", defender: "duelist-two", variant: carcassonneGameWorldVariant },
@@ -1910,6 +2060,55 @@ const leBlancTrack1Variant = leBlancOverlay("objective-raid", {
 });
 
 const leBlancFinalVariant = trackId => leBlancOverlay(trackId);
+
+const lucerneSharedSpecial = [
+  "Successful track completion: a player must complete at least one objective and earn more objective VP than the opponent. Equal VP means neither player successfully completes the track.",
+  "Contract victory — reference only: compare successfully completed tracks when the contract ends; the side with more is the victor and equal totals produce no victor. The browser evaluates only the current tactical track and does not keep campaign success totals.",
+  "Campaign progression — reference only, using official errata: during each of no more than six months, roll 1D6 on the Track Table to determine the number of tracks, then roll to determine the selected unique standard track or tracks; duplicate track-type results produce no track. Bio-Gen Raid is the mandatory sixth played track if that point is reached. The browser does not administer months, duplicates, history, or contract termination.",
+  "Temporary Hires — tactical reference only: the cards below provide unit and pilot information for already-hired units. Consult Draconis Reach pp. 29, 92–93 and official errata for eligibility, availability, costs, bonuses, repairs, and replacement; the browser performs no hiring administration.",
+  "Official Lucerne errata: use the corrected monthly track procedure; select mapsheets with 1D6 on Grasslands Table 1 rather than 2D6; replace the Ronin with Saki; and replace the Spider SDR-7K (752 BV / 27 PV) with the Venom SDR-9KB (769 BV / 28 PV).",
+  ...LUCERNE_PROVISIONAL_RULES
+];
+
+const lucerneReferenceTables = [
+  { title: "Lucerne Mapsheets · corrected 1D6 Grasslands Table 1", headers: ["Roll", "Mapsheet", "Source"], rows: LUCERNE_MAPSHEET_TABLE }
+];
+
+function lucerneOverlay(trackId, { includeComplications = true } = {}) {
+  const base = [...TRACKS, ...SPECIAL_TRACKS].find(track => track.id === trackId);
+  const pageRef = base?.pageRef || "p. " + base?.page;
+  return {
+    setupDetails: [
+      ...(base?.setupDetails || []),
+      "BattleTech mapsheets — official errata: beginning with the Attacker, roll 1D6 on Grasslands Table 1 for every mapsheet required and ignore duplicate results. Scale 1 normally uses one mapsheet; Scales 2–3 normally use two. Any explicit selected-track battlefield footprint takes precedence.",
+      "Alpha Strike terrain: use the base terrain type of the selected mapsheet, or the majority of selected mapsheets, under the p. 154 terrain-placement procedure. Lucerne remains classified as Wooded planetary terrain, but the contract uses the corrected Grasslands mapsheet table."
+    ],
+    special: [...(base?.special || []), ...lucerneSharedSpecial],
+    commandComplications: includeComplications ? LUCERNE_COMMAND_COMPLICATIONS : null,
+    referenceTables: lucerneReferenceTables,
+    temporaryHires: LUCERNE_TEMPORARY_HIRES,
+    temporaryHireNote: "Use these cards only after the players have resolved hiring under Draconis Reach pp. 29 and 92–93. The browser does not determine eligibility, availability, costs, bonuses, repairs, or replacement.",
+    sourceRefs: [
+      "Draconis Reach pp. 90–93 (contracts 906245A–B)",
+      base?.name + " " + pageRef,
+      "Successful tracks pp. 26, 29",
+      "General tactical procedure and salvage pp. 30–31",
+      "Grasslands Mapsheet Table 1 p. 150 and Alpha Strike terrain p. 154",
+      "Shared rules pp. 167–168",
+      "Current official master errata — p. 92 progression and mapsheets; p. 93 Saki and Venom SDR-9KB"
+    ]
+  };
+}
+
+export const LUCERNE_TRACK_RESULTS = Object.freeze([
+  { id: "recon", label: "Recon", trackId: "recon", attacker: "eclipse", defender: "bio-gen", variant: lucerneOverlay("recon") },
+  { id: "breakthrough", label: "Breakthrough", trackId: "breakthrough", attacker: "eclipse", defender: "bio-gen", variant: lucerneOverlay("breakthrough") },
+  { id: "objective-raid", label: "Objective Raid", trackId: "objective-raid", attacker: "eclipse", defender: "bio-gen", variant: lucerneOverlay("objective-raid") },
+  { id: "pushback", label: "Pushback", trackId: "pushback", attacker: "bio-gen", defender: "eclipse", variant: lucerneOverlay("pushback") },
+  { id: "pursuit", label: "Pursuit", trackId: "pursuit", attacker: "bio-gen", defender: "eclipse", variant: lucerneOverlay("pursuit") },
+  { id: "assault", label: "Assault", trackId: "assault", attacker: "eclipse", defender: "bio-gen", variant: lucerneOverlay("assault") },
+  { id: "bio-gen-raid", label: "Bio-Gen Raid · mandatory sixth played track", trackId: "bio-gen-raid", attacker: "eclipse", defender: "bio-gen", variant: lucerneOverlay("bio-gen-raid", { includeComplications: false }) }
+]);
 
 const protectionCommandComplications = {
   ref: "Draconis Reach pp. 30, 111",
@@ -2677,22 +2876,20 @@ export const HOT_SPOTS = [
     name: "Lucerne / PZH2",
     region: "Draconis Combine",
     terrain: "Wooded",
-    source: "Draconis Reach pp. 92–93",
-    note: "The source uses a 1D6 table and may generate a second track. Select the source result for each displayed sequence.",
-    sides: [factionSide("bio-gen", "Bio-Gen", "Corporate"), factionSide("eclipse", "Eclipse Expeditions", "Mercenary")],
-    tracks: [1, 2].map(sequence => ({
-      sequence,
-      label: "Track " + sequence,
-      resultLabel: "Track result (source 1D6)",
-      results: [
-        { id: "recon", label: "1 · Recon", trackId: "recon", attacker: "eclipse", defender: "bio-gen" },
-        { id: "breakthrough", label: "2 · Breakthrough", trackId: "breakthrough", attacker: "eclipse", defender: "bio-gen" },
-        { id: "objective-raid", label: "3 · Objective Raid", trackId: "objective-raid", attacker: "eclipse", defender: "bio-gen" },
-        { id: "pushback", label: "4 · Pushback", trackId: "pushback", attacker: "bio-gen", defender: "eclipse" },
-        { id: "pursuit", label: "5 · Pursuit", trackId: "pursuit", attacker: "eclipse", defender: "bio-gen" },
-        { id: "assault", label: "6 · Assault", trackId: "assault", attacker: "eclipse", defender: "bio-gen" }
-      ]
-    }))
+    source: "Draconis Reach pp. 90–93",
+    note: "Select the current Lucerne tactical outcome directly. Bio-Gen Raid is the mandatory sixth played track if reached, not a seventh campaign battle. Monthly progression, duplicate enforcement, success totals, and contract termination remain reference-only tabletop responsibilities.",
+    campaignState: {
+      kind: "lucerne",
+      title: "Lucerne current-mission setup",
+      sourceRefs: ["Draconis Reach pp. 90–93", "Successful tracks pp. 26, 29", "Current official master errata"]
+    },
+    sides: [factionSide("bio-gen", "Bio-Gen", "Mercenary"), factionSide("eclipse", "Eclipse Expeditions", "Mercenary")],
+    tracks: [{
+      sequence: 1,
+      label: "Selected tactical track",
+      resultLabel: "Lucerne tactical outcome",
+      results: LUCERNE_TRACK_RESULTS
+    }]
   },
   {
     id: "melcher",

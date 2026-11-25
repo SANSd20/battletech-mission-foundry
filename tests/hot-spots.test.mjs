@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { adjustDaharEarnedVp, achernarInitialDefectors, ALTA_VISTA_COMMAND_COMPLICATIONS, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_MAPSHEET_TABLE, DAHAR_PROVISIONAL_RULES, DAHAR_TRACK_RESULTS, evaluateAltaVistaCampaign, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_MAPSHEET_TABLE, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LE_BLANC_TEMPORARY_HIRES, MISSION_OPFOR_OVERRIDES, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, resolveDaharComplications, resolveLeBlancComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
+import { adjustDaharEarnedVp, achernarInitialDefectors, ALTA_VISTA_COMMAND_COMPLICATIONS, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_MAPSHEET_TABLE, DAHAR_PROVISIONAL_RULES, DAHAR_TRACK_RESULTS, evaluateAltaVistaCampaign, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_MAPSHEET_TABLE, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LE_BLANC_TEMPORARY_HIRES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_MAPSHEET_TABLE, LUCERNE_PROVISIONAL_RULES, LUCERNE_TEMPORARY_HIRES, LUCERNE_TRACK_RESULTS, MISSION_OPFOR_OVERRIDES, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
 
 const expected = ["Assault", "Breakthrough", "Defend", "Flank", "Meeting Engagement", "Objective Raid", "Pursuit", "Pushback", "Recon", "Retreat", "Strike"];
 assert.deepEqual(TRACKS.map(track => track.name), expected, "all eleven Draconis Reach standard tracks are present");
@@ -842,7 +842,7 @@ assert.ok(app.includes("availableHotSpotTracks") && app.includes("evaluateAltaVi
 assert.ok(app.includes("data-alta-trial-field") && app.includes("data-alta-root-field"), "Alta Vista campaign controls are wired");
 assert.ok(app.includes("state.mode") && app.includes("renderCampaignState"), "campaign state remains independent of Attacker/Defender/Both display mode");
 assert.ok(css.includes("campaign-wide-field"), "Alta Vista bounded carryover notes have responsive full-width styling");
-assert.match(html, /le-blanc-tactical-scope/, "the current implementation uses a fresh asset cache key");
+assert.match(html, /lucerne-tactical-scope/, "the current implementation uses the Lucerne asset cache key");
 
 const dahar = HOT_SPOTS.find(item => item.id === "dahar-iv");
 assert.ok(dahar, "Dahar IV is available as a Hot Spot");
@@ -915,6 +915,108 @@ assert.match(dahar.note, /tracked outside this tactical browser/i);
 assert.match(dahar.tracks[0].results[0].variant.special.join(" "), /browser does not roll, store, gate, or validate.*duplicate produces no track/i);
 assert.ok(app.includes('"Mercenary": "mercenary-pirate"'), "both Dahar mercenary sides resolve to the Mercenary/Pirate OpFor table");
 assert.ok(css.includes("dahar-tactical") && css.includes("campaign-finalize") && css.includes("adjusted-vp"), "Dahar tactical controls and adjusted scoring have focused responsive styles");
+
+const lucerne = HOT_SPOTS.find(item => item.id === "lucerne");
+assert.ok(lucerne, "Lucerne is available as a Hot Spot");
+assert.equal(lucerne.source, "Draconis Reach pp. 90–93", "Lucerne uses the complete contract source range");
+assert.equal(lucerne.campaignState.kind, "lucerne", "Lucerne exposes bounded current-mission tactical state");
+assert.equal(lucerne.tracks.length, 1, "Lucerne provides independent current-track selection without campaign gating");
+assert.equal(lucerne.tracks[0].results, LUCERNE_TRACK_RESULTS);
+assert.deepEqual(LUCERNE_TRACK_RESULTS.map(result => [result.trackId, result.attacker, result.defender]), [
+  ["recon", "eclipse", "bio-gen"],
+  ["breakthrough", "eclipse", "bio-gen"],
+  ["objective-raid", "eclipse", "bio-gen"],
+  ["pushback", "bio-gen", "eclipse"],
+  ["pursuit", "bio-gen", "eclipse"],
+  ["assault", "eclipse", "bio-gen"],
+  ["bio-gen-raid", "eclipse", "bio-gen"]
+], "all seven Lucerne tactical outcomes use the corrected roles");
+assert.deepEqual(lucerne.sides.map(side => [side.id, side.faction]), [["bio-gen", "Mercenary"], ["eclipse", "Mercenary"]], "both participating Lucerne forces are Mercenary");
+assert.match(lucerne.note, /mandatory sixth played track.*not a seventh campaign battle.*reference-only/i);
+
+assert.deepEqual(LUCERNE_MAPSHEET_TABLE, [
+  ["1", "Grassland #1", "Beginner Box"],
+  ["2", "Grassland #2", "A Game of Armored Combat"],
+  ["3", "Grassland #3", "A Game of Armored Combat"],
+  ["4", "Woodland", "MapPack: Grasslands"],
+  ["5", "Open Terrain #2", "MapPack: Grasslands"],
+  ["6", "Open Terrain #3", "MapPack: Grasslands"]
+], "Lucerne uses corrected 1D6 Grasslands Table 1");
+for (const result of LUCERNE_TRACK_RESULTS) {
+  assert.equal(result.variant.referenceTables[0].rows, LUCERNE_MAPSHEET_TABLE, result.label + " exposes the corrected mapsheet table");
+  assert.match(result.variant.setupDetails.join(" "), /beginning with the Attacker.*1D6.*ignore duplicate.*Scale 1.*one mapsheet.*Scales 2–3.*two/i);
+  assert.match(result.variant.setupDetails.join(" "), /Alpha Strike terrain.*p\. 154.*Wooded planetary terrain.*Grasslands mapsheet table/i);
+  assert.equal(result.variant.temporaryHires, LUCERNE_TEMPORARY_HIRES);
+  assert.match(result.variant.temporaryHireNote, /pp\. 29 and 92–93.*eligibility.*costs.*repairs.*replacement/i);
+  assert.match(result.variant.sourceRefs.join(" "), /pp\. 90–93.*p\. 150.*p\. 154.*official master errata/i);
+}
+for (const result of LUCERNE_TRACK_RESULTS.slice(0, 6)) assert.equal(result.variant.commandComplications, LUCERNE_COMMAND_COMPLICATIONS, result.label + " uses Lucerne complications");
+assert.equal(LUCERNE_TRACK_RESULTS[6].variant.commandComplications, null, "Bio-Gen Raid excludes random Command Complications");
+
+assert.deepEqual(LUCERNE_TEMPORARY_HIRES.map(hire => [hire.name, hire.unit, hire.bv, hire.pv, hire.gunnery, hire.piloting, hire.alphaStrikeSkill, hire.edge, hire.abilities]), [
+  ["Saki", "Venom SDR-9KB", "769", "28", "3", "2", "3", "3", "Jumping Jack Edge Ability"],
+  ["Steve Kendricks", "Firefly FFL-5A", "996", "26", "3", "3", "3", "3", "Cautious Edge Ability"]
+], "Lucerne Temporary Hire cards use source and errata-corrected values");
+assert.match(LUCERNE_TEMPORARY_HIRES[0].source, /official errata.*Ronin.*Spider SDR-7K/i);
+
+const bioGenRaid = SPECIAL_TRACKS.find(track => track.id === "bio-gen-raid");
+assert.ok(bioGenRaid, "Bio-Gen Raid is a standalone custom track");
+assert.equal(bioGenRaid.pageRef, "pp. 91–92");
+assert.match(bioGenRaid.setup.join(" "), /Defender.*short edge.*opposite short.*six Medium Level 2 buildings.*4 hexes.*8 inches/i);
+assert.match(bioGenRaid.setup.join(" "), /immobile.*−4 target number.*30 damage.*4 damage/i);
+assert.match(bioGenRaid.setup.join(" "), /half of the force.*home edge.*start of the track.*remaining force.*perpendicular.*Turn 2/i);
+assert.match(bioGenRaid.setup.join(" "), /entire force before Initiative.*Defender’s half.*At least 50 percent.*3 hexes.*6 inches/i);
+assert.deepEqual(bioGenRaid.objectives.map(({ id, side, vp, text }) => [id, side, vp, text]), [
+  ["damage-collateral", "attacker", 200, "Destroy all the buildings."],
+  ["rough-up-place", "both", 100, "Destroy/Cripple at least 50 percent of the opponent’s force."],
+  ["seek-destroy", "defender", 200, "Destroy/Cripple the Commander."]
+], "Bio-Gen Raid objectives remain manual and preserve the printed wording and VP");
+const bioGenRules = bioGenRaid.special.join(" ");
+assert.match(bioGenRules, /Each destroyed building spawns one enhanced swarm/i);
+assert.match(bioGenRules, /one hex large and 2 levels high.*moves 3 hexes.*nearest unit.*Weapon Attack Phase.*2D6.*2-point clusters.*Anti-Infantry.*Front Table.*Rear Table/i);
+assert.match(bioGenRules, /Alpha Strike.*2-inch AOE.*1 damage.*physical attack.*no separate Alpha Strike movement conversion/i);
+assert.match(bioGenRules, /Enough Chaos.*do not roll random Command Complications/i);
+assert.match(bioGenRules, /Turn 12.*Turn 10 in Alpha Strike/i);
+assert.match(bioGenRules, /general salvage rules on p\. 31.*No Strike or Objective Raid salvage exception/i);
+
+assert.deepEqual(LUCERNE_COMMAND_COMPLICATIONS.rows.map(row => row.roll), ["1–3", "4", "5–6", "7", "8+"]);
+assert.match(LUCERNE_COMMAND_COMPLICATIONS.note, /standard tracks.*independently.*Independent \+0.*Liaison \+1.*House \+2.*Integrated \+3.*Bio-Gen Raid.*Enough Chaos/i);
+assert.match(LUCERNE_COMMAND_COMPLICATIONS.rows[1].text, /−2 Initiative.*first two turns/i);
+assert.match(LUCERNE_COMMAND_COMPLICATIONS.rows[2].text, /1D3 neutral swarms per mapsheet.*central hex.*adjacent hex.*1 level high.*6-inch AOE.*may not share.*2 hexes.*4 inches.*level 3\+ hills.*depth 2\+ water.*non-energy.*energy.*Asset.*1D6.*0\* damage.*immune.*Anti-Infantry/i);
+assert.match(LUCERNE_COMMAND_COMPLICATIONS.rows[3].text, /Round 3.*weapon attacks.*Piloting Skill.*bog down/i);
+assert.match(LUCERNE_COMMAND_COMPLICATIONS.rows[4].text, /exactly two secondary.*same Command Rights modifier.*secondary 8\+.*duplicate actual.*duplicate No Complication.*5 and 6.*do not recurse/i);
+
+for (const [rights, modifier] of [["independent", 0], ["liaison", 1], ["house", 2], ["integrated", 3]]) {
+  assert.equal(resolveLucerneComplications({ initial: 4 }, rights).initial, 4 + modifier, rights + " uses the correct Lucerne modifier");
+}
+assert.deepEqual(resolveLucerneComplications({ initial: 4 }, "independent").effects, [4], "modified 4 resolves Conflicting Orders");
+assert.deepEqual(resolveLucerneComplications({ initial: 5 }, "independent").effects, [5], "modified 5 resolves reptile swarms");
+assert.deepEqual(resolveLucerneComplications({ initial: 6 }, "independent").effects, [5], "modified 6 resolves the same reptile swarm effect");
+assert.deepEqual(resolveLucerneComplications({ initial: 6 }, "liaison").effects, [7], "modified 7 resolves Heavy Rainfall");
+assert.deepEqual(resolveLucerneComplications({ initial: 5, secondaryOne: 1, secondaryTwo: 2 }, "integrated").effects, [4, 5], "Roll Twice resolves exactly two independently modified secondary effects");
+assert.deepEqual(resolveLucerneComplications({ initial: 5, secondaryOne: 2, secondaryTwo: 3, replacementTwo: [4] }, "integrated").effects, [5, 7], "duplicate swarm results 5 and 6 require a differently modified replacement");
+assert.deepEqual(resolveLucerneComplications({ initial: 5, secondaryOne: 5, replacementOne: [1], secondaryTwo: 6, replacementTwo: [1, 2] }, "integrated").effects, [4, 5], "secondary 8+ and duplicate actual effects use non-recursive replacement rolls");
+const duplicateNoComplication = resolveLucerneComplications({ initial: 6, secondaryOne: 1, secondaryTwo: 1 }, "house");
+assert.deepEqual(duplicateNoComplication.effects, [], "duplicate No Complication results are accepted");
+assert.equal(duplicateNoComplication.pendingSecondary, false);
+const pendingReplacement = resolveLucerneComplications({ initial: 5, secondaryOne: 5, secondaryTwo: 1 }, "integrated");
+assert.deepEqual(pendingReplacement.replacementNeeds, [true, false], "secondary 8+ prompts for a replacement without recursion");
+assert.equal(pendingReplacement.pendingSecondary, true);
+
+assert.equal(LUCERNE_PROVISIONAL_RULES.length, 6, "all six approved Lucerne ambiguity dispositions are presented");
+for (const id of ["LUCERNE-PROGRESSION-AMB-001", "LUCERNE-DEPLOYMENT-AMB-001", "LUCERNE-OBJECTIVE-AMB-001", "LUCERNE-ROLLTWICE-AMB-001", "LUCERNE-DUALSWARM-AMB-001", "LUCERNE-ENHANCEDSWARM-AMB-001"]) {
+  assert.ok(LUCERNE_PROVISIONAL_RULES.some(rule => rule.includes(id)), id + " is retained as a provisional disposition");
+}
+for (const term of ["renderLucerneMissionState", "data-lucerne-rights", "data-lucerne-complication", "data-lucerne-replacements", "resolveLucerneComplications", "data-reset-lucerne", "Enough Chaos", "Current-track ordinary swarm quantity", "Shared battlefield condition", "Recon Deny remains projected until Turn 8", "No campaign history"]) {
+  assert.ok(app.includes(term), "Lucerne browser behavior includes " + term);
+}
+assert.match(app, /Bio-Gen Retainer.*CEO Marie Valentina.*Garrison\/Retainer\/Defense.*Integrated Command/);
+assert.match(app, /Eclipse Expeditions Special Operations.*Guildmaster Phil Newsted.*Expedition\/Raid.*Independent Command/);
+assert.match(app, /both participating forces are Mercenary.*Mercenary\/Pirate OpFor table/i);
+assert.match(app, /same completed-objective|Current score: Attacker|currently successfully completes the track/);
+assert.match(app, /renderTemporaryHires\(referenceTrack\.temporaryHires, referenceTrack\.temporaryHireNote\)/, "Temporary Hire cards accept contract-aware hiring guidance");
+assert.match(html, /lucerne-tactical-scope/, "Lucerne uses a fresh browser asset cache key");
+assert.ok(css.includes("campaign-field input") && css.includes("hire-card-grid") && css.includes("@media"), "Lucerne controls and reused Temporary Hire cards retain responsive styling");
 
 for (const hotSpot of HOT_SPOTS) {
   assert.ok(hotSpot.sides.length >= 2, hotSpot.name + " has opposing sides");

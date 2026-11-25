@@ -1,4 +1,4 @@
-import { adjustDaharEarnedVp, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_PROVISIONAL_RULES, evaluateAltaVistaCampaign, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, MISSION_OPFOR_OVERRIDES, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, RECON_DENY_ATTACKER_OBJECTIVE_IDS, resolveDaharComplications, resolveLeBlancComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=le-blanc-tactical-scope";
+import { adjustDaharEarnedVp, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_PROVISIONAL_RULES, evaluateAltaVistaCampaign, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_PROVISIONAL_RULES, MISSION_OPFOR_OVERRIDES, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, RECON_DENY_ATTACKER_OBJECTIVE_IDS, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=lucerne-tactical-scope";
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -31,8 +31,31 @@ const state = {
   vpSelections: {},
   campaignState: {},
   daharMission: null,
-  leBlancMission: null
+  leBlancMission: null,
+  lucerneMission: null
 };
+
+function emptyLucerneComplication() {
+  return { initial: null, secondaryOne: null, secondaryTwo: null, replacementOne: [], replacementTwo: [] };
+}
+
+function newLucerneMissionState() {
+  return {
+    commandRights: { "bio-gen": "integrated", eclipse: "independent" },
+    complications: { "bio-gen": emptyLucerneComplication(), eclipse: emptyLucerneComplication() },
+    missionKey: null
+  };
+}
+
+function lucerneMissionState() {
+  if (!state.lucerneMission) state.lucerneMission = newLucerneMissionState();
+  return state.lucerneMission;
+}
+
+function clearLucerneComplications() {
+  if (!state.lucerneMission) return;
+  state.lucerneMission.complications = { "bio-gen": emptyLucerneComplication(), eclipse: emptyLucerneComplication() };
+}
 
 function newLeBlancMissionState() {
   return {
@@ -492,6 +515,74 @@ function renderLeBlancMissionState(container) {
     '<div class="reference-citation">Source: Draconis Reach pp. 86–89 · successful tracks pp. 26, 29 · Command Rights p. 28 · complications pp. 30, 89 · current official master errata</div></section>';
 }
 
+function lucerneEffectName(effect) {
+  return effect === 4 ? "Conflicting Orders" : effect === 5 ? "Voracious Reptile Swarms" : effect === 7 ? "Heavy Rainfall" : "No Complication";
+}
+
+function lucerneMapCount() {
+  if (currentTrack()?.id === "pursuit") return state.scale >= 3 ? 4 : 2;
+  return state.scale === 1 ? 1 : 2;
+}
+
+function lucerneComplicationControls(sideId, mission) {
+  const side = currentHotSpot().sides.find(item => item.id === sideId);
+  const selection = mission.complications[sideId];
+  const rights = mission.commandRights[sideId];
+  const result = resolveLucerneComplications(selection, rights);
+  const secondary = result.initial >= 8
+    ? '<label class="campaign-field"><span>' + esc(side.name) + ' secondary roll 1</span><select data-lucerne-complication="secondaryOne" data-lucerne-side="' + esc(sideId) + '">' + leBlancOptions([["1", "1"], ["2", "2"], ["3", "3"], ["4", "4"], ["5", "5"], ["6", "6"]], selection.secondaryOne === null ? "" : String(selection.secondaryOne), "Enter 1D6") + '</select></label><label class="campaign-field"><span>' + esc(side.name) + ' secondary roll 2</span><select data-lucerne-complication="secondaryTwo" data-lucerne-side="' + esc(sideId) + '">' + leBlancOptions([["1", "1"], ["2", "2"], ["3", "3"], ["4", "4"], ["5", "5"], ["6", "6"]], selection.secondaryTwo === null ? "" : String(selection.secondaryTwo), "Enter 1D6") + '</select></label>' +
+      '<label class="campaign-field"><span>' + esc(side.name) + ' replacement rolls for result 1</span><input type="text" data-lucerne-replacements="replacementOne" data-lucerne-side="' + esc(sideId) + '" value="' + esc(selection.replacementOne.join(", ")) + '" placeholder="Only when prompted, e.g. 2, 5"><small>Enter comma-separated unmodified 1D6 rolls. Used in order for secondary 8+ results.</small></label>' +
+      '<label class="campaign-field"><span>' + esc(side.name) + ' replacement rolls for result 2</span><input type="text" data-lucerne-replacements="replacementTwo" data-lucerne-side="' + esc(sideId) + '" value="' + esc(selection.replacementTwo.join(", ")) + '" placeholder="Only when prompted, e.g. 2, 5"><small>Used for secondary 8+ or duplicate actual effects; the same modifier applies.</small></label>'
+    : "";
+  const effectNames = result.effects.map(lucerneEffectName);
+  const replacementPrompt = result.replacementNeeds.some(Boolean) ? " · replacement roll required" : "";
+  const status = result.initial === null || result.pendingSecondary
+    ? "Pending" + replacementPrompt
+    : effectNames.length ? effectNames.join(" + ") : "No Complication";
+  return '<label class="campaign-field"><span>' + esc(side.name) + ' initial complication roll</span><select data-lucerne-complication="initial" data-lucerne-side="' + esc(sideId) + '">' + leBlancOptions([["1", "1"], ["2", "2"], ["3", "3"], ["4", "4"], ["5", "5"], ["6", "6"]], selection.initial === null ? "" : String(selection.initial), "Enter 1D6") + '</select></label>' + secondary + '<div class="campaign-field campaign-static-field"><span>' + esc(side.name) + ' effective complication</span><strong>Modifier +' + result.modifier + ' · ' + esc(status) + '</strong></div>';
+}
+
+function lucerneCurrentResultText() {
+  const resolved = resolvedHotSpotStep();
+  const attackerVp = trackScore("attacker");
+  const defenderVp = trackScore("defender");
+  if (state.trackId === "recon") {
+    return "Current projected score: Attacker " + attackerVp + " VP · Defender " + defenderVp + " VP. Recon Deny remains projected until Turn 8; determine successful completion after the final objective states are adjudicated.";
+  }
+  const attackerSucceeded = completedObjectiveCount("attacker") > 0 && attackerVp > defenderVp;
+  const defenderSucceeded = completedObjectiveCount("defender") > 0 && defenderVp > attackerVp;
+  const successful = attackerSucceeded ? sideById(resolved?.attacker)?.name : defenderSucceeded ? sideById(resolved?.defender)?.name : "Neither side";
+  return "Current score: Attacker " + attackerVp + " VP · Defender " + defenderVp + " VP. " + successful + " currently successfully completes the track.";
+}
+
+function renderLucerneMissionState(container) {
+  const mission = lucerneMissionState();
+  const bioGenRaid = currentTrack()?.id === "bio-gen-raid";
+  const rightsFields = ["bio-gen", "eclipse"].map(sideId => {
+    const side = currentHotSpot().sides.find(item => item.id === sideId);
+    return '<label class="campaign-field"><span>' + esc(side.name) + ' Command Rights</span><select data-lucerne-rights="' + esc(sideId) + '">' + leBlancOptions([["independent", "Independent +0"], ["liaison", "Liaison +1"], ["house", "House +2"], ["integrated", "Integrated +3"]], mission.commandRights[sideId]) + '</select></label>';
+  }).join("");
+  const complicationResults = ["bio-gen", "eclipse"].map(sideId => resolveLucerneComplications(mission.complications[sideId], mission.commandRights[sideId]));
+  const swarmPlayers = complicationResults.filter(result => result.effects.includes(5)).length;
+  const swarmSummary = !bioGenRaid && swarmPlayers
+    ? '<div class="campaign-state-summary"><strong>Current-track ordinary swarm quantity</strong><span>' + swarmPlayers + 'D3 neutral swarms per mapsheet · ' + (swarmPlayers * lucerneMapCount()) + ' independent 1D3 quantity roll' + (swarmPlayers * lucerneMapCount() === 1 ? "" : "s") + ' across ' + lucerneMapCount() + ' mapsheet' + (lucerneMapCount() === 1 ? "" : "s") + ' at Scale ' + state.scale + '.</span><span>No two swarms may share a center hex. Placement, movement, attacks, and damage remain tabletop procedures.</span></div>'
+    : "";
+  const rainfall = !bioGenRaid && complicationResults.some(result => result.effects.includes(7))
+    ? '<div class="campaign-state-summary"><strong>Shared battlefield condition</strong><span>Heavy Rainfall begins on Round 3 and applies battlefield-wide, regardless of which player generated it.</span></div>'
+    : "";
+  const complicationFields = bioGenRaid
+    ? '<div class="campaign-state-summary"><strong>Enough Chaos</strong><span>Bio-Gen Raid does not roll random Command Complications. Any standard-track complication state was cleared when this track was selected. Building-spawned enhanced swarms still apply.</span></div>'
+    : '<div class="campaign-fields"><div class="campaign-track-label">Current-track Command Complications</div>' + lucerneComplicationControls("bio-gen", mission) + lucerneComplicationControls("eclipse", mission) + '</div>' + swarmSummary + rainfall;
+  container.innerHTML = '<section class="campaign-state-card lucerne-tactical"><div class="campaign-state-head"><div><div class="panel-kicker">CURRENT MISSION TACTICAL SETUP</div><h3>Lucerne · ' + esc(currentTrack()?.name || "Track pending") + '</h3></div><button type="button" class="campaign-reset-button" data-reset-lucerne="true">Reset Lucerne setup</button></div>' +
+    '<p class="campaign-state-note">Configure only the selected tactical track. Both participating forces are Mercenary and use the Mercenary/Pirate OpFor table. Command Rights and complication rolls are independent for each contract side.</p>' +
+    '<div class="campaign-state-summary"><strong>Contract references</strong><span>906245A · Bio-Gen Retainer · Bio-Gen Industries · CEO Marie Valentina · Garrison/Retainer/Defense · default Integrated Command</span><span>906245B · Eclipse Expeditions Special Operations · Eclipse Expeditions LLC · Guildmaster Phil Newsted · Expedition/Raid · default Independent Command</span><span>PZH2, Lucerne · primary planetary terrain Wooded · six months · Intensity 2–6 tracks</span></div>' +
+    '<div class="campaign-fields"><div class="campaign-track-label">Independent Command Rights</div>' + rightsFields + '</div>' + complicationFields +
+    '<div class="campaign-state-summary"><strong>Current-track successful completion</strong><span>' + esc(lucerneCurrentResultText()) + '</span><span>A player succeeds only after completing at least one objective and earning more VP than the opponent. Equal VP means neither succeeds.</span></div>' +
+    '<div class="campaign-state-summary"><strong>Campaign progression and contract victory — reference only</strong><span>Use the corrected monthly procedure and unique-track rule. Bio-Gen Raid is the mandatory sixth played track if reached, not a seventh battle. The provisional maximum duration is six months; six played tracks end the contract early.</span><span>The side with more successfully completed tracks wins; equal totals produce no victor. The browser does not track months, duplicates, history, success totals, or overall victory.</span></div>' +
+    '<div class="campaign-state-summary"><strong>Approved ambiguity dispositions</strong>' + LUCERNE_PROVISIONAL_RULES.map(rule => '<span class="campaign-ruling">' + esc(rule) + '</span>').join("") + '</div>' +
+    '<div class="reference-citation">Source: Draconis Reach pp. 90–93 · successful tracks pp. 26, 29 · Command Rights p. 28 · complications pp. 30, 92–93 · current official master errata</div></section>';
+}
+
 function selectedWinner(sequence) {
   return state.winnerSelections[winnerKey(sequence)] || "";
 }
@@ -536,6 +627,12 @@ function syncHotSpotState() {
     const mission = leBlancMissionState();
     const missionKey = String(step?.sequence || "") + "::" + String(resolved?.trackId || "pending");
     if (mission.missionKey !== null && mission.missionKey !== missionKey) clearLeBlancComplications();
+    mission.missionKey = missionKey;
+  }
+  if (hotSpot.id === "lucerne") {
+    const mission = lucerneMissionState();
+    const missionKey = String(resolved?.trackId || "pending");
+    if (mission.missionKey !== null && mission.missionKey !== missionKey) clearLucerneComplications();
     mission.missionKey = missionKey;
   }
   state.trackId = resolved?.unresolved ? null : (resolved?.trackId || null);
@@ -820,6 +917,10 @@ function renderCampaignState() {
     renderLeBlancMissionState(container);
     return;
   }
+  if (hotSpot.id === "lucerne") {
+    renderLucerneMissionState(container);
+    return;
+  }
   const definition = campaignDefinition(hotSpot);
   if (!definition) {
     container.innerHTML = "";
@@ -915,10 +1016,10 @@ function renderCommandComplications(table) {
   return '<div class="reference-section command-complications-section"><div class="panel-kicker">COMMAND COMPLICATIONS</div><p class="reference-copy">' + esc(table.note) + '</p><div class="shared-rule-table-wrap"><table class="shared-rule-table command-complications-table"><thead><tr><th scope="col">1D6</th><th scope="col">Complication and effect</th></tr></thead><tbody>' + rows + '</tbody></table></div><div class="reference-citation">Source: ' + esc(table.ref) + '</div></div>';
 }
 
-function renderTemporaryHires(hires) {
+function renderTemporaryHires(hires, note = "Use these cards only after the players have resolved hiring under Draconis Reach pp. 29 and 89. The browser does not determine eligibility, validate force limits, collect corrected Support Point costs, or administer repairs and replacement.") {
   if (!hires?.length) return "";
   const cards = hires.map(hire => '<article class="hire-reference-card"><div class="hire-card-head"><span>NAMED TEMPORARY HIRE</span><h4>' + esc(hire.name) + '</h4><p>' + esc(hire.identity) + '</p></div><div class="hire-card-unit">' + esc(hire.unit) + '</div><div class="hire-card-divider"></div><dl><div><dt>Battle Value</dt><dd>' + esc(hire.bv) + '</dd></div><div><dt>Point Value</dt><dd>' + esc(hire.pv) + '</dd></div></dl><div class="hire-card-divider"></div><dl><div><dt>Gunnery</dt><dd>' + esc(hire.gunnery) + '</dd></div><div><dt>Piloting</dt><dd>' + esc(hire.piloting) + '</dd></div><div><dt>Alpha Strike Skill</dt><dd>' + esc(hire.alphaStrikeSkill) + '</dd></div><div><dt>Edge tokens</dt><dd>' + esc(hire.edge) + '</dd></div></dl><div class="hire-card-divider"></div><div class="hire-card-note"><strong>Special abilities</strong><span>' + esc(hire.abilities) + '</span></div><div class="hire-card-note"><strong>Tactical restriction</strong><span>' + esc(hire.restriction) + '</span></div><div class="hire-card-source">' + esc(hire.source) + '</div></article>').join("");
-  return '<div class="reference-section temporary-hire-section"><div class="panel-kicker">NAMED TEMPORARY HIRES · TACTICAL REFERENCE ONLY</div><p class="reference-copy">Use these cards only after the players have resolved hiring under Draconis Reach pp. 29 and 89. The browser does not determine eligibility, validate force limits, collect corrected Support Point costs, or administer repairs and replacement.</p><div class="hire-card-grid">' + cards + '</div></div>';
+  return '<div class="reference-section temporary-hire-section"><div class="panel-kicker">NAMED TEMPORARY HIRES · TACTICAL REFERENCE ONLY</div><p class="reference-copy">' + esc(note) + '</p><div class="hire-card-grid">' + cards + '</div></div>';
 }
 
 function renderReference() {
@@ -950,7 +1051,7 @@ function renderReference() {
   const objectives = renderReferenceObjectives(referenceTrack.objectives, referenceTrack);
   const special = referenceTrack.special.map(item => "<li>" + esc(item) + "</li>").join("");
   const commandComplications = renderCommandComplications(referenceTrack.commandComplications);
-  const temporaryHires = renderTemporaryHires(referenceTrack.temporaryHires);
+  const temporaryHires = renderTemporaryHires(referenceTrack.temporaryHires, referenceTrack.temporaryHireNote);
   const referenceTables = (referenceTrack.referenceTables || []).map(table => '<div class="reference-section"><div class="panel-kicker">' + esc(table.title) + '</div>' + renderGeneratorTable("", table) + '</div>').join("");
   const sourceReferenceText = referenceTrack.sourceRefs?.join(" · ") || SOURCES.primary + " · selected track " + pageReference;
   const scaleSection = hotSpot.hideScaleSelector ? "" : '<div class="reference-section scale-section"><div class="panel-kicker">SCALE ' + esc(String(state.scale)) + ' VIEW</div><ul class="rule-list">' + scaleNotesMarkup + "</ul></div>";
@@ -1057,6 +1158,7 @@ function renderAll() {
 
 function resetTrack() {
   if (currentHotSpot().id === "dahar-iv") state.daharMission = newDaharMissionState();
+  if (currentHotSpot().id === "lucerne") state.lucerneMission = newLucerneMissionState();
   const prefix = state.hotSpotId + "::";
   Object.keys(state.progress).filter(key => key.startsWith(prefix)).forEach(key => delete state.progress[key]);
   Object.keys(state.vpSelections).filter(key => key.startsWith(prefix)).forEach(key => delete state.vpSelections[key]);
@@ -1176,8 +1278,40 @@ function updateLeBlancMissionField(target) {
   return true;
 }
 
+function updateLucerneMissionField(target) {
+  if (currentHotSpot().id !== "lucerne") return false;
+  const mission = lucerneMissionState();
+  const rightsSide = target.dataset.lucerneRights;
+  if (rightsSide) {
+    mission.commandRights[rightsSide] = target.value;
+    return true;
+  }
+  const complicationField = target.dataset.lucerneComplication;
+  const replacementField = target.dataset.lucerneReplacements;
+  const side = target.dataset.lucerneSide;
+  if (!side || (!complicationField && !replacementField)) return false;
+  if (replacementField) {
+    mission.complications[side][replacementField] = target.value.split(",").map(value => Number(value.trim())).filter(value => Number.isInteger(value) && value >= 1 && value <= 6);
+    return true;
+  }
+  mission.complications[side][complicationField] = target.value === "" ? null : Number(target.value);
+  if (complicationField === "initial") {
+    mission.complications[side].secondaryOne = null;
+    mission.complications[side].secondaryTwo = null;
+    mission.complications[side].replacementOne = [];
+    mission.complications[side].replacementTwo = [];
+  }
+  if (complicationField === "secondaryOne") mission.complications[side].replacementOne = [];
+  if (complicationField === "secondaryTwo") mission.complications[side].replacementTwo = [];
+  return true;
+}
+
 $("#hotspot-campaign-state").addEventListener("input", event => {
   if (updateAchernarCampaignField(event.target)) return;
+  if (event.target.dataset.lucerneReplacements) {
+    updateLucerneMissionField(event.target);
+    return;
+  }
   updateAltaVistaCampaignField(event.target);
 });
 
@@ -1198,6 +1332,10 @@ $("#hotspot-campaign-state").addEventListener("change", event => {
     renderAll();
     return;
   }
+  if (updateLucerneMissionField(event.target)) {
+    renderAll();
+    return;
+  }
   const field = event.target.dataset.campaignField;
   const sequence = event.target.dataset.campaignSequence;
   if (!field || !sequence) return;
@@ -1214,6 +1352,13 @@ $("#hotspot-campaign-state").addEventListener("click", event => {
   if (resetLeBlanc) {
     if (!window.confirm("Reset the current Le Blanc tactical setup?")) return;
     state.leBlancMission = newLeBlancMissionState();
+    renderAll();
+    return;
+  }
+  const resetLucerne = event.target.closest("[data-reset-lucerne]");
+  if (resetLucerne) {
+    if (!window.confirm("Reset the current Lucerne tactical setup?")) return;
+    state.lucerneMission = newLucerneMissionState();
     renderAll();
     return;
   }
@@ -1308,7 +1453,7 @@ $("#objective-body").addEventListener("click", event => {
   setProgress(objective, side, current + (button.dataset.action === "increment" ? 1 : -1));
   if (currentHotSpot().id === "dahar-iv") daharMissionState().finalized = false;
   renderTracker();
-  if (["dahar-iv", "le-blanc"].includes(currentHotSpot().id)) renderCampaignState();
+  if (["dahar-iv", "le-blanc", "lucerne"].includes(currentHotSpot().id)) renderCampaignState();
 });
 
 $("#objective-body").addEventListener("change", event => {
@@ -1320,7 +1465,7 @@ $("#objective-body").addEventListener("change", event => {
   if (input.dataset.vpObjective) setVp(objective, input.dataset.vpSide, input.value);
   if (currentHotSpot().id === "dahar-iv") daharMissionState().finalized = false;
   renderTracker();
-  if (["dahar-iv", "le-blanc"].includes(currentHotSpot().id)) renderCampaignState();
+  if (["dahar-iv", "le-blanc", "lucerne"].includes(currentHotSpot().id)) renderCampaignState();
 });
 
 renderAll();
