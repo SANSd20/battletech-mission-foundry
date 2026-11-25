@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { achernarInitialDefectors, ALTA_VISTA_COMMAND_COMPLICATIONS, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, evaluateAltaVistaCampaign, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
+import { adjustDaharEarnedVp, achernarInitialDefectors, ALTA_VISTA_COMMAND_COMPLICATIONS, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_MAPSHEET_TABLE, DAHAR_PROVISIONAL_RULES, DAHAR_TRACK_RESULTS, evaluateAltaVistaCampaign, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, resolveDaharComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
 
 const expected = ["Assault", "Breakthrough", "Defend", "Flank", "Meeting Engagement", "Objective Raid", "Pursuit", "Pushback", "Recon", "Retreat", "Strike"];
 assert.deepEqual(TRACKS.map(track => track.name), expected, "all eleven Draconis Reach standard tracks are present");
@@ -797,7 +797,79 @@ assert.ok(app.includes("availableHotSpotTracks") && app.includes("evaluateAltaVi
 assert.ok(app.includes("data-alta-trial-field") && app.includes("data-alta-root-field"), "Alta Vista campaign controls are wired");
 assert.ok(app.includes("state.mode") && app.includes("renderCampaignState"), "campaign state remains independent of Attacker/Defender/Both display mode");
 assert.ok(css.includes("campaign-wide-field"), "Alta Vista bounded carryover notes have responsive full-width styling");
-assert.match(html, /alta-vista-correction/, "Alta Vista implementation uses a fresh asset cache key");
+assert.match(html, /dahar-tactical-scope/, "the current implementation uses a fresh asset cache key");
+
+const dahar = HOT_SPOTS.find(item => item.id === "dahar-iv");
+assert.ok(dahar, "Dahar IV is available as a Hot Spot");
+assert.equal(dahar.source, "Draconis Reach pp. 82–85");
+assert.equal(dahar.campaignState, undefined, "Dahar does not expose campaign-management state");
+assert.deepEqual(dahar.sides.map(side => [side.id, side.faction, side.contract, side.employerAlignment]), [
+  ["garrison", "Mercenary", "105112A", "Federated Suns"],
+  ["raid", "Mercenary", "105112B", "Draconis Combine"]
+]);
+assert.deepEqual(DAHAR_TRACK_RESULTS.map(result => [result.roll, result.trackId, result.attacker, result.defender]), [
+  [1, "recon", "raid", "garrison"],
+  [2, "flank", "raid", "garrison"],
+  [3, "strike", "raid", "garrison"],
+  [4, "meeting-engagement", "garrison", "raid"],
+  [5, "assault", "garrison", "raid"],
+  [6, "retreat", "garrison", "raid"]
+]);
+assert.equal(dahar.tracks.length, 1, "Dahar exposes one independently selectable current tactical mission");
+assert.equal(dahar.tracks[0].label, "Selected Mission Table result");
+assert.equal(dahar.tracks[0].resultLabel, "Track to play (source 1D6 result)");
+for (const opportunity of dahar.tracks) {
+  assert.equal(opportunity.results.length, 6);
+  for (const result of opportunity.results) {
+    assert.equal(result.variant.commandComplications, DAHAR_COMMAND_COMPLICATIONS);
+    assert.equal(result.variant.referenceTables.length, 2);
+    assert.match(result.variant.setupDetails.join(" "), /Dahar mapsheets.*specific standard-track battlefield dimension.*Repurposed Equipment.*two-thirds.*three per Scale/i);
+    assert.match(result.variant.special.join(" "), /Successful track completion.*reference only.*two consecutive.*does not evaluate contract victory.*105112A.*105112B.*20%/i);
+    assert.match(result.variant.sourceRefs.join(" "), /pp\. 82–85.*pp\. 26, 29.*p\. 82 Salvage Rights 20%/i);
+  }
+}
+assert.deepEqual(DAHAR_MAPSHEET_TABLE.map(row => row[1]), ["Mine #1", "Mine #2", "Badlands #1", "Badlands #2", "Washout #1", "Sand Drift #2"]);
+assert.deepEqual(DAHAR_INDUSTRIALMECH_TABLE, [
+  ["2", "HMX-3M Exo HaulerMech MOD", "108", "5"],
+  ["3", "SC XI-M-B Powerman HaulerMech MOD", "277", "11"],
+  ["4", "CON-7M Carbine ConstructionMech MOD", "306", "8"],
+  ["5", "RCL-Z1M Deep Lord MilitiaMech", "715", "21"],
+  ["6", "SC CV-M StrongArm ConstructionMech MOD", "315", "9"],
+  ["7", "DTM-1M Burrower MiningMech MOD", "556", "18"],
+  ["8", "DVM-2M Ground Pounder MiningMech MOD", "548", "18"],
+  ["9", "RCL-4M-B Dig Lord MiningMech MOD", "699", "22"],
+  ["10", "CON-9M Carbine ConstructionMech MOD", "289", "10"],
+  ["11", "HCL-1MM Heavy Lifter MilitiaMech", "915", "23"],
+  ["12", "FLN-366-M St. Florian FireMech MOD", "1,266", "30"]
+]);
+assert.equal(DAHAR_COMMAND_COMPLICATIONS.rows.length, 6);
+assert.equal(DAHAR_PROVISIONAL_RULES.length, 3);
+
+for (const [rights, modifier] of [["independent", 0], ["liaison", 1], ["house", 2], ["integrated", 2]]) {
+  assert.equal(resolveDaharComplications({ initial: 4 }, rights).initial, 4 + modifier, rights + " uses the correct Dahar modifier");
+}
+assert.deepEqual([4, 5, 6].map(initial => resolveDaharComplications({ initial }, "independent").effects), [[4], [5], [6]], "direct Sandstorm, Heatwave, and Abandoned Mine results resolve independently");
+assert.deepEqual(resolveDaharComplications({ initial: 6 }, "liaison").effects, [7], "Liaison 6 resolves Orders Are Gibberish");
+assert.deepEqual(resolveDaharComplications({ initial: 6, secondaryOne: 2, secondaryTwo: 3 }, "house"), { modifier: 2, initial: 8, secondary: [4, 5], effects: [4, 5], pendingSecondary: false });
+assert.deepEqual(resolveDaharComplications({ initial: 6, secondaryOne: 5, secondaryTwo: 6 }, "house").effects, [7], "secondary 8 is ignored and does not recurse");
+assert.deepEqual(resolveDaharComplications({ initial: 6, secondaryOne: 2, secondaryTwo: 2 }, "house").effects, [4], "duplicate secondary effects apply once");
+assert.equal(resolveDaharComplications({ initial: 6, secondaryOne: 6, secondaryTwo: 6 }, "house").effects.length, 0);
+assert.equal(adjustDaharEarnedVp(0, true), 0);
+assert.equal(adjustDaharEarnedVp(50, true), 30);
+assert.equal(adjustDaharEarnedVp(100, true), 80);
+assert.equal(adjustDaharEarnedVp(300, true), 280);
+assert.equal(adjustDaharEarnedVp(300, false), 300);
+
+for (const term of ["renderDaharMissionState", "data-dahar-finalize", "adjustDaharEarnedVp", "completedObjectiveCount", "temporaryEligibility", "secondaryOne", "secondaryTwo", "clearDaharObjectiveState", "Current tactical result"]) {
+  assert.ok(app.includes(term), "Dahar browser implementation includes " + term);
+}
+for (const excluded of ["renderDaharCampaignState", "data-dahar-roll-sequence", "evaluateDaharCampaign", "normalizeDaharCampaignState", "Current streaks", "Resolved earlier months"]) {
+  assert.ok(!app.includes(excluded), "Dahar browser excludes campaign manager behavior: " + excluded);
+}
+assert.match(dahar.note, /tracked outside this tactical browser/i);
+assert.match(dahar.tracks[0].results[0].variant.special.join(" "), /browser does not roll, store, gate, or validate.*duplicate produces no track/i);
+assert.ok(app.includes('"Mercenary": "mercenary-pirate"'), "both Dahar mercenary sides resolve to the Mercenary/Pirate OpFor table");
+assert.ok(css.includes("dahar-tactical") && css.includes("campaign-finalize") && css.includes("adjusted-vp"), "Dahar tactical controls and adjusted scoring have focused responsive styles");
 
 for (const hotSpot of HOT_SPOTS) {
   assert.ok(hotSpot.sides.length >= 2, hotSpot.name + " has opposing sides");

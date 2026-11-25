@@ -22,6 +22,83 @@ export function calculateReconDenyVp(completedObjectiveIds = []) {
   return RECON_DENY_VP_SCHEDULE[completedAttackerObjectives];
 }
 
+export const DAHAR_TRACK_RESULTS = Object.freeze([
+  { roll: 1, id: "recon", label: "Recon", trackId: "recon", attacker: "raid", defender: "garrison" },
+  { roll: 2, id: "flank", label: "Flank", trackId: "flank", attacker: "raid", defender: "garrison" },
+  { roll: 3, id: "strike", label: "Strike", trackId: "strike", attacker: "raid", defender: "garrison" },
+  { roll: 4, id: "meeting", label: "Meeting Engagement", trackId: "meeting-engagement", attacker: "garrison", defender: "raid" },
+  { roll: 5, id: "assault", label: "Assault", trackId: "assault", attacker: "garrison", defender: "raid" },
+  { roll: 6, id: "retreat", label: "Retreat", trackId: "retreat", attacker: "garrison", defender: "raid" }
+]);
+
+export const DAHAR_MAPSHEET_TABLE = Object.freeze([
+  ["1", "Mine #1", "MapPack: Deserts"],
+  ["2", "Mine #2", "MapPack: Deserts"],
+  ["3", "Badlands #1", "MapPack: Deserts"],
+  ["4", "Badlands #2", "MapPack: Deserts"],
+  ["5", "Washout #1", "MapPack: Deserts"],
+  ["6", "Sand Drift #2", "MapPack: Deserts"]
+]);
+
+export const DAHAR_INDUSTRIALMECH_TABLE = Object.freeze([
+  ["2", "HMX-3M Exo HaulerMech MOD", "108", "5"],
+  ["3", "SC XI-M-B Powerman HaulerMech MOD", "277", "11"],
+  ["4", "CON-7M Carbine ConstructionMech MOD", "306", "8"],
+  ["5", "RCL-Z1M Deep Lord MilitiaMech", "715", "21"],
+  ["6", "SC CV-M StrongArm ConstructionMech MOD", "315", "9"],
+  ["7", "DTM-1M Burrower MiningMech MOD", "556", "18"],
+  ["8", "DVM-2M Ground Pounder MiningMech MOD", "548", "18"],
+  ["9", "RCL-4M-B Dig Lord MiningMech MOD", "699", "22"],
+  ["10", "CON-9M Carbine ConstructionMech MOD", "289", "10"],
+  ["11", "HCL-1MM Heavy Lifter MilitiaMech", "915", "23"],
+  ["12", "FLN-366-M St. Florian FireMech MOD", "1,266", "30"]
+]);
+
+export const DAHAR_COMMAND_COMPLICATIONS = Object.freeze({
+  ref: "Draconis Reach p. 84",
+  note: "Each player rolls separately for every played track. Add the selected Command Rights modifier: Independent +0, Liaison +1, House +2, Integrated +2. Result 8 uses the approved provisional two-roll procedure shown in the tactical setup panel.",
+  rows: [
+    { roll: "1–3", name: "No Complication", text: "No additional effect." },
+    { roll: "4", name: "Sandstorm", text: "All attacks suffer an additional +1 to-hit modifier at medium range and +2 at long range." },
+    { roll: "5", name: "Heatwave", text: "All BattleMechs generate 1 additional Heat per turn. All ground vehicles suffer −1 MP to Flank Speed; Battlefield Support assets suffer −1 movement. Infantry cannot be used in this track." },
+    { roll: "6", name: "Abandoned Mine", text: "The opposing player may place 1D6 sinkhole tokens (Alpha Strike: 2-inch AOE markers). Each is depth 6 (Alpha Strike: 12 inches). A unit entering one falls to the bottom and, if it survives, is effectively crippled for objectives and repairs." },
+    { roll: "7", name: "Orders Are Gibberish", text: "The affected player receives −20 VP once for each objective that earns VP. For repeatable objectives, deduct 20 once from the objective total, not from every instance." },
+    { roll: "8", name: "Roll Twice", text: "Approved provisional interpretation: roll exactly twice more with the same Command Rights modifier. Ignore secondary 8s and duplicate effects; do not reroll and do not recurse." }
+  ]
+});
+
+export const DAHAR_PROVISIONAL_RULES = Object.freeze([
+  "DAHAR-AMB-001 — Use sidebar contract identifiers 105112A and 105112B; treat Mission Brief identifier 105070A–B as a presumed printing error. This is not official errata.",
+  "DAHAR-AMB-002 — Equal successful-track totals after Month 3 produce a contract draw. Duplicate rolls preserve success streaks; played tactical draws reset both streaks. This is an approved project interpretation.",
+  "DAHAR-AMB-003 — A modified 8 generates exactly two secondary rolls with the same modifier. Secondary 8s and duplicate effects are ignored; no rerolls or recursion. This is an approved project interpretation."
+]);
+
+export function daharCommandModifier(rights = "liaison") {
+  return rights === "liaison" ? 1 : rights === "house" || rights === "integrated" ? 2 : 0;
+}
+
+function daharDie(value, maximum = 6) {
+  if (value === "" || value === null || value === undefined) return null;
+  const number = Math.trunc(Number(value));
+  return number >= 1 && number <= maximum ? number : null;
+}
+
+export function resolveDaharComplications(selection = {}, rights = "liaison") {
+  const modifier = daharCommandModifier(rights);
+  const initialRaw = daharDie(selection.initial);
+  const initial = initialRaw === null ? null : initialRaw + modifier;
+  if (initial === null) return { modifier, initial: null, secondary: [], effects: [], pendingSecondary: false };
+  if (initial !== 8) return { modifier, initial, secondary: [], effects: initial >= 4 && initial <= 7 ? [initial] : [], pendingSecondary: false };
+  const secondary = [daharDie(selection.secondaryOne), daharDie(selection.secondaryTwo)].map(value => value === null ? null : value + modifier);
+  const effects = [...new Set(secondary.filter(value => value >= 4 && value <= 7))];
+  return { modifier, initial, secondary, effects, pendingSecondary: secondary.some(value => value === null) };
+}
+
+export function adjustDaharEarnedVp(earnedVp, affected = false) {
+  const earned = Math.max(0, Number(earnedVp) || 0);
+  return affected && earned > 0 ? Math.max(0, earned - 20) : earned;
+}
+
 export function achernarInitialDefectors(scale = 1) {
   return Math.min(3, Math.max(1, Number(scale) || 1)) * 2;
 }
@@ -1372,6 +1449,43 @@ function achernarVariant(trackId, sequence) {
   };
 }
 
+function daharVariant(trackId) {
+  const base = TRACKS.find(track => track.id === trackId);
+  const pageRef = base?.pageRef || "p. " + base?.page;
+  return {
+    setupDetails: [
+      ...(base?.setupDetails || []),
+      "Dahar mapsheets: roll separately on the Dahar 1D6 mapsheet table for every required BattleTech mapsheet. Scale 1 normally uses one mapsheet; Scale 2–3 normally uses two mapsheets or one equivalent neoprene map. A more specific standard-track battlefield dimension, including Retreat, takes precedence over this general count. Do not reroll duplicate mapsheet results.",
+      "Alpha Strike: use Desert as the primary terrain and the shared terrain procedure on p. 154. Dahar battlefields do not carry over between tracks.",
+      "Repurposed Equipment: for each mission, both Attacker and Defender may add one independently rolled IndustrialMech MOD per Scale (one at Scale 1, two at Scale 2, three at Scale 3). These units use Gunnery 4 / Piloting 5 or Alpha Strike Skill 4, do not count toward normal Scale limits, follow the standard track’s deployment, and are rerolled for every mission.",
+      "Temporary Hire: Dahar’s contract-specific eligibility threshold controls. A force below two-thirds of the maximum permissible BV/PV for its next track may hire additional IndustrialMech MODs from the Dahar table. General p. 29 still requires the resulting force to remain below the Scale limit. Temporary hires are capped at three per Scale, separate from the free Repurposed Equipment allocation, use the listed regular skills, deploy with the track force, and do not carry forward automatically."
+    ],
+    special: [
+      ...(base?.special || []),
+      "Successful track completion: a side must complete at least one objective and earn more finalized, adjusted objective VP than the opponent. Equal VP means neither side successfully completes the track.",
+      "Campaign procedure — reference only: at the beginning of each of the three months, roll twice on the Mission Table and play the two results in rolled order. The browser does not roll, store, gate, or validate the contract history; select the current tactical track directly.",
+      "Duplicate procedure — reference only: each track type may be played only once during the contract. A later duplicate produces no track and is not rerolled. Track previous results and duplicate eligibility outside this tactical browser.",
+      "Dahar contract victory — reference only: two consecutive successfully completed played tracks win the contract immediately and cause the opposing commander to concede. Otherwise, after the Month 3 opportunities resolve, the side with more successful tracks wins.",
+      "Approved provisional victory interpretation — reference only: equal successful-track totals after Month 3 produce a contract draw; a duplicate/no-track result preserves the existing consecutive-success streak; a played tactical track on which neither side succeeds breaks both streaks. This browser reports only the currently selected track’s tactical result and does not evaluate contract victory.",
+      "Contract identifiers: display 105112A (Garrison) and 105112B (Raid), using the individual contract sidebars. Mission Brief identifier 105070A–B is documented as a presumed printing error, not official errata.",
+      "Official erratum, p. 82: Garrison Salvage Rights are 20% (5), not the printed 25% (5). Strategic salvage administration remains outside this tactical browser."
+    ],
+    commandComplications: DAHAR_COMMAND_COMPLICATIONS,
+    referenceTables: [
+      { title: "Dahar Mapsheets (1D6)", headers: ["Roll", "Mapsheet", "Source"], rows: DAHAR_MAPSHEET_TABLE },
+      { title: "Dahar IndustrialMech Random Allocation (2D6)", headers: ["Roll", "IndustrialMech", "BV", "PV"], rows: DAHAR_INDUSTRIALMECH_TABLE }
+    ],
+    sourceRefs: [
+      "Draconis Reach pp. 82–85 (contracts 105112A–B; Mission Brief prints conflicting 105070A–B)",
+      base?.name + " " + pageRef,
+      "Successful tracks pp. 26, 29",
+      "Command Rights p. 28 and complications p. 30",
+      "Shared rules pp. 167–168",
+      "Current Draconis Reach master errata — p. 82 Salvage Rights 20% (5)"
+    ]
+  };
+}
+
 const gladiatorGenerator = {
   note: "For a non-player opponent, roll 2D6 for Experience Rating, apply the duel-class adjustment, use the resulting Experience Level, then roll for Piloting/Gunnery skills, Edge abilities, faction, and ’Mech assignment.",
   classAdjustments: [
@@ -2379,22 +2493,23 @@ export const HOT_SPOTS = [
     name: "Dahar IV",
     region: "Federated Suns",
     terrain: "Desert",
-    source: "Draconis Reach pp. 84–85",
-    note: "Each track uses the source’s 1D6 table. Select the source result for the current track sequence.",
-    sides: [factionSide("garrison", "Dahar Garrison", "Federated Suns"), factionSide("raid", "Dahar Raid", "Draconis Combine")],
-    tracks: [1, 2, 3, 4, 5, 6].map(sequence => ({
-      sequence,
-      label: "Track " + sequence,
-      resultLabel: "Track result (source 1D6)",
-      results: [
-        { id: "recon", label: "1 · Recon", trackId: "recon", attacker: "raid", defender: "garrison" },
-        { id: "flank", label: "2 · Flank", trackId: "flank", attacker: "raid", defender: "garrison" },
-        { id: "strike", label: "3 · Strike", trackId: "strike", attacker: "raid", defender: "garrison" },
-        { id: "meeting", label: "4 · Meeting Engagement", trackId: "meeting-engagement", attacker: "garrison", defender: "raid" },
-        { id: "assault", label: "5 · Assault", trackId: "assault", attacker: "garrison", defender: "raid" },
-        { id: "retreat", label: "6 · Retreat", trackId: "retreat", attacker: "garrison", defender: "raid" }
-      ]
-    }))
+    source: "Draconis Reach pp. 82–85",
+    trackSelectorLabel: "Current tactical track",
+    note: "Contracts 105112A–B. Select the current 1D6 Mission Table result. The initial Recon choice is only a navigation default, not a recorded die roll. Campaign rolls, duplicate enforcement, prior results, success streaks, and overall contract victory are tracked outside this tactical browser.",
+    sides: [
+      { ...factionSide("garrison", "Dahar Garrison", "Mercenary"), contract: "105112A", employer: "Duke Romy Sandoval-Dobson", employerAlignment: "Federated Suns" },
+      { ...factionSide("raid", "Dahar Raid", "Mercenary"), contract: "105112B", employer: "Felix Kurita", employerAlignment: "Draconis Combine" }
+    ],
+    tracks: [{
+      sequence: 1,
+      label: "Selected Mission Table result",
+      resultLabel: "Track to play (source 1D6 result)",
+      results: DAHAR_TRACK_RESULTS.map(result => ({
+        ...result,
+        label: result.roll + " · " + result.label,
+        variant: daharVariant(result.trackId)
+      }))
+    }]
   },
   {
     id: "le-blanc",

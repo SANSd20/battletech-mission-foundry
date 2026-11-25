@@ -1,4 +1,4 @@
-import { ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, evaluateAltaVistaCampaign, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, RECON_DENY_ATTACKER_OBJECTIVE_IDS, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=alta-vista-correction";
+import { adjustDaharEarnedVp, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_PROVISIONAL_RULES, evaluateAltaVistaCampaign, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, MISSION_OPFOR_OVERRIDES, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, RECON_DENY_ATTACKER_OBJECTIVE_IDS, resolveDaharComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=dahar-tactical-scope";
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -29,8 +29,37 @@ const state = {
   opforRoll: 1,
   progress: {},
   vpSelections: {},
-  campaignState: {}
+  campaignState: {},
+  daharMission: null
 };
+
+function emptyDaharSideState() {
+  return {
+    complication: { initial: null, secondaryOne: null, secondaryTwo: null },
+    repurposedRolls: [null, null, null],
+    temporaryEligibility: "not-recorded",
+    temporaryCount: 0,
+    temporaryRolls: Array(9).fill(null)
+  };
+}
+
+function newDaharMissionState() {
+  return {
+    commandRights: { garrison: "liaison", raid: "liaison" },
+    garrison: emptyDaharSideState(),
+    raid: emptyDaharSideState(),
+    finalized: false,
+    scale: null,
+    attackerVp: null,
+    defenderVp: null,
+    successfulSide: "neither"
+  };
+}
+
+function daharMissionState() {
+  if (!state.daharMission) state.daharMission = newDaharMissionState();
+  return state.daharMission;
+}
 
 function currentTrack() {
   return [...TRACKS, ...SPECIAL_TRACKS].find(track => track.id === state.trackId) || null;
@@ -48,9 +77,11 @@ function currentHotSpotStep() {
 }
 
 function availableHotSpotTracks(hotSpot = currentHotSpot()) {
-  if (hotSpot.campaignState?.kind !== "alta-vista") return hotSpot.tracks;
-  const evaluation = evaluateAltaVistaCampaign(state.campaignState[hotSpot.id]?.record || {});
-  return hotSpot.tracks.filter(track => evaluation.availableSequences.includes(track.sequence));
+  if (hotSpot.campaignState?.kind === "alta-vista") {
+    const evaluation = evaluateAltaVistaCampaign(state.campaignState[hotSpot.id]?.record || {});
+    return hotSpot.tracks.filter(track => evaluation.availableSequences.includes(track.sequence));
+  }
+  return hotSpot.tracks;
 }
 
 function selectionKey(sequence) {
@@ -319,6 +350,59 @@ function renderAltaVistaCampaignState(container, definition) {
     '<div class="reference-citation">Source: ' + esc(definition.sourceRefs.join(" · ")) + '</div></section>';
 }
 
+function daharOptions(options, selected, placeholder = null) {
+  const leading = placeholder === null ? "" : '<option value="">' + esc(placeholder) + "</option>";
+  return leading + options.map(([value, label]) => '<option value="' + esc(String(value)) + '"' + (String(selected ?? "") === String(value) ? " selected" : "") + '>' + esc(label) + "</option>").join("");
+}
+
+function daharIndustrialOptions(selected) {
+  return daharOptions(DAHAR_INDUSTRIALMECH_TABLE.map(row => [row[0], row[0] + " · " + row[1] + " · " + row[2] + " BV / " + row[3] + " PV"]), selected, "Enter 2D6 result");
+}
+
+function daharComplicationControls(side, entry, rights, sequence) {
+  const label = side === "garrison" ? "Garrison" : "Raid";
+  const resolved = resolveDaharComplications(entry[side].complication, rights);
+  const effects = resolved.effects.length ? resolved.effects.map(value => DAHAR_COMMAND_COMPLICATIONS.rows.find(row => row.roll === String(value))?.name || value).join(" + ") : resolved.initial === null || resolved.pendingSecondary ? "Pending" : "No complication";
+  const secondary = resolved.initial === 8
+    ? '<label class="campaign-field"><span>' + label + ' secondary roll 1</span><select data-dahar-field="secondaryOne" data-dahar-side="' + side + '" data-dahar-sequence="' + sequence + '">' + daharOptions([[1, "1"], [2, "2"], [3, "3"], [4, "4"], [5, "5"], [6, "6"]], entry[side].complication.secondaryOne, "Enter 1D6") + '</select></label><label class="campaign-field"><span>' + label + ' secondary roll 2</span><select data-dahar-field="secondaryTwo" data-dahar-side="' + side + '" data-dahar-sequence="' + sequence + '">' + daharOptions([[1, "1"], [2, "2"], [3, "3"], [4, "4"], [5, "5"], [6, "6"]], entry[side].complication.secondaryTwo, "Enter 1D6") + '</select></label>'
+    : "";
+  return '<label class="campaign-field"><span>' + label + ' initial complication roll</span><select data-dahar-field="initial" data-dahar-side="' + side + '" data-dahar-sequence="' + sequence + '">' + daharOptions([[1, "1"], [2, "2"], [3, "3"], [4, "4"], [5, "5"], [6, "6"]], entry[side].complication.initial, "Enter 1D6") + '</select></label>' + secondary + '<div class="campaign-field campaign-static-field"><span>' + label + ' effective complication</span><strong>Modifier +' + resolved.modifier + ' · ' + esc(effects) + '</strong></div>';
+}
+
+function daharEquipmentControls(side, entry, sequence) {
+  const label = side === "garrison" ? "Garrison" : "Raid";
+  const sideState = entry[side];
+  const repurposed = Array.from({ length: state.scale }, (_, index) => '<label class="campaign-field"><span>' + label + ' Repurposed unit ' + (index + 1) + '</span><select data-dahar-field="repurposed-' + index + '" data-dahar-side="' + side + '" data-dahar-sequence="' + sequence + '">' + daharIndustrialOptions(sideState.repurposedRolls[index]) + '</select></label>').join("");
+  const maximum = state.scale * 3;
+  const count = sideState.temporaryEligibility === "eligible" ? Math.min(maximum, sideState.temporaryCount) : 0;
+  const countOptions = Array.from({ length: maximum + 1 }, (_, value) => [value, String(value)]);
+  const temporary = Array.from({ length: count }, (_, index) => '<label class="campaign-field"><span>' + label + ' temporary hire ' + (index + 1) + '</span><select data-dahar-field="temporary-' + index + '" data-dahar-side="' + side + '" data-dahar-sequence="' + sequence + '">' + daharIndustrialOptions(sideState.temporaryRolls[index]) + '</select></label>').join("");
+  return repurposed + '<label class="campaign-field"><span>' + label + ' Temporary Hire eligibility</span><select data-dahar-field="temporaryEligibility" data-dahar-side="' + side + '" data-dahar-sequence="' + sequence + '">' + daharOptions([["not-recorded", "Not recorded"], ["eligible", "Eligible — below two-thirds maximum BV/PV"], ["not-eligible", "Not eligible"]], sideState.temporaryEligibility) + '</select></label><label class="campaign-field"><span>' + label + ' temporary hire count</span><select data-dahar-field="temporaryCount" data-dahar-side="' + side + '" data-dahar-sequence="' + sequence + '"' + (sideState.temporaryEligibility !== "eligible" ? " disabled" : "") + '>' + daharOptions(countOptions, count) + '</select></label>' + temporary;
+}
+
+function renderDaharMissionState(container) {
+  const entry = daharMissionState();
+  const resolved = resolvedHotSpotStep();
+  const selectedTrack = resolved?.displayName || currentTrack()?.name || "Selected track";
+  const rightsFields = ["garrison", "raid"].map(side => '<label class="campaign-field"><span>' + (side === "garrison" ? "Garrison" : "Raid") + ' Command Rights</span><select data-dahar-rights="' + side + '">' + daharOptions([["independent", "Independent +0"], ["liaison", "Liaison +1"], ["house", "House +2"], ["integrated", "Integrated +2"]], entry.commandRights[side]) + '</select></label>').join("");
+  const finalized = entry.finalized
+    ? '<div class="campaign-state-summary"><strong>Current tactical result</strong><span>Scale ' + entry.scale + ' · Attacker ' + entry.attackerVp + ' VP · Defender ' + entry.defenderVp + ' VP</span><span>' + (entry.successfulSide === "neither" ? "Neither side successfully completed this track." : esc(sideById(entry.successfulSide)?.name || entry.successfulSide) + " successfully completed this track.") + '</span><span>This result is not added to campaign history and does not evaluate overall contract victory.</span></div>'
+    : "";
+
+  container.innerHTML = '<section class="campaign-state-card dahar-tactical"><div class="campaign-state-head"><div><div class="panel-kicker">CURRENT MISSION TACTICAL SETUP</div><h3>Dahar IV · ' + esc(selectedTrack) + '</h3></div></div>' +
+    '<p class="campaign-state-note">Configure only the currently selected tactical mission. Changing the selected track resets these mission-specific controls; no monthly history or campaign progression is stored.</p>' +
+    '<div class="campaign-state-summary"><strong>Contract identifiers and participating forces</strong><span>105112A · Dahar Garrison · employer Duke Romy Sandoval-Dobson (Federated Suns) · participating faction Mercenary</span><span>105112B · Dahar Raid · employer Felix Kurita (Draconis Combine) · participating faction Mercenary</span><span class="campaign-ruling">Mission Brief p. 84 prints 105070A–B. The approved provisional project interpretation uses the individual sidebar identifiers 105112A–B; this is not official errata.</span></div>' +
+    '<div class="campaign-fields"><div class="campaign-track-label">Current mission support and complications</div>' + rightsFields +
+    daharComplicationControls("garrison", entry, entry.commandRights.garrison, 1) +
+    daharComplicationControls("raid", entry, entry.commandRights.raid, 1) +
+    daharEquipmentControls("garrison", entry, 1) +
+    daharEquipmentControls("raid", entry, 1) +
+    '<div class="campaign-field campaign-wide-field campaign-finalize"><span>Current-track successful completion</span><strong>Current adjusted score: Attacker ' + trackScore("attacker") + ' · Defender ' + trackScore("defender") + '</strong><small>A side succeeds only if it completed at least one objective and has more adjusted VP. Equal adjusted VP means neither side succeeds. Finalize only when this tactical track is complete.</small><button type="button" data-dahar-finalize="current">Finalize current tactical score</button></div></div>' + finalized +
+    '<div class="campaign-state-summary"><strong>Campaign procedure and victory — reference only</strong><span>The contract lasts three months. At the beginning of each month, roll 1D6 twice: the first roll determines the first track and the second roll determines the second track. Play valid tracks in the order rolled.</span><span class="campaign-ruling"><strong>Each track type may only be played once during the entire contract.</strong> A duplicate produces no track and is not rerolled. The contract therefore contains one to six played tracks, subject to early victory.</span><span>Two consecutive successfully completed played tracks win the contract immediately and cause the opposing player to concede. If neither player achieves early victory, the player with more successfully completed tracks after the third month wins.</span><span>The browser does not roll, store, gate, validate, total, or evaluate this campaign history. Previously played tracks and duplicate results are maintained externally.</span></div>' +
+    '<div class="campaign-state-summary"><strong>Approved provisional rules and scope</strong>' + DAHAR_PROVISIONAL_RULES.map(rule => '<span class="campaign-ruling">' + esc(rule) + '</span>').join("") + '<span>Scale 4+ support, Regular Military Command eligibility administration, and strategic compensation, repairs, transportation, purchase, and salvage administration are outside the current tactical browser scope.</span></div>' +
+    '<div class="reference-citation">Source: Draconis Reach pp. 82–85 · Successful tracks pp. 26, 29 · Command Rights p. 28 · Battlefield setup p. 30 · Current Draconis Reach master errata</div></section>';
+}
+
 function selectedWinner(sequence) {
   return state.winnerSelections[winnerKey(sequence)] || "";
 }
@@ -416,18 +500,48 @@ function reconDenyVp() {
   return calculateReconDenyVp(completedObjectiveIds);
 }
 
+function daharContractSideForTacticalSide(side) {
+  const resolved = resolvedHotSpotStep();
+  return side === "attacker" ? resolved?.attacker : resolved?.defender;
+}
+
+function daharGibberishApplies(side) {
+  if (currentHotSpot().id !== "dahar-iv") return false;
+  const entry = daharMissionState();
+  const contractSide = daharContractSideForTacticalSide(side);
+  if (!contractSide) return false;
+  return resolveDaharComplications(entry[contractSide]?.complication, entry.commandRights[contractSide]).effects.includes(7);
+}
+
+function objectiveEarnedVp(objective, side, display = objective) {
+  if (!applies(objective, side)) return 0;
+  const affected = daharGibberishApplies(side);
+  if (isReconDeny(objective, side)) return adjustDaharEarnedVp(reconDenyVp(), affected);
+  const completed = getProgress(objective, side);
+  const earned = objective.repeatable ? Number(completed) * getVp(display, side) : completed ? getVp(display, side) : 0;
+  return adjustDaharEarnedVp(earned, affected);
+}
+
+function completedObjectiveCount(side) {
+  const track = currentTrack();
+  if (!track) return 0;
+  const variant = resolvedHotSpotStep()?.variant;
+  const objectives = variant?.objectives || track.objectives;
+  return objectives.filter(objective => {
+    if (!applies(objective, side)) return false;
+    if (isReconDeny(objective, side)) return reconDenyVp() > 0;
+    return objective.repeatable ? Number(getProgress(objective, side)) > 0 : Boolean(getProgress(objective, side));
+  }).length;
+}
+
 function trackScore(side) {
   const track = currentTrack();
   if (!track) return 0;
   const variant = resolvedHotSpotStep()?.variant;
   const objectives = variant?.objectives || track.objectives;
   return objectives.reduce((total, objective) => {
-    if (!applies(objective, side)) return total;
-    if (isReconDeny(objective, side)) return total + reconDenyVp();
-    const completed = getProgress(objective, side);
     const display = displayObjective(objective, variant);
-    if (objective.repeatable) return total + Number(completed) * getVp(display, side);
-    return total + (completed ? getVp(display, side) : 0);
+    return total + objectiveEarnedVp(objective, side, display);
   }, 0);
 }
 
@@ -599,6 +713,10 @@ function renderCampaignState() {
   const container = $("#hotspot-campaign-state");
   if (!container) return;
   const hotSpot = currentHotSpot();
+  if (hotSpot.id === "dahar-iv") {
+    renderDaharMissionState(container);
+    return;
+  }
   const definition = campaignDefinition(hotSpot);
   if (!definition) {
     container.innerHTML = "";
@@ -708,7 +826,8 @@ function renderReference() {
       $("#mission-reference").innerHTML = '<article class="panel mission-card"><div class="mission-card-head"><div class="eyebrow">NON-PLAYABLE STRATEGIC HEX</div><h2>' + esc(variant.displayName) + '</h2><p>' + esc(variant.summary) + '</p></div><div class="reference-section hot-spot-reference"><div class="panel-kicker">LOCATION & RESTRICTION</div><div class="brief-grid"><div><span>Location</span><strong>' + esc(hotSpot.name) + '</strong><small>' + esc(hotSpot.region + " · " + hotSpot.terrain) + '</small></div><div><span>Strategic hex type</span><strong>' + esc(step?.label || variant.displayName) + '</strong><small>No tactical track is generated</small></div></div></div><div class="reference-section"><div class="panel-kicker">SOURCE RESTRICTION</div><ul class="rule-list">' + restrictions + '</ul></div><div class="reference-section"><div class="panel-kicker">REFERENCE NOTES</div><ul class="rule-list">' + notes + '</ul></div><div class="reference-citation">Sources: ' + esc(sourceReferenceText) + '</div></article>';
       return;
     }
-    $("#mission-reference").innerHTML = '<article class="panel mission-card"><div class="mission-card-head"><div class="eyebrow">HOT SPOT LOCATION · ' + esc(hotSpot.name) + '</div><h2>Track pending</h2><p>' + esc(resolved?.unresolved ? "Choose the previous track winner to resolve this mission." : "The selected source result does not produce a standard track this month.") + '</p></div><div class="reference-section"><div class="panel-kicker">LOCATION & SEQUENCE</div><ul class="rule-list"><li>' + esc(hotSpot.name + " · " + hotSpot.region + " · " + hotSpot.terrain) + '</li><li>' + esc(step?.label || "Track") + " · " + esc(hotSpot.source) + '</li></ul></div><div class="reference-section"><div class="panel-kicker">SOURCE NOTE</div><p class="reference-copy">' + esc(hotSpot.note || "Resolve the Hot Spot setup controls above before opening the standard mission reference.") + '</p></div></article>';
+    const pendingText = resolved?.unresolved ? "Choose the previous track winner to resolve this mission." : "The selected source result does not produce a standard tactical track.";
+    $("#mission-reference").innerHTML = '<article class="panel mission-card"><div class="mission-card-head"><div class="eyebrow">HOT SPOT LOCATION · ' + esc(hotSpot.name) + '</div><h2>Track pending</h2><p>' + esc(pendingText) + '</p></div><div class="reference-section"><div class="panel-kicker">LOCATION & SEQUENCE</div><ul class="rule-list"><li>' + esc(hotSpot.name + " · " + hotSpot.region + " · " + hotSpot.terrain) + '</li><li>' + esc(step?.label || "Track") + " · " + esc(hotSpot.source) + '</li></ul></div><div class="reference-section"><div class="panel-kicker">SOURCE NOTE</div><p class="reference-copy">' + esc(hotSpot.note || "Resolve the Hot Spot setup controls above before opening the standard mission reference.") + '</p></div></article>';
     return;
   }
   const referenceTrack = resolved?.variant ? { ...track, ...resolved.variant } : track;
@@ -722,6 +841,7 @@ function renderReference() {
   const objectives = renderReferenceObjectives(referenceTrack.objectives, referenceTrack);
   const special = referenceTrack.special.map(item => "<li>" + esc(item) + "</li>").join("");
   const commandComplications = renderCommandComplications(referenceTrack.commandComplications);
+  const referenceTables = (referenceTrack.referenceTables || []).map(table => '<div class="reference-section"><div class="panel-kicker">' + esc(table.title) + '</div>' + renderGeneratorTable("", table) + '</div>').join("");
   const sourceReferenceText = referenceTrack.sourceRefs?.join(" · ") || SOURCES.primary + " · selected track " + pageReference;
   const scaleSection = hotSpot.hideScaleSelector ? "" : '<div class="reference-section scale-section"><div class="panel-kicker">SCALE ' + esc(String(state.scale)) + ' VIEW</div><ul class="rule-list">' + scaleNotesMarkup + "</ul></div>";
 
@@ -738,6 +858,7 @@ function renderReference() {
       scaleSection +
       '<div class="reference-section"><div class="panel-kicker">OBJECTIVES & VICTORY POINTS</div><ul class="objective-reference-list">' + objectives + "</ul></div>" +
       '<div class="reference-section"><div class="panel-kicker">SPECIAL RULES, TRACK END & SALVAGE</div><ul class="rule-list">' + special + "</ul></div>" +
+      referenceTables +
       commandComplications +
       '<div class="reference-citation">Sources: ' + esc(sourceReferenceText) + '</div>' +
     "</article>" +
@@ -749,7 +870,7 @@ function renderReference() {
 function objectiveControl(objective, side, display = objective) {
   if (!applies(objective, side)) return '<span class="not-applicable" aria-label="Not applicable">—</span>';
   if (isReconDeny(objective, side)) {
-    return '<div class="calculated-vp" aria-label="Projected Deny Victory Points"><strong>Projected: ' + reconDenyVp() + ' VP</strong><span>Read-only projection</span></div>';
+    return '<div class="calculated-vp" aria-label="Projected Deny Victory Points"><strong>Projected: ' + objectiveEarnedVp(objective, side, display) + ' VP</strong><span>' + (daharGibberishApplies(side) ? "Complication 7 adjusted" : "Read-only projection") + '</span></div>';
   }
   const progress = getProgress(objective, side);
   const vpControl = objective.vpOptions
@@ -757,12 +878,13 @@ function objectiveControl(objective, side, display = objective) {
       display.vpOptions.map(value => '<option value="' + value + '"' + (getVp(display, side) === value ? " selected" : "") + ">" + value + " VP</option>").join("") +
       "</select>"
     : '<span class="vp-badge">' + display.vp + " VP" + (display.repeatable ? " each" : "") + "</span>";
+  const adjusted = daharGibberishApplies(side) ? '<span class="adjusted-vp">Earned after Complication 7: ' + objectiveEarnedVp(objective, side, display) + ' VP</span>' : "";
   if (objective.repeatable) {
     return '<div class="counter-control"><button type="button" class="counter-button" data-action="decrement" data-objective="' + esc(objective.id) + '" data-side="' + side + '" aria-label="Decrease ' + esc(display.name) + '">−</button>' +
       '<output>' + progress + '</output><button type="button" class="counter-button" data-action="increment" data-objective="' + esc(objective.id) + '" data-side="' + side + '" aria-label="Increase ' + esc(display.name) + '">+</button>' +
-      '<span class="counter-label">completed</span></div>' + vpControl;
+      '<span class="counter-label">completed</span></div>' + vpControl + adjusted;
   }
-  return '<label class="check-control"><input type="checkbox" data-action="toggle" data-objective="' + esc(objective.id) + '" data-side="' + side + '"' + (progress ? " checked" : "") + '><span class="checkmark"></span><span class="control-copy">' + (progress ? "Complete" : "Open") + "</span></label>" + vpControl;
+  return '<label class="check-control"><input type="checkbox" data-action="toggle" data-objective="' + esc(objective.id) + '" data-side="' + side + '"' + (progress ? " checked" : "") + '><span class="checkmark"></span><span class="control-copy">' + (progress ? "Complete" : "Open") + "</span></label>" + vpControl + adjusted;
 }
 
 function renderTracker() {
@@ -789,8 +911,9 @@ function renderTracker() {
     const display = displayObjective(objective, variant);
     const calculatedDeny = isReconDeny(objective);
     const objectiveText = display.text;
-    const vpLabel = calculatedDeny ? "Projected: " + reconDenyVp() + " VP" : (display.vpOptions ? display.vpOptions.join(" / ") + " VP (select value)" : display.vp + " VP" + (display.repeatable ? " each" : ""));
-    const projectionNote = calculatedDeny ? '<div class="calculated-vp-note">Projected Deny VP follows the printed Deny schedule as the Attacker completes objectives. Remaining Deny points are awarded at the end of Turn 8.</div>' : "";
+    const denyVp = calculatedDeny ? objectiveEarnedVp(objective, "defender", display) : 0;
+    const vpLabel = calculatedDeny ? "Projected: " + denyVp + " VP" : (display.vpOptions ? display.vpOptions.join(" / ") + " VP (select value)" : display.vp + " VP" + (display.repeatable ? " each" : ""));
+    const projectionNote = calculatedDeny ? '<div class="calculated-vp-note">Projected Deny VP follows the printed Deny schedule as the Attacker completes objectives. Remaining Deny points are awarded at the end of Turn 8.' + (daharGibberishApplies("defender") ? " Dahar Complication 7 deducts 20 VP once from the earned Deny objective." : "") + '</div>' : "";
     return '<tr><th scope="row"><div class="objective-title">' + esc(display.name) + '</div><div class="objective-rule">' + esc(objectiveText) + '</div><div class="objective-vp">' + vpLabel + "</div>" + projectionNote + "</th>" +
       '<td class="attacker-col">' + objectiveControl(objective, "attacker", display) + "</td>" +
       '<td class="defender-col">' + objectiveControl(objective, "defender", display) + "</td></tr>";
@@ -822,6 +945,7 @@ function renderAll() {
 }
 
 function resetTrack() {
+  if (currentHotSpot().id === "dahar-iv") state.daharMission = newDaharMissionState();
   const prefix = state.hotSpotId + "::";
   Object.keys(state.progress).filter(key => key.startsWith(prefix)).forEach(key => delete state.progress[key]);
   Object.keys(state.vpSelections).filter(key => key.startsWith(prefix)).forEach(key => delete state.vpSelections[key]);
@@ -884,6 +1008,39 @@ function updateAltaVistaCampaignField(target) {
   return true;
 }
 
+function clearDaharObjectiveState() {
+  const prefix = "dahar-iv::";
+  for (const collection of [state.progress, state.vpSelections, state.sourceRollSelections, state.selectionValues]) {
+    for (const key of Object.keys(collection)) {
+      if (key.startsWith(prefix)) delete collection[key];
+    }
+  }
+}
+
+function updateDaharMissionField(target) {
+  if (currentHotSpot().id !== "dahar-iv") return false;
+  const entry = daharMissionState();
+  if (target.dataset.daharRights) {
+    entry.commandRights[target.dataset.daharRights] = target.value;
+    entry.finalized = false;
+    return true;
+  }
+  const field = target.dataset.daharField;
+  const side = target.dataset.daharSide;
+  if (!field || !side) return false;
+  const sideState = entry[side];
+  if (["initial", "secondaryOne", "secondaryTwo"].includes(field)) sideState.complication[field] = target.value === "" ? null : Number(target.value);
+  if (field === "temporaryEligibility") {
+    sideState.temporaryEligibility = target.value;
+    if (target.value !== "eligible") sideState.temporaryCount = 0;
+  }
+  if (field === "temporaryCount") sideState.temporaryCount = Math.min(state.scale * 3, Math.max(0, Number(target.value) || 0));
+  if (field.startsWith("repurposed-")) sideState.repurposedRolls[Number(field.split("-")[1])] = target.value === "" ? null : Number(target.value);
+  if (field.startsWith("temporary-")) sideState.temporaryRolls[Number(field.split("-")[1])] = target.value === "" ? null : Number(target.value);
+  entry.finalized = false;
+  return true;
+}
+
 $("#hotspot-campaign-state").addEventListener("input", event => {
   if (updateAchernarCampaignField(event.target)) return;
   updateAltaVistaCampaignField(event.target);
@@ -895,6 +1052,10 @@ $("#hotspot-campaign-state").addEventListener("change", event => {
     return;
   }
   if (updateAltaVistaCampaignField(event.target)) {
+    renderAll();
+    return;
+  }
+  if (updateDaharMissionField(event.target)) {
     renderAll();
     return;
   }
@@ -910,6 +1071,29 @@ $("#hotspot-campaign-state").addEventListener("change", event => {
 });
 
 $("#hotspot-campaign-state").addEventListener("click", event => {
+  const finalize = event.target.closest("[data-dahar-finalize]");
+  if (finalize) {
+    const entry = daharMissionState();
+    for (const side of ["garrison", "raid"]) {
+      const complication = resolveDaharComplications(entry[side].complication, entry.commandRights[side]);
+      if (complication.initial === null || complication.pendingSecondary) {
+        window.alert("Record complete Command Complication rolls for both players before finalizing this track.");
+        return;
+      }
+    }
+    const attackerVp = trackScore("attacker");
+    const defenderVp = trackScore("defender");
+    const attackerSucceeded = completedObjectiveCount("attacker") > 0 && attackerVp > defenderVp;
+    const defenderSucceeded = completedObjectiveCount("defender") > 0 && defenderVp > attackerVp;
+    entry.finalized = true;
+    entry.scale = state.scale;
+    entry.attackerVp = attackerVp;
+    entry.defenderVp = defenderVp;
+    const resolved = resolvedHotSpotStep();
+    entry.successfulSide = attackerSucceeded ? resolved.attacker : defenderSucceeded ? resolved.defender : "neither";
+    renderAll();
+    return;
+  }
   const button = event.target.closest("[data-reset-campaign]");
   if (!button) return;
   const hotSpot = currentHotSpot();
@@ -931,7 +1115,13 @@ $("#opfor-display").addEventListener("change", event => {
 
 $("#winner-controls").addEventListener("change", event => {
   if (event.target.dataset.winnerSequence) state.winnerSelections[winnerKey(event.target.dataset.winnerSequence)] = event.target.value;
-  if (event.target.dataset.resultSequence) state.resultSelections[resultKey(event.target.dataset.resultSequence)] = event.target.value;
+  if (event.target.dataset.resultSequence) {
+    state.resultSelections[resultKey(event.target.dataset.resultSequence)] = event.target.value;
+    if (currentHotSpot().id === "dahar-iv") {
+      state.daharMission = newDaharMissionState();
+      clearDaharObjectiveState();
+    }
+  }
   if (event.target.dataset.sourceRollId) state.sourceRollSelections[sourceRollKey(event.target.dataset.sourceRollSequence, event.target.dataset.sourceRollId)] = event.target.value;
   if (event.target.dataset.selectionId) state.selectionValues[variantSelectionKey(event.target.dataset.selectionSequence, { id: event.target.dataset.selectionId })] = event.target.value;
   if (event.target.dataset.roleSequence) state.roleSelections[roleKey(event.target.dataset.roleSequence)] = event.target.value;
@@ -942,6 +1132,11 @@ $("#scale-select").addEventListener("click", event => {
   const button = event.target.closest(".scale-button");
   if (!button || currentHotSpot().fixedScale) return;
   state.scale = Number(button.dataset.scale);
+  if (currentHotSpot().id === "dahar-iv") {
+    const mission = daharMissionState();
+    mission.finalized = false;
+    for (const side of ["garrison", "raid"]) mission[side].temporaryCount = Math.min(mission[side].temporaryCount, state.scale * 3);
+  }
   renderCampaignState();
   renderControlState();
   renderReference();
@@ -965,7 +1160,9 @@ $("#objective-body").addEventListener("click", event => {
   const side = button.dataset.side;
   const current = Number(getProgress(objective, side));
   setProgress(objective, side, current + (button.dataset.action === "increment" ? 1 : -1));
+  if (currentHotSpot().id === "dahar-iv") daharMissionState().finalized = false;
   renderTracker();
+  if (currentHotSpot().id === "dahar-iv") renderCampaignState();
 });
 
 $("#objective-body").addEventListener("change", event => {
@@ -975,7 +1172,9 @@ $("#objective-body").addEventListener("change", event => {
   const side = input.dataset.side || input.dataset.vpSide;
   if (input.dataset.action === "toggle") setProgress(objective, side, input.checked);
   if (input.dataset.vpObjective) setVp(objective, input.dataset.vpSide, input.value);
+  if (currentHotSpot().id === "dahar-iv") daharMissionState().finalized = false;
   renderTracker();
+  if (currentHotSpot().id === "dahar-iv") renderCampaignState();
 });
 
 renderAll();
