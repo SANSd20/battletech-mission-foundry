@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { adjustDaharEarnedVp, achernarInitialDefectors, ALTA_VISTA_COMMAND_COMPLICATIONS, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_MAPSHEET_TABLE, DAHAR_PROVISIONAL_RULES, DAHAR_TRACK_RESULTS, evaluateAltaVistaCampaign, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_MAPSHEET_TABLE, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LE_BLANC_TEMPORARY_HIRES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_MAPSHEET_TABLE, LUCERNE_PROVISIONAL_RULES, LUCERNE_TEMPORARY_HIRES, LUCERNE_TRACK_RESULTS, MELCHER_BLACK_MARKET, MELCHER_COMMAND_COMPLICATIONS, MELCHER_GRASSLANDS_MAPSHEETS, MELCHER_TEMPORARY_HIRES, MISSION_OPFOR_OVERRIDES, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PLAYER_VISIBLE_HOT_SPOT_IDS, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
+import { adjustDaharEarnedVp, achernarInitialDefectors, ALTA_VISTA_COMMAND_COMPLICATIONS, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_MAPSHEET_TABLE, DAHAR_PROVISIONAL_RULES, DAHAR_TRACK_RESULTS, evaluateAltaVistaCampaign, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_MAPSHEET_TABLE, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LE_BLANC_TEMPORARY_HIRES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_MAPSHEET_TABLE, LUCERNE_PROVISIONAL_RULES, LUCERNE_TEMPORARY_HIRES, LUCERNE_TRACK_RESULTS, MELCHER_BLACK_MARKET, MELCHER_COMMAND_COMPLICATIONS, MELCHER_GRASSLANDS_MAPSHEETS, MELCHER_TEMPORARY_HIRES, MISSION_OPFOR_OVERRIDES, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_COMMAND_COMPLICATIONS, NEW_IVAARSEN_LIGHT_URBAN_MAPSHEETS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PLAYER_VISIBLE_HOT_SPOT_IDS, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
 
 const expected = ["Assault", "Breakthrough", "Defend", "Flank", "Meeting Engagement", "Objective Raid", "Pursuit", "Pushback", "Recon", "Retreat", "Strike"];
 assert.deepEqual(TRACKS.map(track => track.name), expected, "all eleven Draconis Reach standard tracks are present");
@@ -206,16 +206,27 @@ assert.deepEqual(newIvaarsen.tracks.map(track => [track.sequence, track.trackId,
   [2, "meeting-engagement", "stephensons", "isf"],
   [3, "assault", "isf", "stephensons"]
 ], "New Ivaarsen retains its source track order and roles");
-assert.equal(newIvaarsen.campaignState.fields.length, 5, "New Ivaarsen exposes all cross-track state fields");
-assert.deepEqual(newIvaarsen.campaignState.fields.map(field => field.id), [
-  "stephensonsBuildingDamage",
-  "isfBuildingDamage",
-  "sirDuncanStatus",
-  "sionaStatus",
-  "specialCharactersPresent"
-]);
-assert.match(newIvaarsen.campaignState.note, /remain associated with their track sequence/);
-assert.match(newIvaarsen.campaignState.note, /four buildings designated by the Defender/);
+assert.equal(newIvaarsen.campaignState, undefined, "New Ivaarsen does not expose obsolete cross-track campaign bookkeeping");
+assert.deepEqual(newIvaarsen.sides.map(side => side.faction), ["Mercenary", "Mercenary"], "both New Ivaarsen participants are Mercenary");
+assert.deepEqual(newIvaarsen.tracks.map(track => track.variant.sourceRefs[0]), ["Draconis Reach pp. 99–102", "Draconis Reach pp. 99–102", "Draconis Reach pp. 99–102"]);
+assert.equal(NEW_IVAARSEN_LIGHT_URBAN_MAPSHEETS.length, 6, "New Ivaarsen includes all Light Urban Table 7 results");
+assert.equal(NEW_IVAARSEN_RYUKEN_SUPPORT.length, 6, "New Ivaarsen includes the complete Ryuken support table");
+assert.deepEqual(NEW_IVAARSEN_CHARACTERS.map(character => [character.name, character.unit, character.bv, character.pv]), [["Sir Duncan Atterton", "Sentry SNT-W5", "1,143", "27"], ["Siona Stephenson", "Gunsmith CH-11NG", "1,465", "36"]]);
+assert.equal(NEW_IVAARSEN_COMMAND_COMPLICATIONS.rows.length, 12, "both force-specific complication tables are complete");
+assert.equal(NEW_IVAARSEN_COMMAND_COMPLICATIONS.separateBySide, true);
+assert.deepEqual(NEW_IVAARSEN_COMMAND_COMPLICATIONS.groups.map(group => [group.sideId, group.title]), [["stephensons", "Stephensons · Liaison Command (+1)"], ["isf", "ISF · House Command (+2)"]]);
+assert.match(NEW_IVAARSEN_COMMAND_COMPLICATIONS.rows.find(row => row.name === "Falling Damage").text, /random BattleMech.*falling damage.*Add 2/s);
+assert.match(NEW_IVAARSEN_COMMAND_COMPLICATIONS.rows.find(row => row.name === "Long Tom Support").text, /two Long Tom Artillery Support Attacks per Scale/);
+assert.match(NEW_IVAARSEN_COMMAND_COMPLICATIONS.rows.find(row => row.name === "Mechanized Infantry Support").text, /two BSP Mechanized Infantry Platoons per Scale/);
+assert.match(NEW_IVAARSEN_COMMAND_COMPLICATIONS.rows.find(row => row.name === "Striker Support").text, /one BSP Striker Light Tank per Scale/);
+assert.match(newIvaarsen.contractReference.summary.join(" "), /100 percent \(13\)/, "the Guerrilla Suppression salvage erratum is incorporated");
+for (const sequence of newIvaarsen.tracks) {
+  const standard = TRACKS.find(track => track.id === sequence.trackId);
+  for (const role of ["attacker", "defender"]) {
+    const maximum = standard.objectives.filter(objective => objective.side === role || objective.side === "both").reduce((sum, objective) => sum + objective.vp * (objective.maxCount || 1), 0);
+    assert.equal(maximum, 350, "New Ivaarsen " + standard.name + " preserves the 350 VP " + role + " maximum");
+  }
+}
 const app = fs.readFileSync(new URL("../dist/hot-spots/app.mjs", import.meta.url), "utf8");
 const html = fs.readFileSync(new URL("../dist/hot-spots/index.html", import.meta.url), "utf8");
 const css = fs.readFileSync(new URL("../dist/hot-spots/styles.css", import.meta.url), "utf8");
@@ -245,9 +256,9 @@ assert.ok(app.includes('data-action=\"increment\"') && app.includes('data-action
 for (const term of ["referenceTrack", "scaleNotesFor", "scaleNotesByScale", "sourceReferenceText", "displayObjective", "renderCommandComplications", "commandComplications", "objectiveOverrides", "Gem Convoy Raid", "Modified Objective Raid", "one component per functioning hand actuator per turn", "removed from play and cannot return", "Destroying a Ryu does not itself award victory"]) {
   assert.ok((app + data).includes(term), term + " Pascagoula variant behavior is present");
 }
-for (const term of ["campaignState", "campaignTrackValues", "campaignBuildingTotals", "CROSS-TRACK PRESERVATION", "Reset campaign state", "Stephensons building hexes destroyed this track", "running totals through Tracks 1–2"]) {
-  assert.ok((app + data + html).includes(term), term + " New Ivaarsen cross-track preservation behavior is present");
-}
+for (const term of ["renderNewIvaarsenSetupInputs", "newIvaarsenCharacterAvailability", "renderNewIvaarsenTacticalReference", "stephensons-building-total", "isf-building-total", "Ryuken-ni Support BattleMechs", "BUILDING-DIFFERENCE SUPPORT"]) assert.ok(app.includes(term), term + " New Ivaarsen tactical behavior is present");
+for (const term of ["Long Tom Support Attacks: ", "2 * state.scale", "BSP Mechanized Infantry Platoons: ", "BSP Striker Light Tanks: ", "Math.max(0, Number(isf) - Number(steph))"]) assert.ok(app.includes(term), term + " computed New Ivaarsen support behavior is present");
+assert.doesNotMatch(JSON.stringify(newIvaarsen), /campaignState|reputation calculator|purchase history/i, "New Ivaarsen remains tactical-reference only");
 assert.ok(css.includes("command-complications-table") && css.includes("complication-roll"), "Command Complications table has focused responsive styling");
 for (const term of ["data-complication-choice", "data-apply-complications", "data-edit-complications", "active-complications", "Apply Complications", "Reference only"]) {
   assert.ok((app + css).includes(term), "resolved-complication workflow includes " + term);
@@ -740,7 +751,8 @@ assert.deepEqual(malloryTraining.sourceRefs, ["Draconis Reach pp. 135–139", "P
 assert.ok(html.includes('id="hot-spot-track-label"'), "the sequence selector has a location-specific label target");
 assert.ok(app.includes('hotSpot.trackSelectorLabel || "Track"'), "the shared selector uses player-facing Track terminology while preserving location-specific labels");
 assert.ok(app.includes("if (hotSpot.fixedScale) state.scale = hotSpot.fixedScale"), "Mallory’s World applies its fixed Scale before each render");
-assert.ok(app.includes("button.disabled = Boolean(fixedScale)"), "the Scale selector locks for fixed-Scale Hot Spots and unlocks elsewhere");
+assert.match(app, /const unavailable = Boolean\(fixedScale\).*button\.disabled = unavailable/s, "fixed-Scale Hot Spots disable only unavailable Scale choices");
+assert.match(css, /scale-button\.unavailable::before.*background: #b3131b/s, "unavailable Scale choices receive the large red X treatment");
 assert.ok(html.includes('id="scale-restriction-note"'), "the fixed-Scale explanation has a dedicated display target");
 assert.ok(app.includes("outcome.reverseRoles") && app.includes("attacker: opposingSide, defender: selectedInitiator"), "City Pursuit role reversal assigns objective and VP columns to the correct tactical sides");
 assert.ok(app.includes("variant?.nonPlayable") && app.includes("This strategic hex cannot be entered and has no tactical objectives"), "the restricted research facility renders without a tactical tracker");
@@ -856,7 +868,7 @@ assert.ok(app.includes("availableHotSpotTracks") && !app.includes("availableAlta
 assert.ok(app.includes("data-alta-withdrawal-response"), "Alta Vista exposes only the current Withdrawal Order response when applicable");
 assert.ok(app.includes("state.mode") && app.includes("renderContractReference"), "Alta Vista references remain independent of Attacker/Defender/Both display mode");
 assert.ok(css.includes("contract-reference"), "Alta Vista contract references use shared responsive styling");
-assert.match(html, /melcher-final-visual/, "the current implementation uses the final Melcher visual asset cache key");
+assert.match(html, /new-ivaarsen/, "the current implementation uses the New Ivaarsen asset cache key");
 
 const dahar = HOT_SPOTS.find(item => item.id === "dahar-iv");
 assert.ok(dahar, "Dahar IV is available as a Hot Spot");
@@ -1022,7 +1034,7 @@ assert.match(app, /Eclipse Expeditions Special Operations.*Guildmaster Phil News
 assert.match(app, /both participating forces are Mercenary.*Mercenary\/Pirate OpFor table/i);
 assert.match(app, /same completed-objective|Current score: Attacker|currently successfully completes the track/);
 assert.match(app, /renderTemporaryHires\(referenceTrack\.temporaryHires, referenceTrack\.temporaryHireNote\)/, "Temporary Hire cards accept contract-aware hiring guidance");
-assert.match(html, /melcher-final-visual/, "Hot Spots uses the final Melcher visual asset cache key");
+assert.match(html, /new-ivaarsen/, "Hot Spots uses the New Ivaarsen asset cache key");
 assert.ok(css.includes("campaign-field input") && css.includes("hire-card-grid") && css.includes("@media"), "Lucerne controls and reused Temporary Hire cards retain responsive styling");
 
 assert.match(html, /<details[^>]+id="hotspot-setup"[^>]+open>/, "Hot Spot Setup starts expanded");
@@ -1066,9 +1078,9 @@ assert.match(app, /\$\("#hotspot-setup"\)\.addEventListener\("change"/, "complic
 assert.doesNotMatch(renderOpForBody, /data-complication-choice/, "generated OpFor rendering remains separate from complication selection");
 assert.ok(css.includes("setup-configuration-card") && css.includes("complication-selection-status"), "battlefield and complication setup remain responsive and visibly grouped");
 
-assert.deepEqual(PLAYER_VISIBLE_HOT_SPOT_IDS, ["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher"], "only completed and verified contracts are player-visible in source order");
+assert.deepEqual(PLAYER_VISIBLE_HOT_SPOT_IDS, ["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen"], "only completed and verified contracts are player-visible in source order");
 assert.equal(PLAYER_VISIBLE_HOT_SPOT_IDS.every(id => HOT_SPOTS.some(hotSpot => hotSpot.id === id)), true, "every visible contract retains its source data");
-assert.equal(HOT_SPOTS.some(hotSpot => hotSpot.id === "new-ivaarsen"), true, "hidden contract data remains available for development and regression tests");
+assert.equal(HOT_SPOTS.some(hotSpot => hotSpot.id === "new-ivaarsen"), true, "New Ivaarsen contract data is available to the verified-location filter");
 assert.match(app, /const VISIBLE_HOT_SPOTS = HOT_SPOTS\.filter/, "the browser uses one centralized approved-location filter");
 assert.match(app, /state\.hotSpotId !== hotSpot\.id.*state\.hotSpotId = hotSpot\.id/, "saved hidden selections fall back to an approved location");
 
@@ -1087,7 +1099,7 @@ assert.deepEqual(MELCHER_GRASSLANDS_MAPSHEETS.map(row => row[2]), ["BB", "AGOAC"
 assert.equal(MELCHER_BLACK_MARKET.length, 11, "Melcher includes all Black Market AgroMech results");
 assert.equal(MELCHER_COMMAND_COMPLICATIONS.rows.length, 5, "Melcher includes the full resolved Command Complications bracket");
 assert.equal(MELCHER_TEMPORARY_HIRES.length, 2, "Melcher includes both named temporary hires");
-assert.match(app, /"melcher"\]\);/, "Melcher uses the shared interactive complication and simplified OpFor workflows");
+assert.match(app, /"melcher", "new-ivaarsen"\]\);/, "Melcher and New Ivaarsen use the shared interactive complication and simplified OpFor workflows");
 assert.match(app, /Math\.min\(objective\.maxCount \?\? Infinity/, "repeatable objectives honor source-defined maximum counts");
 const hotSpotsHeader = html.match(/<header class="topbar">[\s\S]*?<\/header>/)?.[0] || "";
 const coreHeader = coreHtml.match(/<header class="topbar">[\s\S]*?<\/header>/)?.[0] || "";
@@ -1096,12 +1108,11 @@ assert.match(coreHeader, /CORE MISSION FOUNDRY[\s\S]*Mission generator[\s\S]*v0\
 assert.doesNotMatch(hotSpotsHeader + coreHeader, /status-dot/, "neither application header contains a colored status dot");
 assert.match(css + coreCss, /\.app-nav-link\{?[^}]*font-weight:\s*400[^}]*text-decoration:\s*underline/s, "both navigation links use the shared muted regular underlined treatment");
 assert.match(melcher.contractReference.summary.join(" "), /Melcher Food Corporation.*Surinami Processing.*Intensity 2/, "Melcher Contract Reference preserves the employers and contract intensity");
-assert.equal(melcher.tracks[0].variant.sourceRolls[0].presentation, "battlefield-table", "Melcher uses the selectable battlefield-table presentation");
-assert.equal(melcher.tracks[0].variant.sourceRolls[0].note, undefined, "Melcher omits redundant independent-roll and duplicate-reroll instructions");
+assert.equal(melcher.tracks[0].variant.sourceRolls, undefined, "Melcher mapsheet tables are reference-only and hold no selection state");
 assert.doesNotMatch(melcher.tracks[0].variant.setupDetails.join(" "), /duplicate result|independently rolled/i, "Melcher battlefield rules omit redundant duplicate-result guidance");
-assert.match(app, /function renderBattlefieldTable\(table, referenceTrack\)/, "battlefield configuration supports selectable mapsheet tables");
-assert.match(app, /selectable-battlefield-row.*selected/s, "the selected mapsheet row is clearly identified");
-assert.match(app, /sourceRollKey\(sourceRoll\.dataset\.sourceRollSequence/, "mapsheet table selections persist by track sequence");
+assert.match(app, /function renderBattlefieldTable\(table\) \{\s+return renderGeneratorTable\("", table\);/s, "battlefield configuration renders reference-only tables");
+assert.doesNotMatch(app, /selectable-battlefield-row|Selected mapsheet|No mapsheet selected/, "battlefield tables expose no selected row or selected summary");
+assert.doesNotMatch(data, /presentation: "battlefield-table"/, "contract data stores no battlefield-table selection configuration");
 
 for (const hotSpot of HOT_SPOTS) {
   assert.ok(hotSpot.sides.length >= 2, hotSpot.name + " has opposing sides");

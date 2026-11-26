@@ -2835,14 +2835,6 @@ function melcherOverlay(trackId, extra = {}) {
       "Successful track completion: a player must complete at least one objective and earn more objective VP than the opponent. Equal VP means neither player successfully completes the track. Either contract side wins its contract by successfully completing at least one of the two simultaneous tracks."
     ],
     commandComplications: MELCHER_COMMAND_COMPLICATIONS,
-    sourceRolls: [{
-      id: "melcher-mapsheet",
-      label: "Melcher battlefield mapsheet (1D6)",
-      presentation: "battlefield-table",
-      tableTitle: "Melcher Mapsheets · Grasslands Table 1 (1D6)",
-      placeholder: "Choose the resolved Grasslands Table 1 result",
-      options: MELCHER_GRASSLANDS_MAPSHEETS.map(row => ({ value: row[0], label: row[0] + " · " + row[1] + " (" + row[2] + ")" }))
-    }],
     referenceTables: melcherReferenceTables,
     temporaryHires: MELCHER_TEMPORARY_HIRES,
     temporaryHireNote: "Use these cards after resolving Melcher Temporary Hire availability and charges under Draconis Reach pp. 97–98 and the general rules. A named hire may participate in only one simultaneous track.",
@@ -2869,6 +2861,107 @@ const melcherObjectiveRaidVariant = melcherOverlay("objective-raid", {
     ...(melcherObjectiveRaidBase?.special || []),
     "Melcher salvage restriction: Earwigs may not claim enemy salvage. If Border Collies successfully complete the track, apply the general salvage procedure; otherwise each side reclaims its own destroyed or crippled units."
   ]
+});
+
+export const NEW_IVAARSEN_LIGHT_URBAN_MAPSHEETS = [
+  ["1", "River CommCenter", "MapPack: Grasslands"],
+  ["2", "Park District", "MapPack: City"],
+  ["3", "Central Park", "MapPack: City"],
+  ["4", "AeroBase #1", "MapPack: Deserts"],
+  ["5", "AeroBase #2", "MapPack: Deserts"],
+  ["6", "Roundabout", "MapPack: City"]
+];
+
+export const NEW_IVAARSEN_RYUKEN_SUPPORT = [
+  ["1", "Wight WGT-1LAW/SC", "1,142", "29"],
+  ["2", "Panther PNT-14R", "1,291", "25"],
+  ["3", "Rokurokubi RK-4K", "1,286", "27"],
+  ["4", "Phoenix Hawk PXH-7K", "1,241", "35"],
+  ["5", "Wolf Trap WFT-2B", "1,439", "31"],
+  ["6", "Centurion CN11-O", "1,236", "28"]
+];
+
+export const NEW_IVAARSEN_CHARACTERS = [
+  { id: "duncan", name: "Sir Duncan Atterton", identity: "Stephensons special character", unit: "Sentry SNT-W5", bv: "1,143", pv: "27", gunnery: "3", piloting: "4", alphaStrikeSkill: "3", source: "Draconis Reach pp. 99–102" },
+  { id: "siona", name: "Siona Stephenson", identity: "Stephensons special character", unit: "Gunsmith CH-11NG", bv: "1,465", pv: "36", gunnery: "3", piloting: "4", alphaStrikeSkill: "3", source: "Draconis Reach pp. 99–102" }
+];
+
+export const NEW_IVAARSEN_COMMAND_COMPLICATIONS = {
+  separateBySide: true,
+  note: "Resolve each force’s Command Complications outside the browser, then select the resulting effects. The listed command-right modifiers apply to the initial and secondary rolls. Secondary Roll Twice results do not recurse; use the provisional duplicate procedures shown below.",
+  provisional: [
+    "Stephensons: resolve two secondary results; reroll a secondary 8+, keep a duplicate No Complication result, and reroll any other duplicate.",
+    "ISF: resolve two secondary results; ignore a secondary 8+, ignore duplicate actual effects, and do not reroll duplicates. A duplicate No Complication has no additional effect."
+  ],
+  groups: [
+    { sideId: "stephensons", title: "Stephensons · Liaison Command (+1)", rollLabel: "Adjusted 1D6" },
+    { sideId: "isf", title: "ISF · House Command (+2)", rollLabel: "Adjusted 1D6" }
+  ],
+  rows: [
+    { roll: "1–3", name: "No Complication", text: "No additional effect.", sides: ["stephensons"] },
+    { roll: "4", name: "Duncan’s Burden", text: "Sir Duncan Atterton receives a +1 Target Number modifier to all Skill rolls. If Duncan is not participating, this result has no effect and is not rerolled.", absentText: "Sir Duncan Atterton is not participating, so this resolved result has no tactical effect and is not rerolled.", duncanOnly: true, sides: ["stephensons"] },
+    { roll: "5", name: "Falling Damage", text: "Before the track begins, one random BattleMech in the Stephensons force suffers falling damage. Add 2 to the Stephensons’ cumulative destroyed-building-hex total for the first two tracks; record this adjustment with the Track 3 setup total because the browser does not alter it automatically.", sides: ["stephensons"] },
+    { roll: "6", name: "Urban Crossfire", text: "All Stephensons units receive a +1 ranged-attack Target Number modifier against ISF BattleMechs when a building hex is adjacent to and directly behind the target along the line of sight.", sides: ["stephensons"] },
+    { roll: "7", name: "Forced Withdrawal", text: "The ISF rolls 1D6 to determine the turn on which Sir Duncan Atterton must begin Forced Withdrawal. If Duncan is not participating, this result has no effect and is not rerolled.", absentText: "Sir Duncan Atterton is not participating, so this resolved result has no tactical effect and is not rerolled.", duncanOnly: true, sides: ["stephensons"] },
+    { roll: "8+", name: "Roll Twice", text: "Resolve two additional Stephensons results using the approved provisional duplicate procedure.", sides: ["stephensons"] },
+    { roll: "1–3", name: "No Complication", text: "No additional effect.", sides: ["isf"] },
+    { roll: "4", name: "Collateral Damage", text: "Add 1 to the ISF cumulative destroyed-building-hex total for the first two tracks. Record this adjustment with the Track 3 setup total; the browser does not alter it automatically.", sides: ["isf"] },
+    { roll: "5", name: "Long Tom Support", text: "The Stephensons receive two Long Tom Artillery Support Attacks per Scale for this track.", sides: ["isf"] },
+    { roll: "6", name: "Mechanized Infantry Support", text: "After initial deployment, the Stephensons receive two BSP Mechanized Infantry Platoons per Scale; each may be placed atop any building hex.", sides: ["isf"] },
+    { roll: "7", name: "Striker Support", text: "The Stephensons receive one BSP Striker Light Tank per Scale for this track.", sides: ["isf"] },
+    { roll: "8+", name: "Roll Twice", text: "Resolve two additional ISF results using the approved provisional duplicate procedure.", sides: ["isf"] }
+  ],
+  ref: "Draconis Reach pp. 99–102"
+};
+
+const newIvaarsenBattlefieldDetails = [
+  "BattleTech mapsheets: use Light Urban Table 7. Scale 1 uses one mapsheet; Scales 2–3 use two mapsheets. Duplicate results are permitted.",
+  "Alpha Strike terrain: use a battlefield 48 inches across, with a width of 36 inches at Scale 1 and 48 inches at Scales 2–3. Each player chooses eight terrain pieces and places them using the standard Light Urban placement bands."
+];
+
+const newIvaarsenReferenceTables = [{
+  title: "Light Urban Mapsheets · Table 7 (1D6) · Reference only",
+  headers: ["Roll", "Mapsheet", "Source"],
+  rows: NEW_IVAARSEN_LIGHT_URBAN_MAPSHEETS
+}];
+
+function newIvaarsenOverlay(trackId, extra = {}) {
+  const base = TRACKS.find(track => track.id === trackId);
+  return {
+    ...extra,
+    displayName: extra.displayName || base.name,
+    type: "New Ivaarsen contract track",
+    setupDetails: [...(base.setupDetails || []), ...newIvaarsenBattlefieldDetails, ...(extra.setupDetails || [])],
+    special: [
+      ...(base.special || []),
+      "Both participating forces are player-controlled Mercenary commands.",
+      "Building Damage: for Tracks 1–2, players record each side’s cumulative destroyed building hexes outside the browser, including applicable Command Complication adjustments. Do not count the four Defender-designated Strike objective buildings.",
+      "Each participating Stephensons special character grants the ISF one Ryuken-ni support BattleMech for this track, to a maximum of two. The quantity is independent of Scale; resolve the specific units from the Ryuken-ni reference table at the table.",
+      "Total Warfare substitutions: an assigned BSP infantry unit may be represented by any Inner Sphere Motorized Infantry Platoon; an assigned Light Wheeled BSP vehicle may be represented by a Striker Light Tank (564 BV / 20 PV).",
+      ...(extra.special || [])
+    ],
+    commandComplications: NEW_IVAARSEN_COMMAND_COMPLICATIONS,
+    referenceTables: newIvaarsenReferenceTables,
+    sourceRefs: ["Draconis Reach pp. 99–102", base.name + " " + (base.pageRef || "p. " + base.page), "Light Urban Table 7 p. 154", "Current Draconis Reach master errata"]
+  };
+}
+
+const newIvaarsenStrikeVariant = newIvaarsenOverlay("strike", {
+  displayName: "Track 1 · Strike",
+  setupDetails: ["Sir Duncan Atterton participates automatically in Track 1."],
+  special: ["Do not include the four Defender-designated Strike objective buildings when recording destroyed building hexes for the Track 3 comparison."]
+});
+
+const newIvaarsenMeetingVariant = newIvaarsenOverlay("meeting-engagement", {
+  displayName: "Track 2 · Meeting Engagement",
+  setupDetails: ["Before setup, record whether Sir Duncan Atterton’s Sentry was destroyed in Track 1. Duncan participates only when that BattleMech remains operational."],
+  special: ["Record cumulative building hexes destroyed by each force for later Track 3 setup, including any resolved Command Complication adjustments."]
+});
+
+const newIvaarsenAssaultVariant = newIvaarsenOverlay("assault", {
+  displayName: "Track 3 · Assault",
+  setupDetails: ["Before setup, separately record whether Duncan’s Sentry was destroyed in either prior track and whether Duncan survived both prior tracks. Siona Stephenson participates only if Duncan survived both prior tracks."],
+  special: ["At the beginning of Track 3, compare cumulative building hexes destroyed in Tracks 1–2, including complication adjustments. If the ISF total is higher, the Stephensons receive one additional BSP Mechanized Infantry Platoon per point of difference; do not multiply this support by Scale."]
 });
 
 export const HOT_SPOTS = [
@@ -3014,24 +3107,21 @@ export const HOT_SPOTS = [
     name: "New Ivaarsen",
     region: "Draconis Combine",
     terrain: "Light Urban",
-    source: "Draconis Reach pp. 101–102",
-    campaignState: {
-      title: "Cross-track campaign state",
-      note: "Record the source’s running values after each track. These entries remain associated with their track sequence when you switch between New Ivaarsen tracks. Do not count the four buildings designated by the Defender in the Strike track.",
-      sourceRefs: ["Draconis Reach pp. 101–102"],
-      fields: [
-        { id: "stephensonsBuildingDamage", label: "Stephensons building hexes destroyed this track", type: "number", min: 0, default: 0 },
-        { id: "isfBuildingDamage", label: "ISF building hexes destroyed this track", type: "number", min: 0, default: 0 },
-        { id: "sirDuncanStatus", label: "Sir Duncan Atterton after this track", type: "status", default: "not-recorded" },
-        { id: "sionaStatus", label: "Siona Stephenson after this track", type: "status", default: "not-recorded" },
-        { id: "specialCharactersPresent", label: "Stephenson special characters present this track", type: "number", min: 0, max: 2, default: 0 }
-      ]
+    source: "Draconis Reach pp. 99–102",
+    note: "Select the current tactical track directly. The browser presents current-track rules and scoring without maintaining campaign history.",
+    contractReference: {
+      summary: ["421145A · Asset Recovery · House Stephenson · Federated Suns political alignment · Stephensons participating faction Mercenary · Raid · Liaison Command · three months.", "421145B · Guerrilla Suppression · ISF New Ivaarsen Occupation Command · Draconis Combine political alignment · ISF participating faction Mercenary · Retainer · House Command · three months.", "New Ivaarsen · Light Urban · three tracks. Guerrilla Suppression salvage is 100 percent (13), incorporating current errata. Source: Draconis Reach pp. 99–102."],
+      progression: ["Play Strike, Meeting Engagement, and Assault in order. The browser displays only the selected tactical track; record cross-track outcomes with the campaign record.", "For Track 3, enter the cumulative destroyed-building-hex totals from Tracks 1–2, including applicable complication adjustments and excluding the four Defender-designated Strike objective buildings."],
+      victory: ["Stephensons win if Siona Stephenson survives Track 3 and either Siona or Sir Duncan Atterton has an operational BattleMech.", "ISF wins if it successfully completes at least one track. The conditions are independent, so both contracts may succeed."]
     },
-    sides: [factionSide("stephensons", "Stephensons", "Draconis Combine"), factionSide("isf", "ISF", "Federated Suns")],
+    sides: [
+      { ...factionSide("stephensons", "Stephensons", "Mercenary"), contract: "421145A", employer: "House Stephenson", employerAlignment: "Federated Suns" },
+      { ...factionSide("isf", "ISF", "Mercenary"), contract: "421145B", employer: "ISF New Ivaarsen Occupation Command", employerAlignment: "Draconis Combine" }
+    ],
     tracks: [
-      fixedHotSpotTrack(1, "strike", "stephensons", "isf"),
-      fixedHotSpotTrack(2, "meeting-engagement", "stephensons", "isf"),
-      fixedHotSpotTrack(3, "assault", "isf", "stephensons")
+      fixedHotSpotTrack(1, "strike", "stephensons", "isf", { label: "Track 1 · Strike", variant: newIvaarsenStrikeVariant }),
+      fixedHotSpotTrack(2, "meeting-engagement", "stephensons", "isf", { label: "Track 2 · Meeting Engagement", variant: newIvaarsenMeetingVariant }),
+      fixedHotSpotTrack(3, "assault", "isf", "stephensons", { label: "Track 3 · Assault", variant: newIvaarsenAssaultVariant })
     ]
   },
   {
@@ -3193,6 +3283,6 @@ export const HOT_SPOTS = [
   }
 ];
 
-export const PLAYER_VISIBLE_HOT_SPOT_IDS = Object.freeze(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher"]);
+export const PLAYER_VISIBLE_HOT_SPOT_IDS = Object.freeze(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen"]);
 
 

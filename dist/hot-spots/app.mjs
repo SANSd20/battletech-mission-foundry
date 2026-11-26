@@ -1,4 +1,4 @@
-import { adjustDaharEarnedVp, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_PROVISIONAL_RULES, evaluateAltaVistaCampaign, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_PROVISIONAL_RULES, MISSION_OPFOR_OVERRIDES, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PLAYER_VISIBLE_HOT_SPOT_IDS, RECON_DENY_ATTACKER_OBJECTIVE_IDS, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=melcher-ux21";
+import { adjustDaharEarnedVp, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_PROVISIONAL_RULES, evaluateAltaVistaCampaign, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_PROVISIONAL_RULES, MISSION_OPFOR_OVERRIDES, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PLAYER_VISIBLE_HOT_SPOT_IDS, RECON_DENY_ATTACKER_OBJECTIVE_IDS, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=new-ivaarsen";
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -123,7 +123,7 @@ function currentHotSpot() {
 
 const approvedHotSpotIds = new Set(PLAYER_VISIBLE_HOT_SPOT_IDS);
 const VISIBLE_HOT_SPOTS = HOT_SPOTS.filter(hotSpot => approvedHotSpotIds.has(hotSpot.id));
-const interactiveComplicationContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher"]);
+const interactiveComplicationContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen"]);
 
 function complicationRowKey(row, index) {
   return "effect-" + index + "-" + row.roll;
@@ -135,6 +135,10 @@ function isNoComplicationRow(row) {
 
 function isRollTwiceRow(row) {
   return /roll twice/i.test(row.name);
+}
+
+function complicationRowAppliesToSide(row, sideId) {
+  return !row.sides?.length || row.sides.includes(sideId);
 }
 
 function currentComplicationTable() {
@@ -162,9 +166,11 @@ function complicationSelectionState(table = currentComplicationTable()) {
   if (!profile) return null;
   const key = complicationSelectionKey();
   if (!state.complicationSelections[key]) {
-    const noComplicationIndex = profile.table.rows.findIndex(isNoComplicationRow);
-    const defaultKey = noComplicationIndex >= 0 ? complicationRowKey(profile.table.rows[noComplicationIndex], noComplicationIndex) : null;
-    const draft = Object.fromEntries(profile.participants.map(side => [side.id, defaultKey ? [defaultKey] : []]));
+    const draft = Object.fromEntries(profile.participants.map(side => {
+      const noComplicationIndex = profile.table.rows.findIndex(row => isNoComplicationRow(row) && complicationRowAppliesToSide(row, side.id));
+      const defaultKey = noComplicationIndex >= 0 ? complicationRowKey(profile.table.rows[noComplicationIndex], noComplicationIndex) : null;
+      return [side.id, defaultKey ? [defaultKey] : []];
+    }));
     state.complicationSelections[key] = { expanded: true, appliedOnce: false, draft, applied: Object.fromEntries(profile.participants.map(side => [side.id, []])) };
   }
   return state.complicationSelections[key];
@@ -212,7 +218,7 @@ function sideById(sideId) {
   return side;
 }
 
-const simplifiedContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher"]);
+const simplifiedContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen"]);
 
 function generatedOpForConfiguration() {
   const hotSpot = currentHotSpot();
@@ -817,9 +823,13 @@ function renderControlState() {
   if (setupSummary) setupSummary.textContent = [currentHotSpot().name, resolved?.displayName || track?.name || currentHotSpotStep()?.label || "Track pending", selected?.name || "Military side", "Scale " + state.scale].join(" · ");
   Array.from(document.querySelectorAll(".scale-button")).forEach(button => {
     const active = Number(button.dataset.scale) === state.scale;
+    const unavailable = Boolean(fixedScale) && Number(button.dataset.scale) !== fixedScale;
     button.classList.toggle("active", active);
+    button.classList.toggle("unavailable", unavailable);
     button.setAttribute("aria-pressed", String(active));
-    button.disabled = Boolean(fixedScale);
+    button.setAttribute("aria-disabled", String(unavailable));
+    button.disabled = unavailable;
+    button.title = unavailable ? "Scale " + button.dataset.scale + " is unavailable for " + currentHotSpot().name : "";
   });
 }
 
@@ -1062,10 +1072,7 @@ function battlefieldConfigurationParts(referenceTrack) {
 
 function battlefieldSelectionSummary(referenceTrack) {
   const { tables } = battlefieldConfigurationParts(referenceTrack);
-  const step = currentHotSpotStep();
-  const selectedRolls = (referenceTrack.sourceRolls || []).filter(roll => /map|terrain|battlefield/i.test([roll.id, roll.label, roll.note].join(" ")) && selectedSourceRoll(step?.sequence, roll)).map(roll => sourceRollLabel(step.sequence, roll));
-  const selectedChoices = (referenceTrack.selectionControls || []).filter(selection => /map|terrain|battlefield/i.test([selection.id, selection.label, selection.note].join(" ")) && selectedVariantSelection(step?.sequence, selection)).map(selection => variantSelectionLabel(step.sequence, selection));
-  return [...(tables[0] ? [tables[0].title] : [currentHotSpot().terrain + " battlefield"]), ...selectedRolls, ...selectedChoices].join(" · ");
+  return tables[0]?.title || currentHotSpot().terrain + " battlefield";
 }
 
 function displayObjective(objective, variant) {
@@ -1132,6 +1139,14 @@ function activeComplicationExtras(profile) {
       return '<div class="active-complication-extra"><strong>' + esc(recipient.name) + ' receives support</strong><label><span>Receiving player’s unit choice</span><select data-melcher-support-recipient="' + esc(recipient.id) + '"><option value="lct-3v"' + (selected === "lct-3v" ? " selected" : "") + '>LCT-3V Locust</option><option value="um-r80"' + (selected === "um-r80" ? " selected" : "") + '>UM-R80 UrbanMech</option></select></label><span>One selected unit per Scale; current Melcher tactical Scale is 1. Gunnery 5 · Piloting 6 · Alpha Strike Skill 5.</span></div>';
     }).join("");
   }
+  if (hotSpotId === "new-ivaarsen") {
+    const support = [];
+    if (appliedComplicationNamed("isf", "Long Tom Support", profile.table)) support.push("Long Tom Support Attacks: " + (2 * state.scale));
+    if (appliedComplicationNamed("isf", "Mechanized Infantry Support", profile.table)) support.push("BSP Mechanized Infantry Platoons: " + (2 * state.scale) + " · place after initial deployment atop building hexes");
+    if (appliedComplicationNamed("isf", "Striker Support", profile.table)) support.push("BSP Striker Light Tanks: " + state.scale);
+    if (!support.length) return "";
+    return '<div class="active-complication-extra"><strong>Stephensons receive complication support</strong><span>' + support.map(esc).join(" · ") + '</span><span>These quantities use current Scale ' + state.scale + ' and remain separate from Track 3 building-difference support.</span></div>';
+  }
   return "";
 }
 
@@ -1149,7 +1164,10 @@ function renderActiveComplications(profile, selection) {
       effectCards.push('<article class="active-complication-card shared-effect"><strong>' + esc(row.name) + '</strong><span class="effect-owner">Battlefield-wide · selected for ' + esc(affected.map(side => side.name).join(" and ")) + '</span><p>' + esc(row.text) + '</p></article>');
       continue;
     }
-    for (const side of affected) effectCards.push('<article class="active-complication-card"><strong>' + esc(row.name) + '</strong><span class="effect-owner">Affected force: ' + esc(side.name) + '</span><p>' + esc(row.text) + '</p></article>');
+    for (const side of affected) {
+      const duncanAbsent = profile.hotSpot.id === "new-ivaarsen" && row.duncanOnly && newIvaarsenCharacterAvailability().duncan === false;
+      effectCards.push('<article class="active-complication-card"><strong>' + esc(row.name) + '</strong><span class="effect-owner">Affected force: ' + esc(side.name) + '</span><p>' + esc(duncanAbsent ? row.absentText : row.text) + '</p></article>');
+    }
   }
   const extras = activeComplicationExtras(profile);
   if (!effectCards.length && !extras) return "";
@@ -1165,6 +1183,21 @@ function renderInteractiveComplications(profile) {
       return total + profile.participants.filter(side => (selection.applied[side.id] || []).includes(key)).length;
     }, 0);
     return '<div class="complication-selection-status"><div><strong>' + (activeCount ? activeCount + ' applied complication' + (activeCount === 1 ? '' : 's') : 'No active complications') + '</strong><span>Selections are applied to the current track. Reopen the table to revise them.</span></div><button type="button" class="complication-edit-button" data-edit-complications="true">Edit</button></div>';
+  }
+  if (profile.table.separateBySide) {
+    const tables = profile.table.groups.map(group => {
+      const side = profile.participants.find(item => item.id === group.sideId);
+      const rows = profile.table.rows.map((row, index) => ({ row, index })).filter(({ row }) => complicationRowAppliesToSide(row, group.sideId)).map(({ row, index }) => {
+        const key = complicationRowKey(row, index);
+        const control = isRollTwiceRow(row)
+          ? '<span class="complication-reference-only">Reference only</span>'
+          : '<label class="complication-choice"><input type="checkbox" data-complication-choice="' + esc(key) + '" data-complication-force="' + esc(group.sideId) + '"' + ((selection.draft[group.sideId] || []).includes(key) ? " checked" : "") + '><span>' + ((selection.draft[group.sideId] || []).includes(key) ? "Selected" : "Select") + '</span></label>';
+        return '<tr><th scope="row"><span class="complication-roll">' + esc(row.roll) + '</span><strong>' + esc(row.name) + '</strong><small>' + esc(row.text) + '</small></th><td>' + control + '</td></tr>';
+      }).join("");
+      return '<div class="separate-complication-table"><strong>' + esc(group.title || side?.name || "Force") + '</strong><div class="shared-rule-table-wrap"><table class="shared-rule-table command-complications-table interactive-complications"><thead><tr><th scope="col">Resolved effect</th><th scope="col">' + esc(side?.name || "Force") + '</th></tr></thead><tbody>' + rows + '</tbody></table></div></div>';
+    }).join("");
+    const provisional = profile.table.provisional?.length ? '<div class="complication-provisional">' + renderProvisionalRules(profile.table.provisional) + '</div>' : "";
+    return '<div class="complication-selector"><div class="complication-selector-head"><p>Select the complications already resolved at the table. Roll Twice is a reference instruction; no dice are rolled automatically.</p></div>' + tables + provisional + '<div class="complication-actions"><button type="button" data-apply-complications="true">Apply Complications</button></div></div>';
   }
   const headerCells = profile.participants.map(side => '<th scope="col">' + esc(side.name) + '</th>').join("");
   const rows = profile.table.rows.map((row, index) => {
@@ -1193,18 +1226,8 @@ function renderAppliedComplications(table) {
   return profile && selection?.appliedOnce ? renderActiveComplications(profile, selection) : "";
 }
 
-function renderBattlefieldTable(table, referenceTrack) {
-  const step = currentHotSpotStep();
-  const roll = (referenceTrack.sourceRolls || []).find(item => item.presentation === "battlefield-table" && item.tableTitle === table.title);
-  if (!roll || !step) return renderGeneratorTable("", table);
-  const selected = selectedSourceRoll(step.sequence, roll);
-  const rows = table.rows.map(row => {
-    const value = String(row[0]);
-    const checked = value === selected;
-    return '<tr class="selectable-battlefield-row' + (checked ? ' selected' : '') + '"><td><label class="battlefield-roll-choice"><input type="radio" name="battlefield-roll-' + esc(String(step.sequence)) + '" value="' + esc(value) + '" data-source-roll-id="' + esc(roll.id) + '" data-source-roll-sequence="' + esc(String(step.sequence)) + '"' + (checked ? ' checked' : '') + '><span>' + esc(value) + '</span></label></td>' + row.slice(1).map(cell => '<td>' + esc(cell) + '</td>').join("") + '</tr>';
-  }).join("");
-  const selectedLabel = selected ? sourceRollLabel(step.sequence, roll) : "No mapsheet selected";
-  return '<div class="selected-battlefield" aria-live="polite"><span>Selected mapsheet</span><strong>' + esc(selectedLabel) + '</strong></div><div class="shared-rule-table-wrap"><table class="shared-rule-table selectable-battlefield-table"><thead><tr>' + table.headers.map(header => '<th scope="col">' + esc(header) + '</th>').join("") + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+function renderBattlefieldTable(table) {
+  return renderGeneratorTable("", table);
 }
 
 function renderSetupConfiguration(referenceTrack) {
@@ -1219,9 +1242,9 @@ function renderSetupConfiguration(referenceTrack) {
   const procedure = items.length
     ? '<ul class="rule-list">' + items.map(item => '<li>' + esc(item) + '</li>').join("") + '</ul>'
     : '<p class="reference-copy">No contract-specific mapsheet table or Alpha Strike terrain override applies. Use the selected track’s battlefield rules.</p>';
-  const tableMarkup = tables.map(table => '<div class="setup-battlefield-table"><div class="label">' + esc(table.title) + '</div>' + renderBattlefieldTable(table, referenceTrack) + '</div>').join("");
+  const tableMarkup = tables.map(table => '<div class="setup-battlefield-table"><div class="label">' + esc(table.title) + '</div>' + renderBattlefieldTable(table) + '</div>').join("");
   battlefieldContainer.innerHTML = '<section class="setup-configuration-card battlefield-configuration-card"><div class="panel-kicker">BATTLEFIELD CONFIGURATION</div><p class="setup-configuration-summary">' + esc(battlefieldSelectionSummary(referenceTrack)) + ' · Scale ' + esc(String(state.scale)) + '</p>' + procedure + tableMarkup + '</section>';
-  complicationContainer.innerHTML = renderCommandComplicationsSetup(referenceTrack.commandComplications);
+  complicationContainer.innerHTML = renderNewIvaarsenSetupInputs() + renderCommandComplicationsSetup(referenceTrack.commandComplications);
 
   const setupSummary = $("#hotspot-setup-summary");
   const selected = sideById(state.selectedSide[currentHotSpot().id]);
@@ -1237,6 +1260,72 @@ function renderTemporaryHires(hires, note = "Use these cards after the players r
 
 function tacticalInputKey(name) {
   return [state.hotSpotId, currentHotSpotStep()?.sequence || 1, state.trackId || "pending", name].join("::");
+}
+
+function newIvaarsenInput(name, fallback = "") {
+  return state.tacticalInputs[tacticalInputKey(name)] ?? fallback;
+}
+
+function newIvaarsenCharacterAvailability() {
+  const sequence = Number(currentHotSpotStep()?.sequence || 1);
+  if (currentHotSpot().id !== "new-ivaarsen") return { duncan: false, siona: false, unresolved: false };
+  if (sequence === 1) return { duncan: true, siona: false, unresolved: false };
+  if (sequence === 2) {
+    const destroyed = newIvaarsenInput("duncan-mech-destroyed-track-1", "unknown");
+    return { duncan: destroyed === "no" ? true : destroyed === "yes" ? false : null, siona: false, unresolved: destroyed === "unknown" };
+  }
+  const destroyed = newIvaarsenInput("duncan-mech-destroyed-prior", "unknown");
+  const survived = newIvaarsenInput("duncan-survived-prior", "unknown");
+  return {
+    duncan: destroyed === "no" ? true : destroyed === "yes" ? false : null,
+    siona: survived === "yes" ? true : survived === "no" ? false : null,
+    unresolved: destroyed === "unknown" || survived === "unknown"
+  };
+}
+
+function newIvaarsenSelect(name, label, selected) {
+  const options = [["unknown", "Not answered"], ["no", "No"], ["yes", "Yes"]].map(([value, text]) => '<option value="' + value + '"' + (selected === value ? " selected" : "") + '>' + text + '</option>').join("");
+  return '<label><span>' + esc(label) + '</span><select data-new-ivaarsen-input="' + esc(name) + '">' + options + '</select></label>';
+}
+
+function renderNewIvaarsenSetupInputs() {
+  if (currentHotSpot().id !== "new-ivaarsen") return "";
+  const sequence = Number(currentHotSpotStep()?.sequence || 1);
+  let controls = '<p class="reference-copy">Sir Duncan Atterton participates automatically in Track 1.</p>';
+  if (sequence === 2) controls = newIvaarsenSelect("duncan-mech-destroyed-track-1", "Was Duncan’s Sentry destroyed in Track 1?", newIvaarsenInput("duncan-mech-destroyed-track-1", "unknown"));
+  if (sequence === 3) {
+    controls = newIvaarsenSelect("duncan-mech-destroyed-prior", "Was Duncan’s Sentry destroyed in either prior track?", newIvaarsenInput("duncan-mech-destroyed-prior", "unknown")) +
+      newIvaarsenSelect("duncan-survived-prior", "Did Duncan survive both prior tracks?", newIvaarsenInput("duncan-survived-prior", "unknown"));
+    const steph = newIvaarsenInput("stephensons-building-total", "");
+    const isf = newIvaarsenInput("isf-building-total", "");
+    controls += '<label><span>Stephensons destroyed building hexes · Tracks 1–2</span><input type="number" min="0" step="1" value="' + esc(steph) + '" data-new-ivaarsen-input="stephensons-building-total"></label>' +
+      '<label><span>ISF destroyed building hexes · Tracks 1–2</span><input type="number" min="0" step="1" value="' + esc(isf) + '" data-new-ivaarsen-input="isf-building-total"></label>' +
+      '<p class="control-hint">Include resolved complication adjustments. Exclude the four Defender-designated Strike objective buildings.</p>';
+  }
+  return '<section class="setup-configuration-card new-ivaarsen-setup-card"><div class="panel-kicker">CURRENT-TRACK AVAILABILITY</div><div class="setup-input-grid">' + controls + '</div></section>';
+}
+
+function renderNewIvaarsenCharacterCard(character) {
+  return '<article class="hire-reference-card"><div class="hire-card-head"><span>SPECIAL CHARACTER</span><h4>' + esc(character.name) + '</h4><p>' + esc(character.identity) + '</p></div><div class="hire-card-unit">' + esc(character.unit) + '</div><div class="hire-card-divider"></div><dl><div><dt>Battle Value</dt><dd>' + esc(character.bv) + '</dd></div><div><dt>Point Value</dt><dd>' + esc(character.pv) + '</dd></div><div><dt>Gunnery / Piloting</dt><dd>' + esc(character.gunnery + " / " + character.piloting) + '</dd></div><div><dt>Alpha Strike Skill</dt><dd>' + esc(character.alphaStrikeSkill) + '</dd></div></dl><div class="hire-card-source">' + esc(character.source) + '</div></article>';
+}
+
+function renderNewIvaarsenTacticalReference() {
+  if (currentHotSpot().id !== "new-ivaarsen") return "";
+  const availability = newIvaarsenCharacterAvailability();
+  const characters = NEW_IVAARSEN_CHARACTERS.filter(character => availability[character.id] === true);
+  const characterCards = characters.map(renderNewIvaarsenCharacterCard).join("");
+  const pending = availability.unresolved ? '<p class="reference-copy">Complete the availability questions in Hot Spot Setup before treating unresolved special characters as participants.</p>' : "";
+  const characterSection = '<div class="reference-section temporary-hire-section"><div class="panel-kicker">STEPHENSONS SPECIAL CHARACTERS</div>' + pending + (characterCards ? '<div class="hire-card-grid">' + characterCards + '</div>' : '<p class="reference-copy">No special character is currently confirmed to participate.</p>') + '</div>';
+  const ryukenSection = characters.length ? '<div class="reference-section"><div class="panel-kicker">ISF TACTICAL SUPPORT · RYUKEN-NI</div><p class="reference-copy">Receive ' + characters.length + ' Ryuken-ni support BattleMech' + (characters.length === 1 ? "" : "s") + '—one per participating Stephensons special character, independent of Scale. All pilots are Gunnery 3 / Piloting 4 / Alpha Strike Skill 3. Resolve the unit result at the table.</p>' + renderGeneratorTable("Ryuken-ni Support BattleMechs (1D6)", { headers: ["Roll", "Unit", "BV", "PV"], rows: NEW_IVAARSEN_RYUKEN_SUPPORT }) + '</div>' : "";
+  let buildingSection = "";
+  if (Number(currentHotSpotStep()?.sequence) === 3) {
+    const steph = newIvaarsenInput("stephensons-building-total", "");
+    const isf = newIvaarsenInput("isf-building-total", "");
+    const complete = steph !== "" && isf !== "";
+    const support = complete ? Math.max(0, Number(isf) - Number(steph)) : null;
+    buildingSection = '<div class="reference-section"><div class="panel-kicker">TRACK 3 · BUILDING-DIFFERENCE SUPPORT</div><p class="reference-copy">' + (complete ? 'Stephensons receive ' + support + ' additional BSP Mechanized Infantry Platoon' + (support === 1 ? "" : "s") + '. This difference is not multiplied by Scale.' : 'Enter both cumulative building totals in Hot Spot Setup to calculate the additional Stephensons support.') + '</p></div>';
+  }
+  return characterSection + ryukenSection + buildingSection;
 }
 
 function renderCurrentTrackInputs() {
@@ -1320,6 +1409,7 @@ function renderReference() {
   const currentTrackInputs = renderCurrentTrackInputs();
   const contractReference = renderContractReference();
   const temporaryHires = renderTemporaryHires(referenceTrack.temporaryHires, referenceTrack.temporaryHireNote);
+  const newIvaarsenTacticalReference = renderNewIvaarsenTacticalReference();
   const referenceTables = (referenceTrack.referenceTables || []).filter(table => !isBattlefieldConfigurationTable(table)).map(table => '<div class="reference-section"><div class="panel-kicker">' + esc(table.title) + '</div>' + renderGeneratorTable("", table) + '</div>').join("");
   const sourceReferenceText = referenceTrack.sourceRefs?.join(" · ") || SOURCES.primary + " · selected track " + pageReference;
   const scaleSection = hotSpot.hideScaleSelector ? "" : '<div class="reference-section scale-section"><div class="panel-kicker">SCALE ' + esc(String(state.scale)) + ' VIEW</div><ul class="rule-list">' + scaleNotesMarkup + "</ul></div>";
@@ -1336,6 +1426,7 @@ function renderReference() {
       hotSpotBrief +
       contractReference +
       currentTrackInputs +
+      newIvaarsenTacticalReference +
       '<div class="reference-section"><div class="panel-kicker">BATTLEFIELD & SETUP</div><ul class="rule-list">' + setup + "</ul></div>" +
       (setupDetails ? '<div class="reference-section"><div class="panel-kicker">DEPLOYMENT DETAILS</div><ul class="rule-list">' + setupDetails + "</ul></div>" : "") +
       scaleSection +
@@ -1686,6 +1777,14 @@ $("#mission-reference").addEventListener("change", event => {
 });
 
 $("#hotspot-setup").addEventListener("change", event => {
+  const newIvaarsenInputControl = event.target.closest("[data-new-ivaarsen-input]");
+  if (newIvaarsenInputControl) {
+    const name = newIvaarsenInputControl.dataset.newIvaarsenInput;
+    const value = newIvaarsenInputControl.type === "number" ? (newIvaarsenInputControl.value === "" ? "" : Math.max(0, Math.floor(Number(newIvaarsenInputControl.value)))) : newIvaarsenInputControl.value;
+    state.tacticalInputs[tacticalInputKey(name)] = value;
+    renderAll();
+    return;
+  }
   const sourceRoll = event.target.closest('[data-source-roll-id][type="radio"]');
   if (sourceRoll) {
     state.sourceRollSelections[sourceRollKey(sourceRoll.dataset.sourceRollSequence, sourceRoll.dataset.sourceRollId)] = sourceRoll.value;
@@ -1699,7 +1798,7 @@ $("#hotspot-setup").addEventListener("change", event => {
   if (!profile || !selection) return;
   const forceId = input.dataset.complicationForce;
   const rowKey = input.dataset.complicationChoice;
-  const noComplicationKey = profile.table.rows.map(complicationRowKey).find((key, index) => isNoComplicationRow(profile.table.rows[index]));
+  const noComplicationKey = profile.table.rows.map(complicationRowKey).find((key, index) => isNoComplicationRow(profile.table.rows[index]) && complicationRowAppliesToSide(profile.table.rows[index], forceId));
   const chosen = new Set(selection.draft[forceId] || []);
   if (input.checked) {
     if (rowKey === noComplicationKey) {
@@ -1778,7 +1877,7 @@ $("#winner-controls").addEventListener("change", event => {
 
 $("#scale-select").addEventListener("click", event => {
   const button = event.target.closest(".scale-button");
-  if (!button || currentHotSpot().fixedScale) return;
+  if (!button || button.disabled) return;
   state.scale = Number(button.dataset.scale);
   if (currentHotSpot().id === "dahar-iv") {
     const mission = daharMissionState();
