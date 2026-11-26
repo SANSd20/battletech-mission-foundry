@@ -1,4 +1,4 @@
-import { adjustDaharEarnedVp, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_PROVISIONAL_RULES, evaluateAltaVistaCampaign, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_PROVISIONAL_RULES, MISSION_OPFOR_OVERRIDES, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, RECON_DENY_ATTACKER_OBJECTIVE_IDS, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=usability-final-ux16-19";
+import { adjustDaharEarnedVp, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_PROVISIONAL_RULES, evaluateAltaVistaCampaign, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_PROVISIONAL_RULES, MISSION_OPFOR_OVERRIDES, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PLAYER_VISIBLE_HOT_SPOT_IDS, RECON_DENY_ATTACKER_OBJECTIVE_IDS, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=melcher-ux21";
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -118,10 +118,12 @@ function currentTrack() {
 }
 
 function currentHotSpot() {
-  return HOT_SPOTS.find(hotSpot => hotSpot.id === state.hotSpotId) || HOT_SPOTS[0];
+  return VISIBLE_HOT_SPOTS.find(hotSpot => hotSpot.id === state.hotSpotId) || VISIBLE_HOT_SPOTS[0];
 }
 
-const interactiveComplicationContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne"]);
+const approvedHotSpotIds = new Set(PLAYER_VISIBLE_HOT_SPOT_IDS);
+const VISIBLE_HOT_SPOTS = HOT_SPOTS.filter(hotSpot => approvedHotSpotIds.has(hotSpot.id));
+const interactiveComplicationContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher"]);
 
 function complicationRowKey(row, index) {
   return "effect-" + index + "-" + row.roll;
@@ -210,7 +212,7 @@ function sideById(sideId) {
   return side;
 }
 
-const simplifiedContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne"]);
+const simplifiedContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher"]);
 
 function generatedOpForConfiguration() {
   const hotSpot = currentHotSpot();
@@ -677,6 +679,7 @@ function resolvedHotSpotStep() {
 
 function syncHotSpotState() {
   const hotSpot = currentHotSpot();
+  if (state.hotSpotId !== hotSpot.id) state.hotSpotId = hotSpot.id;
   if (hotSpot.fixedScale) state.scale = hotSpot.fixedScale;
   const availableTracks = availableHotSpotTracks(hotSpot);
   if (!availableTracks.some(track => track.sequence === Number(state.trackSequence[hotSpot.id]))) state.trackSequence[hotSpot.id] = availableTracks[0]?.sequence || 1;
@@ -726,7 +729,7 @@ function getProgress(objective, side) {
 }
 
 function setProgress(objective, side, value) {
-  state.progress[progressKey(state.trackId, objective.id, side)] = objective.repeatable ? Math.max(0, Number(value) || 0) : Boolean(value);
+  state.progress[progressKey(state.trackId, objective.id, side)] = objective.repeatable ? Math.min(objective.maxCount ?? Infinity, Math.max(0, Number(value) || 0)) : Boolean(value);
 }
 
 function getVp(objective, side) {
@@ -901,7 +904,7 @@ function renderHotSpotSetup() {
   const step = currentHotSpotStep();
   const resolved = resolvedHotSpotStep();
   const selected = sideById(state.selectedSide[hotSpot.id]);
-  $("#hot-spot-select").innerHTML = HOT_SPOTS.map(item => '<option value="' + esc(item.id) + '">' + esc(item.name) + " · " + esc(item.region) + "</option>").join("");
+  $("#hot-spot-select").innerHTML = VISIBLE_HOT_SPOTS.map(item => '<option value="' + esc(item.id) + '">' + esc(item.name) + " · " + esc(item.region) + "</option>").join("");
   $("#hot-spot-select").value = hotSpot.id;
   $("#hot-spot-track-label").textContent = hotSpot.trackSelectorLabel || "Track";
   $("#hot-spot-track-select").innerHTML = availableTracks.map(item => '<option value="' + item.sequence + '">' + esc(item.label) + "</option>").join("");
@@ -933,6 +936,7 @@ function renderHotSpotSetup() {
     winnerControls.push('<div class="control-group"><label for="source-result">' + esc(step.resultLabel || "Source result") + '</label><select id="source-result" data-result-sequence="' + step.sequence + '">' + step.results.map(option => '<option value="' + esc(option.id) + '"' + (result === option.id ? " selected" : "") + '>' + esc(option.label) + "</option>").join("") + '</select><span class="control-hint">This choice records the source table result for this track.</span></div>');
   }
   for (const roll of resolved?.variant?.sourceRolls || []) {
+    if (roll.presentation === "battlefield-table") continue;
     const selectedRoll = selectedSourceRoll(step.sequence, roll);
     winnerControls.push('<div class="control-group"><label for="source-roll-' + esc(roll.id) + '">' + esc(roll.label) + '</label><select id="source-roll-' + esc(roll.id) + '" data-source-roll-id="' + esc(roll.id) + '" data-source-roll-sequence="' + esc(String(step.sequence)) + '"><option value="">' + esc(roll.placeholder || "Choose the 1D6 result") + '</option>' + roll.options.map(option => '<option value="' + esc(option.value) + '"' + (selectedRoll === option.value ? " selected" : "") + '>' + esc(option.label) + "</option>").join("") + '</select><span class="control-hint">' + esc(roll.note) + '</span></div>');
   }
@@ -1119,6 +1123,15 @@ function activeComplicationExtras(profile) {
       return '<div class="active-complication-extra"><strong>' + esc(recipient?.name || "Opposing force") + ' receives partisan support</strong><span>' + units + '</span><span>Free support for this track only; the package follows the receiving force’s tactical role.</span></div>';
     }).join("");
   }
+  if (hotSpotId === "melcher") {
+    return profile.participants.map(side => {
+      if (!appliedComplicationNamed(side.id, "Fighting on Stephens", profile.table)) return "";
+      const recipient = profile.participants.find(item => item.id !== side.id);
+      const key = tacticalInputKey("melcher-support-" + recipient.id);
+      const selected = state.tacticalInputs[key] || "lct-3v";
+      return '<div class="active-complication-extra"><strong>' + esc(recipient.name) + ' receives support</strong><label><span>Receiving player’s unit choice</span><select data-melcher-support-recipient="' + esc(recipient.id) + '"><option value="lct-3v"' + (selected === "lct-3v" ? " selected" : "") + '>LCT-3V Locust</option><option value="um-r80"' + (selected === "um-r80" ? " selected" : "") + '>UM-R80 UrbanMech</option></select></label><span>One selected unit per Scale; current Melcher tactical Scale is 1. Gunnery 5 · Piloting 6 · Alpha Strike Skill 5.</span></div>';
+    }).join("");
+  }
   return "";
 }
 
@@ -1180,6 +1193,20 @@ function renderAppliedComplications(table) {
   return profile && selection?.appliedOnce ? renderActiveComplications(profile, selection) : "";
 }
 
+function renderBattlefieldTable(table, referenceTrack) {
+  const step = currentHotSpotStep();
+  const roll = (referenceTrack.sourceRolls || []).find(item => item.presentation === "battlefield-table" && item.tableTitle === table.title);
+  if (!roll || !step) return renderGeneratorTable("", table);
+  const selected = selectedSourceRoll(step.sequence, roll);
+  const rows = table.rows.map(row => {
+    const value = String(row[0]);
+    const checked = value === selected;
+    return '<tr class="selectable-battlefield-row' + (checked ? ' selected' : '') + '"><td><label class="battlefield-roll-choice"><input type="radio" name="battlefield-roll-' + esc(String(step.sequence)) + '" value="' + esc(value) + '" data-source-roll-id="' + esc(roll.id) + '" data-source-roll-sequence="' + esc(String(step.sequence)) + '"' + (checked ? ' checked' : '') + '><span>' + esc(value) + '</span></label></td>' + row.slice(1).map(cell => '<td>' + esc(cell) + '</td>').join("") + '</tr>';
+  }).join("");
+  const selectedLabel = selected ? sourceRollLabel(step.sequence, roll) : "No mapsheet selected";
+  return '<div class="selected-battlefield" aria-live="polite"><span>Selected mapsheet</span><strong>' + esc(selectedLabel) + '</strong></div><div class="shared-rule-table-wrap"><table class="shared-rule-table selectable-battlefield-table"><thead><tr>' + table.headers.map(header => '<th scope="col">' + esc(header) + '</th>').join("") + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+}
+
 function renderSetupConfiguration(referenceTrack) {
   const battlefieldContainer = $("#battlefield-configuration");
   const complicationContainer = $("#complication-configuration");
@@ -1192,7 +1219,7 @@ function renderSetupConfiguration(referenceTrack) {
   const procedure = items.length
     ? '<ul class="rule-list">' + items.map(item => '<li>' + esc(item) + '</li>').join("") + '</ul>'
     : '<p class="reference-copy">No contract-specific mapsheet table or Alpha Strike terrain override applies. Use the selected track’s battlefield rules.</p>';
-  const tableMarkup = tables.map(table => '<div class="setup-battlefield-table"><div class="label">' + esc(table.title) + '</div>' + renderGeneratorTable("", table) + '</div>').join("");
+  const tableMarkup = tables.map(table => '<div class="setup-battlefield-table"><div class="label">' + esc(table.title) + '</div>' + renderBattlefieldTable(table, referenceTrack) + '</div>').join("");
   battlefieldContainer.innerHTML = '<section class="setup-configuration-card battlefield-configuration-card"><div class="panel-kicker">BATTLEFIELD CONFIGURATION</div><p class="setup-configuration-summary">' + esc(battlefieldSelectionSummary(referenceTrack)) + ' · Scale ' + esc(String(state.scale)) + '</p>' + procedure + tableMarkup + '</section>';
   complicationContainer.innerHTML = renderCommandComplicationsSetup(referenceTrack.commandComplications);
 
@@ -1635,6 +1662,11 @@ $("#hotspot-campaign-state").addEventListener("click", event => {
 });
 
 $("#mission-reference").addEventListener("change", event => {
+  if (event.target.dataset.melcherSupportRecipient) {
+    state.tacticalInputs[tacticalInputKey("melcher-support-" + event.target.dataset.melcherSupportRecipient)] = event.target.value;
+    renderReference();
+    return;
+  }
   if (event.target.dataset.achernarCurrentSurvivors) {
     state.tacticalInputs[tacticalInputKey("defector-survivors")] = Number(event.target.value);
     renderReference();
@@ -1654,6 +1686,12 @@ $("#mission-reference").addEventListener("change", event => {
 });
 
 $("#hotspot-setup").addEventListener("change", event => {
+  const sourceRoll = event.target.closest('[data-source-roll-id][type="radio"]');
+  if (sourceRoll) {
+    state.sourceRollSelections[sourceRollKey(sourceRoll.dataset.sourceRollSequence, sourceRoll.dataset.sourceRollId)] = sourceRoll.value;
+    renderAll();
+    return;
+  }
   const input = event.target.closest("[data-complication-choice]");
   if (!input) return;
   const profile = currentComplicationProfile();

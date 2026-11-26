@@ -25,6 +25,8 @@ button, select { cursor: pointer; }
 .brand strong { font-size: 13px; }
 .brand small { margin-top: 2px; color: #9ba7b2; font-size: 9px; letter-spacing: .16em; }
 .topbar-meta { color: #aeb8c1; font-size: 12px; }
+.app-nav-link { color: inherit; font-weight: 400; text-decoration: underline; text-underline-offset: 3px; }
+.app-nav-link:hover, .app-nav-link:focus-visible { color: #edf2f4; }
 .status-dot { display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px rgba(191, 216, 59, .12); }
 .divider { padding: 0 7px; color: #62707d; }
 .shell { width: min(1500px, calc(100% - 32px)); margin: 0 auto; padding: 42px 0 64px; }
@@ -311,6 +313,14 @@ body { background: color-mix(in srgb, var(--faction-color) 10%, #111821); color:
 .setup-configuration-summary { margin: 5px 0 12px; color: var(--ink); font-size: 12px; font-weight: 800; }
 .setup-battlefield-table + .setup-battlefield-table { margin-top: 12px; }
 .setup-battlefield-table > .label { display: block; margin: 10px 0 7px; }
+.selected-battlefield { display: flex; align-items: baseline; gap: 8px; margin: 9px 0 5px; color: #536168; font-size: 11px; }
+.selected-battlefield strong { color: var(--ink); }
+.battlefield-roll-choice { display: flex; align-items: center; gap: 7px; cursor: pointer; }
+.battlefield-roll-choice input { accent-color: var(--faction-color); }
+.selectable-battlefield-row { cursor: pointer; }
+.selectable-battlefield-row.selected td { background: color-mix(in srgb, var(--faction-color) 11%, #fff); }
+.selectable-battlefield-table th:first-child, .selectable-battlefield-table td:first-child { width: 15%; }
+.selectable-battlefield-table th:not(:first-child), .selectable-battlefield-table td:not(:first-child) { width: 42.5%; }
 .complication-selection-status { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px; border: 1px solid var(--line); background: #fff; }
 .complication-selection-status div { display: grid; gap: 3px; }
 .complication-selection-status span { color: #59676f; font-size: 11px; }
@@ -336,8 +346,8 @@ body { background: color-mix(in srgb, var(--faction-color) 10%, #111821); color:
   .tracker-column { order: 2; }
 }
 @media (max-width: 660px) {
-  .topbar { align-items: flex-start; }
-  .topbar-meta { display: none; }
+  .topbar { align-items: flex-start; flex-direction: column; gap: 8px; }
+  .topbar-meta { display: block; }
   .shell { width: min(100% - 20px, 1500px); padding-top: 25px; }
   .controls { grid-template-columns: 1fr; gap: 13px; }
   .hotspot-panel { padding-left: 16px; padding-right: 16px; }

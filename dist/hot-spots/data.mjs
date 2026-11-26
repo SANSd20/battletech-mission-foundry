@@ -1890,7 +1890,77 @@ const bioGenRaidTrack = {
   sourceRefs: ["Draconis Reach pp. 91–92", "General salvage p. 31", "Commander and shared rules p. 167"]
 };
 
-export const SPECIAL_TRACKS = [gameWorldDuelTrack, bioGenRaidTrack];
+export const MELCHER_GRASSLANDS_MAPSHEETS = [
+  ["1", "Grassland #1", "BB"],
+  ["2", "Grassland #2", "AGOAC"],
+  ["3", "Grassland #3", "AGOAC"],
+  ["4", "Woodland", "Map Pack: Grasslands"],
+  ["5", "Open Terrain #2", "Map Pack: Grasslands"],
+  ["6", "Open Terrain #3", "Map Pack: Grasslands"]
+];
+
+export const MELCHER_BLACK_MARKET = [
+  ["2", "CattleMaster (Hunter) CTL-3R2", "245", "7"],
+  ["3", "CattleMaster SecurityMech CTL-3R3", "358", "12"],
+  ["4", "Demeter WLD-1-M", "327", "8"],
+  ["5", "Crosscut ED-X4M", "430", "11"],
+  ["6", "Burrower DTM-1M", "556", "18"],
+  ["7", "Ground Pounder DVM-2M", "548", "18"],
+  ["8", "Dig Lord RCL-4M", "706", "20"],
+  ["9", "Dig Lord RCL-4M-B", "699", "22"],
+  ["10", "Grommet MilitiaMech D90", "836", "25"],
+  ["11", "MuckRaker GMMM-2M", "1,001", "22"],
+  ["12", "MuckRaker GMMM-2M-B", "815", "27"]
+];
+
+export const MELCHER_COMMAND_COMPLICATIONS = {
+  ref: "Draconis Reach pp. 96–98; general procedure p. 30",
+  note: "Resolve independently for each contract force. Earwigs use Independent Command (+0); Border Collies use Liaison Command (+1). Select the final resolved effects directly.",
+  rows: [
+    { roll: "1–3", name: "No Complication", text: "No additional tactical effect." },
+    { roll: "4", name: "Moonless Night", text: "Fight the current track under Moonless Night conditions." },
+    { roll: "5", name: "Fighting on Stephens", text: "The affected player’s opponent receives one LCT-3V Locust or UM-R80 UrbanMech per Scale. The receiving player chooses the unit type. Crews use Gunnery 5 / Piloting 6 or Alpha Strike Skill 5; the force represents Davion raiders or Combine ashigaru." },
+    { roll: "6", name: "Black Market AgroMechs", text: "At least 25 percent of the affected player’s force by unit count must be AgroMechs. Use owned units or employer-provided track-only units from the Black Market table." },
+    { roll: "7+", name: "Roll Twice", text: "Resolve two effects and apply both. Do not reroll No Complication; reroll any other duplicate result." }
+  ]
+};
+
+export const MELCHER_TEMPORARY_HIRES = [
+  { name: "Leena", identity: "Border Collies temporary hire", unit: "Grand Dragon DRG-5K", bv: "1,358", pv: "33", gunnery: "3", piloting: "4", alphaStrikeSkill: "3", edge: "4", abilities: "None listed.", restriction: "May participate in only one of the two simultaneous Melcher tracks.", source: "Draconis Reach pp. 97–98" },
+  { name: "Serge", identity: "Earwigs temporary hire", unit: "Hatchetman HCT-6M", bv: "1,274", pv: "45", gunnery: "3", piloting: "4", alphaStrikeSkill: "3", edge: "3", abilities: "Speed Demon.", restriction: "May participate in only one of the two simultaneous Melcher tracks.", source: "Draconis Reach pp. 97–98" }
+];
+
+const oxenInterceptTrack = {
+  id: "oxen-intercept",
+  name: "Oxen Intercept",
+  page: 96,
+  pageRef: "pp. 96–97",
+  type: "Melcher custom track",
+  summary: "Earwigs CattleMasters drive a herd across the battlefield while the Border Collies attempt to stop them.",
+  setup: [
+    "Use opposing long home edges.",
+    "Attacker (Earwigs): place a one-hex herd token (Alpha Strike: 2-inch AOE) within 3 hexes (AS: 6 inches) of the Attacker home edge. Deploy the Attacker force within the same distance and add four CTL-3R CattleMasters adjacent to the herd (AS: within 2 inches).",
+    "Defender (Border Collies): enter from the Defender home edge during the Movement Phase of Turn 2."
+  ],
+  objectives: [
+    { id: "orders-attacker", name: "Orders", side: A, vp: 50, text: "At least half of the Attacker units by number reach the battlefield center line, not necessarily on the same turn, or the herd reaches the center line." },
+    { id: "orders-defender", name: "Orders", side: D, vp: 50, text: "Attack a CattleMaster or another Attacker unit on two different turns." },
+    { id: "oxen-free", name: "Oxen Free", side: A, vp: 400, text: "The herd reaches the Defender home edge." },
+    { id: "live-to-celebrate", name: "Live to Celebrate", side: A, vp: 300, text: "More than half of the Attacker force exits through the Defender home edge." },
+    { id: "rope-those-cows", name: "Rope Those Cows", side: D, vp: 400, text: "Destroy all four CattleMasters before the herd reaches the Defender home edge." },
+    { id: "deliver-justice", name: "Deliver Justice", side: D, vp: 200, repeatable: true, maxCount: 2, text: "Cripple or destroy an Attacker unit. Maximum two awards (400 VP)." }
+  ],
+  special: [
+    "Herd movement: at the start of its movement, move the herd 1 hex (AS: 2 inches) for each CattleMaster within 1 hex (AS: 2 inches). The herd moves before other Attacker units, and no other unit may move through its hex or AOE.",
+    "The herd ignores terrain movement costs, but cannot change elevation by more than 1 level (AS: 2 inches) or enter depth-1 water (AS: depth 1 inch).",
+    "Spooked herd: during the End Phase, if any weapons were fired within 3 hexes (AS: 6 inches) of the herd, roll 2D6. On 9+, the herd does not move next turn. Each side that fired in the area loses one-quarter of its combat pay, rounded up, for each spooked turn, to a maximum of two such reductions. Resolve this pay adjustment outside the VP tracker.",
+    "Track End: during the End Phase when the herd reaches the Defender home edge, after Turn 10, or when all Attacker units have retreated, are crippled, or are destroyed.",
+    "Salvage: Earwigs may not claim enemy salvage. If Border Collies successfully complete the track, apply the general salvage procedure; otherwise each side reclaims its own destroyed or crippled units."
+  ],
+  sourceRefs: ["Draconis Reach pp. 94–98", "Oxen Intercept pp. 96–97", "Shared rules pp. 167–168"]
+};
+
+export const SPECIAL_TRACKS = [gameWorldDuelTrack, bioGenRaidTrack, oxenInterceptTrack];
 
 const gameWorldResults = [
   { id: "carcassonne", label: "Carcassonne", trackId: "game-world-duel", attacker: "duelist-one", defender: "duelist-two", variant: carcassonneGameWorldVariant },
@@ -2744,6 +2814,63 @@ export const altaVistaRetreatVariant = () => ({
   sourceRefs: ["Draconis Reach pp. 78–81", "Retreat pp. 174–175", "Shared rules pp. 167–168"]
 });
 
+const melcherBattlefieldDetails = [
+  "BattleTech mapsheets: each simultaneous Scale 1 track uses one roll on Grasslands Table 1.",
+  "Alpha Strike battlefield: 48 inches across by 36 inches wide. Each player normally selects eight terrain pieces; Grasslands halves that allowance to four, rounded up. For each of the four removed pieces, that player chooses which normal placement area loses one piece. Preserve the standard placement zones and resolve the chosen reductions at the table.",
+  "Contract Scale is 2, but each of the two simultaneous tactical tracks is fixed at Scale 1. A unit or named temporary hire assigned to one track cannot participate in the other."
+];
+
+const melcherReferenceTables = [
+  { title: "Melcher Mapsheets · Grasslands Table 1 (1D6)", headers: ["Roll", "Mapsheet", "Source"], rows: MELCHER_GRASSLANDS_MAPSHEETS },
+  { title: "Black Market AgroMechs (2D6)", headers: ["Roll", "Unit", "BV", "PV"], rows: MELCHER_BLACK_MARKET }
+];
+
+function melcherOverlay(trackId, extra = {}) {
+  const base = [...TRACKS, ...SPECIAL_TRACKS].find(track => track.id === trackId);
+  return {
+    ...extra,
+    setupDetails: [...(extra.setupDetails || base?.setupDetails || []), ...melcherBattlefieldDetails],
+    special: [
+      ...(extra.special || base?.special || []),
+      "Successful track completion: a player must complete at least one objective and earn more objective VP than the opponent. Equal VP means neither player successfully completes the track. Either contract side wins its contract by successfully completing at least one of the two simultaneous tracks."
+    ],
+    commandComplications: MELCHER_COMMAND_COMPLICATIONS,
+    sourceRolls: [{
+      id: "melcher-mapsheet",
+      label: "Melcher battlefield mapsheet (1D6)",
+      presentation: "battlefield-table",
+      tableTitle: "Melcher Mapsheets · Grasslands Table 1 (1D6)",
+      placeholder: "Choose the resolved Grasslands Table 1 result",
+      options: MELCHER_GRASSLANDS_MAPSHEETS.map(row => ({ value: row[0], label: row[0] + " · " + row[1] + " (" + row[2] + ")" }))
+    }],
+    referenceTables: melcherReferenceTables,
+    temporaryHires: MELCHER_TEMPORARY_HIRES,
+    temporaryHireNote: "Use these cards after resolving Melcher Temporary Hire availability and charges under Draconis Reach pp. 97–98 and the general rules. A named hire may participate in only one simultaneous track.",
+    sourceRefs: ["Draconis Reach pp. 94–98", base?.name + " " + (base?.pageRef || "p. " + base?.page), "Grasslands Table 1 p. 150", "Command complications pp. 30, 96–98", "Current Draconis Reach master errata"]
+  };
+}
+
+const melcherOxenVariant = melcherOverlay("oxen-intercept", {
+  displayName: "Oxen Intercept",
+  type: "Melcher custom track"
+});
+
+const melcherObjectiveRaidBase = TRACKS.find(track => track.id === "objective-raid");
+const melcherObjectiveRaidVariant = melcherOverlay("objective-raid", {
+  displayName: "Objective Raid · Scientist Extraction",
+  type: "Modified Objective Raid",
+  setupDetails: [
+    ...(melcherObjectiveRaidBase?.setupDetails || []),
+    "Earwigs are the Attacker and Border Collies are the Defender. Add two Heavy Wheeled APCs carrying the scientists. When using Battlefield Support Assets, represent each with a Galleon Light Tank GAL-100 that has no attacks.",
+    "Initially, only the two scientist APCs may use Grab the Stuff. If an APC is destroyed, another Attacker unit or asset vehicle acquires its scientists by ending movement adjacent to it (AS: in base contact); mark that unit as eligible to use Grab the Stuff.",
+    "All Attacker units are treated as having functioning hands for the purpose of grabbing components. Preserve the remaining standard Objective Raid component, transfer, movement, attack, track-end, and scoring rules."
+  ],
+  special: [
+    ...(melcherObjectiveRaidBase?.special || []),
+    "Melcher salvage restriction: Earwigs may not claim enemy salvage. If Border Collies successfully complete the track, apply the general salvage procedure; otherwise each side reclaims its own destroyed or crippled units."
+  ]
+});
+
 export const HOT_SPOTS = [
   {
     id: "achernar",
@@ -2867,11 +2994,19 @@ export const HOT_SPOTS = [
     name: "Melcher",
     region: "Federated Suns / Draconis Combine",
     terrain: "Grasslands",
-    source: "Draconis Reach pp. 97–98",
-    sides: [factionSide("earwigs", "Earwigs", "Draconis Combine"), factionSide("border-collies", "Border Collies", "Federated Suns")],
+    source: "Draconis Reach pp. 94–98",
+    fixedScale: 1,
+    fixedScaleNote: "Each simultaneous tactical track is fixed at Scale 1; the overall contract is Scale 2.",
+    note: "Select either simultaneous Scale 1 tactical track. Forces and named hires assigned to one track cannot be reused in the other.",
+    contractReference: {
+      summary: ["867530A · Cattle Rustling · Melcher Food Corporation · Federated Suns-aligned employer · Earwigs participating faction Mercenary · Independent Command.", "867530B · Thousand Oaks Garrison · Surinami Processing · Draconis Combine-aligned employer · Border Collies participating faction Mercenary · Liaison Command.", "Three-month Retainer contracts. Melcher is contract Scale 2 with Intensity 2; the two tactical tracks are each Scale 1. Source: Draconis Reach pp. 94–98."],
+      progression: ["Play Oxen Intercept and the modified Objective Raid simultaneously using separate Scale 1 forces. No unit may participate in both tracks, and each named temporary hire may be assigned to only one track."],
+      victory: ["A contract side wins by successfully completing at least one of the two tracks. Earwigs may not claim enemy salvage. The browser scores only the currently selected tactical track and does not maintain cross-track history."]
+    },
+    sides: [factionSide("earwigs", "Earwigs", "Mercenary"), factionSide("border-collies", "Border Collies", "Mercenary")],
     tracks: [
-      fixedHotSpotTrack(1, "objective-raid", "earwigs", "border-collies", { displayName: "Oxen Intercept · Objective Raid rules" }),
-      fixedHotSpotTrack(2, "objective-raid", "earwigs", "border-collies", { displayName: "Objective Raid" })
+      fixedHotSpotTrack(1, "oxen-intercept", "earwigs", "border-collies", { label: "Track 1 · Oxen Intercept", displayName: "Oxen Intercept", variant: melcherOxenVariant }),
+      fixedHotSpotTrack(2, "objective-raid", "earwigs", "border-collies", { label: "Track 2 · Scientist Extraction", displayName: "Objective Raid · Scientist Extraction", variant: melcherObjectiveRaidVariant })
     ]
   },
   {
@@ -3057,5 +3192,7 @@ export const HOT_SPOTS = [
     ]
   }
 ];
+
+export const PLAYER_VISIBLE_HOT_SPOT_IDS = Object.freeze(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher"]);
 
 

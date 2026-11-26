@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { adjustDaharEarnedVp, achernarInitialDefectors, ALTA_VISTA_COMMAND_COMPLICATIONS, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_MAPSHEET_TABLE, DAHAR_PROVISIONAL_RULES, DAHAR_TRACK_RESULTS, evaluateAltaVistaCampaign, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_MAPSHEET_TABLE, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LE_BLANC_TEMPORARY_HIRES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_MAPSHEET_TABLE, LUCERNE_PROVISIONAL_RULES, LUCERNE_TEMPORARY_HIRES, LUCERNE_TRACK_RESULTS, MISSION_OPFOR_OVERRIDES, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
+import { adjustDaharEarnedVp, achernarInitialDefectors, ALTA_VISTA_COMMAND_COMPLICATIONS, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_MAPSHEET_TABLE, DAHAR_PROVISIONAL_RULES, DAHAR_TRACK_RESULTS, evaluateAltaVistaCampaign, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_MAPSHEET_TABLE, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LE_BLANC_TEMPORARY_HIRES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_MAPSHEET_TABLE, LUCERNE_PROVISIONAL_RULES, LUCERNE_TEMPORARY_HIRES, LUCERNE_TRACK_RESULTS, MELCHER_BLACK_MARKET, MELCHER_COMMAND_COMPLICATIONS, MELCHER_GRASSLANDS_MAPSHEETS, MELCHER_TEMPORARY_HIRES, MISSION_OPFOR_OVERRIDES, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PLAYER_VISIBLE_HOT_SPOT_IDS, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
 
 const expected = ["Assault", "Breakthrough", "Defend", "Flank", "Meeting Engagement", "Objective Raid", "Pursuit", "Pushback", "Recon", "Retreat", "Strike"];
 assert.deepEqual(TRACKS.map(track => track.name), expected, "all eleven Draconis Reach standard tracks are present");
@@ -220,6 +220,8 @@ const app = fs.readFileSync(new URL("../dist/hot-spots/app.mjs", import.meta.url
 const html = fs.readFileSync(new URL("../dist/hot-spots/index.html", import.meta.url), "utf8");
 const css = fs.readFileSync(new URL("../dist/hot-spots/styles.css", import.meta.url), "utf8");
 const data = fs.readFileSync(new URL("../dist/hot-spots/data.mjs", import.meta.url), "utf8");
+const coreHtml = fs.readFileSync(new URL("../dist/index.html", import.meta.url), "utf8");
+const coreCss = fs.readFileSync(new URL("../dist/styles.css", import.meta.url), "utf8");
 assert.ok(app.includes('referenceTrack.pageRef || "p. " + referenceTrack.page'), "mission heading and citation use the complete pageRef metadata");
 assert.ok(app.includes('track.pageRef || "p. " + track.page'), "objective tracker uses the complete pageRef metadata");
 assert.ok(app.includes("roleChoiceHint"), "role choice hints can describe source-specific role selection");
@@ -854,7 +856,7 @@ assert.ok(app.includes("availableHotSpotTracks") && !app.includes("availableAlta
 assert.ok(app.includes("data-alta-withdrawal-response"), "Alta Vista exposes only the current Withdrawal Order response when applicable");
 assert.ok(app.includes("state.mode") && app.includes("renderContractReference"), "Alta Vista references remain independent of Attacker/Defender/Both display mode");
 assert.ok(css.includes("contract-reference"), "Alta Vista contract references use shared responsive styling");
-assert.match(html, /usability-final-ux16-19/, "the current implementation uses the final usability asset cache key");
+assert.match(html, /melcher-final-visual/, "the current implementation uses the final Melcher visual asset cache key");
 
 const dahar = HOT_SPOTS.find(item => item.id === "dahar-iv");
 assert.ok(dahar, "Dahar IV is available as a Hot Spot");
@@ -1020,7 +1022,7 @@ assert.match(app, /Eclipse Expeditions Special Operations.*Guildmaster Phil News
 assert.match(app, /both participating forces are Mercenary.*Mercenary\/Pirate OpFor table/i);
 assert.match(app, /same completed-objective|Current score: Attacker|currently successfully completes the track/);
 assert.match(app, /renderTemporaryHires\(referenceTrack\.temporaryHires, referenceTrack\.temporaryHireNote\)/, "Temporary Hire cards accept contract-aware hiring guidance");
-assert.match(html, /usability-final-ux16-19/, "Lucerne uses the final usability browser asset cache key");
+assert.match(html, /melcher-final-visual/, "Hot Spots uses the final Melcher visual asset cache key");
 assert.ok(css.includes("campaign-field input") && css.includes("hire-card-grid") && css.includes("@media"), "Lucerne controls and reused Temporary Hire cards retain responsive styling");
 
 assert.match(html, /<details[^>]+id="hotspot-setup"[^>]+open>/, "Hot Spot Setup starts expanded");
@@ -1063,6 +1065,43 @@ assert.match(app, /if \(!effectCards\.length && !extras\) return "";/, "the game
 assert.match(app, /\$\("#hotspot-setup"\)\.addEventListener\("change"/, "complication selection is handled from Hot Spot Setup");
 assert.doesNotMatch(renderOpForBody, /data-complication-choice/, "generated OpFor rendering remains separate from complication selection");
 assert.ok(css.includes("setup-configuration-card") && css.includes("complication-selection-status"), "battlefield and complication setup remain responsive and visibly grouped");
+
+assert.deepEqual(PLAYER_VISIBLE_HOT_SPOT_IDS, ["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher"], "only completed and verified contracts are player-visible in source order");
+assert.equal(PLAYER_VISIBLE_HOT_SPOT_IDS.every(id => HOT_SPOTS.some(hotSpot => hotSpot.id === id)), true, "every visible contract retains its source data");
+assert.equal(HOT_SPOTS.some(hotSpot => hotSpot.id === "new-ivaarsen"), true, "hidden contract data remains available for development and regression tests");
+assert.match(app, /const VISIBLE_HOT_SPOTS = HOT_SPOTS\.filter/, "the browser uses one centralized approved-location filter");
+assert.match(app, /state\.hotSpotId !== hotSpot\.id.*state\.hotSpotId = hotSpot\.id/, "saved hidden selections fall back to an approved location");
+
+const melcher = HOT_SPOTS.find(hotSpot => hotSpot.id === "melcher");
+assert.equal(melcher.fixedScale, 1, "each Melcher tactical track is locked to Scale 1");
+assert.deepEqual(melcher.sides.map(side => side.faction), ["Mercenary", "Mercenary"], "both Melcher participating factions are Mercenary");
+assert.deepEqual(melcher.tracks.map(track => track.trackId), ["oxen-intercept", "objective-raid"], "Melcher exposes the custom Oxen Intercept and modified Objective Raid tracks");
+const oxen = SPECIAL_TRACKS.find(track => track.id === "oxen-intercept");
+assert.equal(oxen.objectives.find(objective => objective.id === "deliver-justice").maxCount, 2, "Deliver Justice is capped at two 200 VP awards");
+assert.match(oxen.objectives.find(objective => objective.id === "deliver-justice").text, /Cripple or destroy/, "Deliver Justice uses the source-defined qualifying unit condition");
+assert.equal(oxen.objectives.filter(objective => objective.side === "attacker").reduce((sum, objective) => sum + objective.vp, 0), 750, "Oxen Intercept Attacker maximum is 750 VP");
+assert.equal(oxen.objectives.filter(objective => objective.side === "defender").reduce((sum, objective) => sum + objective.vp * (objective.maxCount || 1), 0), 850, "Oxen Intercept Defender maximum is 850 VP");
+assert.match(melcher.tracks[1].variant.setupDetails.join(" "), /Galleon Light Tank GAL-100.*no attacks/, "the official Melcher APC erratum is incorporated");
+assert.equal(MELCHER_GRASSLANDS_MAPSHEETS.length, 6, "Melcher includes the complete Grasslands mapsheet table");
+assert.deepEqual(MELCHER_GRASSLANDS_MAPSHEETS.map(row => row[2]), ["BB", "AGOAC", "AGOAC", "Map Pack: Grasslands", "Map Pack: Grasslands", "Map Pack: Grasslands"], "Melcher preserves the printed mapsheet source abbreviations");
+assert.equal(MELCHER_BLACK_MARKET.length, 11, "Melcher includes all Black Market AgroMech results");
+assert.equal(MELCHER_COMMAND_COMPLICATIONS.rows.length, 5, "Melcher includes the full resolved Command Complications bracket");
+assert.equal(MELCHER_TEMPORARY_HIRES.length, 2, "Melcher includes both named temporary hires");
+assert.match(app, /"melcher"\]\);/, "Melcher uses the shared interactive complication and simplified OpFor workflows");
+assert.match(app, /Math\.min\(objective\.maxCount \?\? Infinity/, "repeatable objectives honor source-defined maximum counts");
+const hotSpotsHeader = html.match(/<header class="topbar">[\s\S]*?<\/header>/)?.[0] || "";
+const coreHeader = coreHtml.match(/<header class="topbar">[\s\S]*?<\/header>/)?.[0] || "";
+assert.match(hotSpotsHeader, /HOT SPOTS MISSION FOUNDRY[\s\S]*Mission tracker[\s\S]*v0\.1[\s\S]*href="\.\.\/">Core Mission Foundry →<\/a>/, "Hot Spots uses the approved branding and same-tab reciprocal link");
+assert.match(coreHeader, /CORE MISSION FOUNDRY[\s\S]*Mission generator[\s\S]*v0\.1[\s\S]*href="hot-spots\/">Hot Spots Mission Foundry →<\/a>/, "Core uses the approved branding and same-tab reciprocal link");
+assert.doesNotMatch(hotSpotsHeader + coreHeader, /status-dot/, "neither application header contains a colored status dot");
+assert.match(css + coreCss, /\.app-nav-link\{?[^}]*font-weight:\s*400[^}]*text-decoration:\s*underline/s, "both navigation links use the shared muted regular underlined treatment");
+assert.match(melcher.contractReference.summary.join(" "), /Melcher Food Corporation.*Surinami Processing.*Intensity 2/, "Melcher Contract Reference preserves the employers and contract intensity");
+assert.equal(melcher.tracks[0].variant.sourceRolls[0].presentation, "battlefield-table", "Melcher uses the selectable battlefield-table presentation");
+assert.equal(melcher.tracks[0].variant.sourceRolls[0].note, undefined, "Melcher omits redundant independent-roll and duplicate-reroll instructions");
+assert.doesNotMatch(melcher.tracks[0].variant.setupDetails.join(" "), /duplicate result|independently rolled/i, "Melcher battlefield rules omit redundant duplicate-result guidance");
+assert.match(app, /function renderBattlefieldTable\(table, referenceTrack\)/, "battlefield configuration supports selectable mapsheet tables");
+assert.match(app, /selectable-battlefield-row.*selected/s, "the selected mapsheet row is clearly identified");
+assert.match(app, /sourceRollKey\(sourceRoll\.dataset\.sourceRollSequence/, "mapsheet table selections persist by track sequence");
 
 for (const hotSpot of HOT_SPOTS) {
   assert.ok(hotSpot.sides.length >= 2, hotSpot.name + " has opposing sides");
