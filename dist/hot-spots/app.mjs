@@ -1,4 +1,4 @@
-import { adjustDaharEarnedVp, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_PROVISIONAL_RULES, evaluateAltaVistaCampaign, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_PROVISIONAL_RULES, MISSION_OPFOR_OVERRIDES, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PLAYER_VISIBLE_HOT_SPOT_IDS, RECON_DENY_ATTACKER_OBJECTIVE_IDS, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=new-ivaarsen";
+import { adjustDaharEarnedVp, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_PROVISIONAL_RULES, evaluateAltaVistaCampaign, FACTION_COLORS, GENERAL_RULES, groupComplicationEffectEntries, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_PROVISIONAL_RULES, MISSION_OPFOR_OVERRIDES, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PASCAGOULA_PROVISIONAL_RULES, PLAYER_VISIBLE_HOT_SPOT_IDS, RECON_DENY_ATTACKER_OBJECTIVE_IDS, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=pascagoula";
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -123,7 +123,7 @@ function currentHotSpot() {
 
 const approvedHotSpotIds = new Set(PLAYER_VISIBLE_HOT_SPOT_IDS);
 const VISIBLE_HOT_SPOTS = HOT_SPOTS.filter(hotSpot => approvedHotSpotIds.has(hotSpot.id));
-const interactiveComplicationContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen"]);
+const interactiveComplicationContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula"]);
 
 function complicationRowKey(row, index) {
   return "effect-" + index + "-" + row.roll;
@@ -158,7 +158,8 @@ function currentComplicationProfile(table = currentComplicationTable()) {
 
 function complicationSelectionKey() {
   const step = currentHotSpotStep();
-  return [state.hotSpotId, step?.sequence || 1, state.trackId || "pending"].join("::");
+  const branch = state.hotSpotId === "pascagoula" && Number(step?.sequence) === 2 ? selectedWinner(1) || "unresolved" : null;
+  return [state.hotSpotId, step?.sequence || 1, state.trackId || "pending", branch].filter(value => value !== null).join("::");
 }
 
 function complicationSelectionState(table = currentComplicationTable()) {
@@ -218,7 +219,7 @@ function sideById(sideId) {
   return side;
 }
 
-const simplifiedContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen"]);
+const simplifiedContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula"]);
 
 function generatedOpForConfiguration() {
   const hotSpot = currentHotSpot();
@@ -250,6 +251,10 @@ function currentOpForTable() {
 function currentMissionOpForOverride() {
   const hotSpot = currentHotSpot();
   const selectedSideId = state.selectedSide[hotSpot.id];
+  if (hotSpot.id === "pascagoula") {
+    const trackOne = Number(currentHotSpotStep()?.sequence) === 1;
+    return trackOne && selectedSideId === "ranger-raiders" ? MISSION_OPFOR_OVERRIDES.pascagoula?.["jewel-thieves"] || null : null;
+  }
   return MISSION_OPFOR_OVERRIDES[hotSpot.id]?.[selectedSideId] || null;
 }
 
@@ -725,7 +730,26 @@ function applies(objective, side) {
 }
 
 function progressKey(trackId, objectiveId, side) {
-  return state.hotSpotId + "::" + (state.trackSequence[state.hotSpotId] || "") + "::" + trackId + "::" + objectiveId + "::" + side;
+  const branch = state.hotSpotId === "pascagoula" && Number(state.trackSequence[state.hotSpotId]) === 2
+    ? "::" + (selectedWinner(1) || "unresolved")
+    : "";
+  return state.hotSpotId + "::" + (state.trackSequence[state.hotSpotId] || "") + "::" + trackId + branch + "::" + objectiveId + "::" + side;
+}
+
+function pascagoulaExtractionKey() {
+  return progressKey(state.trackId || "pursuit", "ryu-extracted", "defender");
+}
+
+function pascagoulaExtractionRequired() {
+  return currentHotSpot().id === "pascagoula" && Number(currentHotSpotStep()?.sequence) === 2 && Boolean(state.trackId);
+}
+
+function pascagoulaRyuExtracted() {
+  return !pascagoulaExtractionRequired() || Boolean(state.tacticalInputs[pascagoulaExtractionKey()]);
+}
+
+function pascagoulaObjectiveSuppressed(objective, side) {
+  return pascagoulaExtractionRequired() && side === "defender" && objective.id !== "orders-defender" && !pascagoulaRyuExtracted();
 }
 
 function getProgress(objective, side) {
@@ -779,6 +803,7 @@ function daharGibberishApplies(side) {
 
 function objectiveEarnedVp(objective, side, display = objective) {
   if (!applies(objective, side)) return 0;
+  if (pascagoulaObjectiveSuppressed(objective, side)) return 0;
   const affected = daharGibberishApplies(side);
   if (isReconDeny(objective, side)) return adjustDaharEarnedVp(reconDenyVp(), affected);
   const completed = getProgress(objective, side);
@@ -793,6 +818,7 @@ function completedObjectiveCount(side) {
   const objectives = variant?.objectives || track.objectives;
   return objectives.filter(objective => {
     if (!applies(objective, side)) return false;
+    if (pascagoulaObjectiveSuppressed(objective, side)) return false;
     if (isReconDeny(objective, side)) return reconDenyVp() > 0;
     return objective.repeatable ? Number(getProgress(objective, side)) > 0 : Boolean(getProgress(objective, side));
   }).length;
@@ -1152,23 +1178,32 @@ function activeComplicationExtras(profile) {
 
 function renderActiveComplications(profile, selection) {
   const sharedNames = new Set(["Sandstorm", "Heatwave", "Unexpected Sandstorm", "Heavy Rainfall"]);
-  const effectCards = [];
+  const effectEntries = [];
   for (const [index, row] of profile.table.rows.entries()) {
     if (isRollTwiceRow(row)) continue;
     const key = complicationRowKey(row, index);
     const affected = profile.participants.filter(side => (selection.applied[side.id] || []).includes(key));
     if (!affected.length) continue;
     if (isNoComplicationRow(row)) continue;
-    const shared = sharedNames.has(row.name) || (profile.hotSpot.id === "achernar" && row.name === "Republic Spider" && affected.length > 1);
-    if (shared) {
-      effectCards.push('<article class="active-complication-card shared-effect"><strong>' + esc(row.name) + '</strong><span class="effect-owner">Battlefield-wide · selected for ' + esc(affected.map(side => side.name).join(" and ")) + '</span><p>' + esc(row.text) + '</p></article>');
-      continue;
-    }
     for (const side of affected) {
-      const duncanAbsent = profile.hotSpot.id === "new-ivaarsen" && row.duncanOnly && newIvaarsenCharacterAvailability().duncan === false;
-      effectCards.push('<article class="active-complication-card"><strong>' + esc(row.name) + '</strong><span class="effect-owner">Affected force: ' + esc(side.name) + '</span><p>' + esc(duncanAbsent ? row.absentText : row.text) + '</p></article>');
+      const sharedEffectId = row.effectScope === "shared-battlefield"
+        ? row.effectId
+        : sharedNames.has(row.name) || (profile.hotSpot.id === "achernar" && row.name === "Republic Spider" && affected.length > 1)
+          ? profile.hotSpot.id + "::" + row.name
+          : null;
+      effectEntries.push({ row, side, sharedEffectId });
     }
   }
+  const effects = groupComplicationEffectEntries(effectEntries);
+  const effectCards = effects.map(effect => {
+    if (effect.shared) {
+      const ownerLabel = effect.row.effectScope === "shared-battlefield" ? "Shared battlefield condition" : "Battlefield-wide";
+      return '<article class="active-complication-card shared-effect" data-complication-effect="' + esc(effect.effectId) + '"><strong>' + esc(effect.row.name) + '</strong><span class="effect-owner">' + ownerLabel + ' · selected for ' + esc(effect.sides.map(side => side.name).join(" and ")) + '</span><p>' + esc(effect.row.text) + '</p></article>';
+    }
+    const side = effect.sides[0];
+    const duncanAbsent = profile.hotSpot.id === "new-ivaarsen" && effect.row.duncanOnly && newIvaarsenCharacterAvailability().duncan === false;
+    return '<article class="active-complication-card"><strong>' + esc(effect.row.name) + '</strong><span class="effect-owner">Affected force: ' + esc(side.name) + '</span><p>' + esc(duncanAbsent ? effect.row.absentText : effect.row.text) + '</p></article>';
+  });
   const extras = activeComplicationExtras(profile);
   if (!effectCards.length && !extras) return "";
   return '<div class="reference-section active-complications" aria-live="polite"><div class="active-complications-head"><div><div class="panel-kicker">ACTIVE COMPLICATIONS</div><p>Applied tactical effects for the current track.</p></div></div><div class="active-complication-grid">' + effectCards.join("") + '</div>' + extras + '</div>';
@@ -1177,12 +1212,21 @@ function renderActiveComplications(profile, selection) {
 function renderInteractiveComplications(profile) {
   const selection = complicationSelectionState(profile.table);
   if (!selection.expanded && selection.appliedOnce) {
-    const activeCount = profile.table.rows.reduce((total, row, index) => {
-      if (isNoComplicationRow(row) || isRollTwiceRow(row)) return total;
+    const activeCount = profile.table.rows.reduce((entries, row, index) => {
+      if (isNoComplicationRow(row) || isRollTwiceRow(row)) return entries;
       const key = complicationRowKey(row, index);
-      return total + profile.participants.filter(side => (selection.applied[side.id] || []).includes(key)).length;
-    }, 0);
-    return '<div class="complication-selection-status"><div><strong>' + (activeCount ? activeCount + ' applied complication' + (activeCount === 1 ? '' : 's') : 'No active complications') + '</strong><span>Selections are applied to the current track. Reopen the table to revise them.</span></div><button type="button" class="complication-edit-button" data-edit-complications="true">Edit</button></div>';
+      const affected = profile.participants.filter(item => (selection.applied[item.id] || []).includes(key));
+      const legacyShared = new Set(["Sandstorm", "Heatwave", "Unexpected Sandstorm", "Heavy Rainfall"]);
+      const sharedEffectId = row.effectScope === "shared-battlefield"
+        ? row.effectId
+        : legacyShared.has(row.name) || (profile.hotSpot.id === "achernar" && row.name === "Republic Spider" && affected.length > 1)
+          ? profile.hotSpot.id + "::" + row.name
+          : null;
+      for (const side of affected) entries.push({ row, side, sharedEffectId });
+      return entries;
+    }, []);
+    const displayedCount = groupComplicationEffectEntries(activeCount).length;
+    return '<div class="complication-selection-status"><div><strong>' + (displayedCount ? displayedCount + ' applied complication' + (displayedCount === 1 ? '' : 's') : 'No active complications') + '</strong><span>Selections are applied to the current track. Reopen the table to revise them.</span></div><button type="button" class="complication-edit-button" data-edit-complications="true">Edit</button></div>';
   }
   if (profile.table.separateBySide) {
     const tables = profile.table.groups.map(group => {
@@ -1331,6 +1375,9 @@ function renderNewIvaarsenTacticalReference() {
 function renderCurrentTrackInputs() {
   const hotSpot = currentHotSpot();
   const step = currentHotSpotStep();
+  if (hotSpot.id === "pascagoula" && Number(step?.sequence) === 1) {
+    return '<div class="reference-section current-track-inputs"><div class="panel-kicker">SPECIAL TACTICAL VICTORY</div><p class="reference-copy">Use Pascagoula’s special tactical victory condition to determine the Track 1 winner manually. The Objective Raid VP tracker remains available for objective scoring and does not select the tactical winner.</p>' + renderProvisionalRules(PASCAGOULA_PROVISIONAL_RULES) + '</div>';
+  }
   if (hotSpot.id === "achernar" && [4, 5].includes(Number(step?.sequence))) {
     const maximum = state.scale * 2;
     const key = tacticalInputKey("defector-survivors");
@@ -1482,13 +1529,17 @@ function renderTracker() {
   $("#defender-bar").style.background = defenderSide?.color || FACTION_COLORS.Local;
   document.body.dataset.mode = state.mode;
   $$(".mode-button").forEach(button => button.classList.toggle("active", button.dataset.mode === state.mode));
-  $("#objective-body").innerHTML = track ? objectives.map(objective => {
+  const extractionRow = track && pascagoulaExtractionRequired()
+    ? '<tr class="prerequisite-row"><th scope="row"><div class="objective-title">Defender scoring prerequisite</div><div class="objective-rule">' + esc(variant?.defenderExtractionText || "At least one Ryu successfully extracted.") + '</div><div class="objective-vp">Orders remains available. Other Defender objectives score 0 VP until this is complete; recorded progress is preserved.</div></th><td class="attacker-col"><span class="not-applicable" aria-label="Not applicable">—</span></td><td class="defender-col"><label class="check-control"><input type="checkbox" data-pascagoula-ryu-extracted="true"' + (pascagoulaRyuExtracted() ? " checked" : "") + '><span class="checkmark"></span><span class="control-copy">' + (pascagoulaRyuExtracted() ? "Extracted" : "Not extracted") + '</span></label></td></tr>'
+    : "";
+  $("#objective-body").innerHTML = track ? extractionRow + objectives.map(objective => {
     const display = displayObjective(objective, variant);
     const calculatedDeny = isReconDeny(objective);
     const objectiveText = display.text;
     const denyVp = calculatedDeny ? objectiveEarnedVp(objective, "defender", display) : 0;
     const vpLabel = calculatedDeny ? "Projected: " + denyVp + " VP" : (display.vpOptions ? display.vpOptions.join(" / ") + " VP (select value)" : display.vp + " VP" + (display.repeatable ? " each" : ""));
-    const projectionNote = calculatedDeny ? '<div class="calculated-vp-note">Projected Deny VP follows the printed Deny schedule as the Attacker completes objectives. Remaining Deny points are awarded at the end of Turn 8.' + (daharGibberishApplies("defender") ? " Dahar Complication 7 deducts 20 VP once from the earned Deny objective." : "") + '</div>' : "";
+    const extractionNote = pascagoulaObjectiveSuppressed(objective, "defender") ? '<div class="calculated-vp-note">Defender VP is currently suppressed until at least one Ryu is extracted.</div>' : "";
+    const projectionNote = (calculatedDeny ? '<div class="calculated-vp-note">Projected Deny VP follows the printed Deny schedule as the Attacker completes objectives. Remaining Deny points are awarded at the end of Turn 8.' + (daharGibberishApplies("defender") ? " Dahar Complication 7 deducts 20 VP once from the earned Deny objective." : "") + '</div>' : "") + extractionNote;
     return '<tr><th scope="row"><div class="objective-title">' + esc(display.name) + '</div><div class="objective-rule">' + esc(objectiveText) + '</div><div class="objective-vp">' + vpLabel + "</div>" + projectionNote + "</th>" +
       '<td class="attacker-col">' + objectiveControl(objective, "attacker", display) + "</td>" +
       '<td class="defender-col">' + objectiveControl(objective, "defender", display) + "</td></tr>";
@@ -1520,9 +1571,11 @@ function renderAll() {
 }
 
 function resetTrack() {
-  const prefix = state.hotSpotId + "::" + (state.trackSequence[state.hotSpotId] || "") + "::" + (state.trackId || "") + "::";
+  const branch = state.hotSpotId === "pascagoula" && Number(state.trackSequence[state.hotSpotId]) === 2 ? "::" + (selectedWinner(1) || "unresolved") : "";
+  const prefix = state.hotSpotId + "::" + (state.trackSequence[state.hotSpotId] || "") + "::" + (state.trackId || "") + branch + "::";
   Object.keys(state.progress).filter(key => key.startsWith(prefix)).forEach(key => delete state.progress[key]);
   Object.keys(state.vpSelections).filter(key => key.startsWith(prefix)).forEach(key => delete state.vpSelections[key]);
+  if (pascagoulaExtractionRequired()) delete state.tacticalInputs[pascagoulaExtractionKey()];
   renderAll();
 }
 
@@ -1914,6 +1967,11 @@ $("#objective-body").addEventListener("click", event => {
 
 $("#objective-body").addEventListener("change", event => {
   const input = event.target;
+  if (input.dataset.pascagoulaRyuExtracted) {
+    state.tacticalInputs[pascagoulaExtractionKey()] = input.checked;
+    renderTracker();
+    return;
+  }
   const objective = currentTrack()?.objectives.find(item => item.id === input.dataset.objective);
   if (!objective) return;
   const side = input.dataset.side || input.dataset.vpSide;

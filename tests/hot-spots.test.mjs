@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { adjustDaharEarnedVp, achernarInitialDefectors, ALTA_VISTA_COMMAND_COMPLICATIONS, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_MAPSHEET_TABLE, DAHAR_PROVISIONAL_RULES, DAHAR_TRACK_RESULTS, evaluateAltaVistaCampaign, FACTION_COLORS, GENERAL_RULES, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_MAPSHEET_TABLE, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LE_BLANC_TEMPORARY_HIRES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_MAPSHEET_TABLE, LUCERNE_PROVISIONAL_RULES, LUCERNE_TEMPORARY_HIRES, LUCERNE_TRACK_RESULTS, MELCHER_BLACK_MARKET, MELCHER_COMMAND_COMPLICATIONS, MELCHER_GRASSLANDS_MAPSHEETS, MELCHER_TEMPORARY_HIRES, MISSION_OPFOR_OVERRIDES, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_COMMAND_COMPLICATIONS, NEW_IVAARSEN_LIGHT_URBAN_MAPSHEETS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PLAYER_VISIBLE_HOT_SPOT_IDS, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
+import { adjustDaharEarnedVp, achernarInitialDefectors, ALTA_VISTA_COMMAND_COMPLICATIONS, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_MAPSHEET_TABLE, DAHAR_PROVISIONAL_RULES, DAHAR_TRACK_RESULTS, evaluateAltaVistaCampaign, FACTION_COLORS, GENERAL_RULES, groupComplicationEffectEntries, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_MAPSHEET_TABLE, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LE_BLANC_TEMPORARY_HIRES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_MAPSHEET_TABLE, LUCERNE_PROVISIONAL_RULES, LUCERNE_TEMPORARY_HIRES, LUCERNE_TRACK_RESULTS, MELCHER_BLACK_MARKET, MELCHER_COMMAND_COMPLICATIONS, MELCHER_GRASSLANDS_MAPSHEETS, MELCHER_TEMPORARY_HIRES, MISSION_OPFOR_OVERRIDES, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_COMMAND_COMPLICATIONS, NEW_IVAARSEN_LIGHT_URBAN_MAPSHEETS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PASCAGOULA_COMMAND_COMPLICATIONS, PASCAGOULA_MOUNTAINS_MAPSHEETS, PASCAGOULA_PROVISIONAL_RULES, PLAYER_VISIBLE_HOT_SPOT_IDS, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
 
 const expected = ["Assault", "Breakthrough", "Defend", "Flank", "Meeting Engagement", "Objective Raid", "Pursuit", "Pushback", "Recon", "Retreat", "Strike"];
 assert.deepEqual(TRACKS.map(track => track.name), expected, "all eleven Draconis Reach standard tracks are present");
@@ -10,7 +10,7 @@ assert.match(SOURCES.supersession, /supersedes/i);
 assert.match(SOURCES.militaryPalette, /military-ui\.yaml/);
 assert.equal(FACTION_COLORS["Federated Suns"], "#7FA52F", "Federated Suns uses the brighter Hot Spots consumer adaptation");
 assert.match(SOURCES.errata, /official master errata/i);
-assert.match(SOURCES.pascagoula, /pp\. 104–106/);
+assert.match(SOURCES.pascagoula, /pp\. 103–107.*Pursuit p\. 172.*Mountains Terrain Table p\. 150.*Alpha Strike terrain p\. 154/);
 const cripplingDamage = GENERAL_RULES.find(rule => rule.title === "Crippling Damage").text;
 assert.match(cripplingDamage, /torso internal structure damage does not count while that location still has front armor/);
 assert.match(cripplingDamage, /half starting structure, rounded up/);
@@ -106,28 +106,32 @@ assert.match(reconDeny.text, /not met by the end of Turn 8.*withdrawing from the
 assert.doesNotMatch(reconDeny.text, /select the applicable value/i, "Recon Deny no longer instructs the player to select a manual VP value");
 const pascagoula = HOT_SPOTS.find(item => item.id === "pascagoula");
 assert.equal(pascagoula.tracks[0].trackId, "objective-raid", "Pascagoula Track 1 uses Objective Raid");
-assert.equal(pascagoula.tracks[0].displayName, undefined, "Pascagoula Track 1 does not expose contract naming");
+assert.equal(pascagoula.tracks[0].displayName, "Gem Convoy Raid", "Pascagoula Track 1 exposes its tactical title");
 assert.equal(pascagoula.tracks[1].outcomes["jewel-thieves"].trackId, "pursuit", "Pascagoula Track 2 remains Pursuit");
 const pascagoulaVariant = pascagoula.tracks[0].variant;
 assert.equal(pascagoulaVariant.displayName, "Gem Convoy Raid", "Pascagoula Track 1 exposes the scenario title in its variant card");
 assert.equal(pascagoulaVariant.type, "Modified Objective Raid", "Pascagoula Track 1 identifies the modified track type");
-assert.match(pascagoulaVariant.setup.join(" "), /Mines #1/);
+assert.deepEqual(pascagoula.sides.map(side => [side.name, side.faction]), [["Jewel Thieves", "Mercenary"], ["Ranger Raiders", "Mercenary"]], "both Pascagoula participating forces are Mercenary");
+assert.match(pascagoula.contractReference.summary.join(" "), /145202A.*Oyabun Jamal Matsumoto.*145202B.*Colonel Kenneth Ramaley.*three months/i);
+assert.match(pascagoula.contractReference.progression.join(" "), /No repairs or ammunition reloading.*purchases cannot be made between tracks.*one Draconis Combine faction purchase.*one Federated Suns faction purchase/i);
+assert.match(pascagoula.contractReference.victory.join(" "), /successfully complete both tracks.*does not equate/i);
+assert.match(pascagoulaVariant.setup.join(" "), /Mines #1.*Scales 2–3/);
 assert.match(pascagoulaVariant.setup.join(" "), /four Ryu Heavy Transport WiGEs/);
 assert.match(pascagoulaVariant.setup.join(" "), /Vedette Medium Tank BSP asset cards/);
 assert.doesNotMatch(pascagoulaVariant.setup.join(" "), /two Medium objective buildings|height 1|battlefield center|indestructible/);
 assert.match(pascagoulaVariant.scaleNotesByScale["1"].join(" "), /Mines #1/);
 assert.match(pascagoulaVariant.scaleNotesByScale["2"].join(" "), /Mines #1 and Mines #2.*Daimyo DMO-5K.*Dragon DRG-5Nr/);
 assert.match(pascagoulaVariant.scaleNotesByScale["3"].join(" "), /Mines #1 and Mines #2.*Daimyo DMO-5K.*Dragon DRG-5Nr.*Nova Cat T/);
+assert.doesNotMatch(pascagoulaVariant.scaleNotesByScale["3"].join(" "), /additional mapsheets|Mountains Terrain table/i, "Scale 3 uses only the two designated Mines mapsheets");
 assert.match(pascagoulaVariant.setupDetails.join(" "), /Chimera CHA-2K and Jenner JR7-C2/);
 assert.match(pascagoulaVariant.setupDetails.join(" "), /Gunnery 3 \/ Piloting 4/);
 assert.match(pascagoulaVariant.setupDetails.join(" "), /opposite the Defender’s home edge/);
 assert.match(pascagoulaVariant.setupDetails.join(" "), /Defender selects a short edge/);
-assert.match(pascagoulaVariant.special.join(" "), /working interpretation, not an official errata ruling/);
+assert.doesNotMatch(pascagoulaVariant.special.join(" "), /agreed table interpretation|working interpretation|internal finding/i);
 assert.match(pascagoulaVariant.special.join(" "), /one component per functioning hand actuator per turn/);
 assert.match(pascagoulaVariant.special.join(" "), /transfer one carried component/);
 assert.match(pascagoulaVariant.special.join(" "), /removed from play and cannot return/);
-assert.match(pascagoulaVariant.special.join(" "), /Destroying a Ryu does not itself award victory/);
-assert.match(pascagoulaVariant.special.join(" "), /replace Objective Raid’s generic 12-turn limit/);
+assert.match(pascagoulaVariant.special.join(" "), /Special tactical victory.*all surviving Ryus.*at least one Ryu.*every opposing unit has fled or been destroyed/i);
 assert.match(pascagoulaVariant.special.join(" "), /damage and ammunition expenditure carry over/);
 assert.match(pascagoulaVariant.objectiveOverrides["orders-defender"].text, /mobile Ryu/);
 assert.equal(pascagoulaVariant.objectiveOverrides["grab-stuff"].name, "Grab the Stuff");
@@ -135,16 +139,76 @@ assert.match(pascagoulaVariant.objectiveOverrides["grab-stuff"].text, /extracted
 assert.equal(pascagoulaVariant.objectiveOverrides["pay-for-that"].name, "You Must Pay for That");
 assert.match(pascagoulaVariant.objectiveOverrides["pay-for-that"].text, /qualifying non-asset Attacker unit/);
 assert.equal(pascagoulaVariant.commandComplications.rows.length, 6, "Pascagoula exposes all six Command Complications results");
-assert.deepEqual(pascagoulaVariant.commandComplications.rows.map(row => row.name), ["No complications", "Shifting Sand", "Ash Fall", "Volcanic Geysers", "Delayed Deployment", "Increased Repair Costs"]);
+assert.equal(pascagoulaVariant.commandComplications, PASCAGOULA_COMMAND_COMPLICATIONS);
+assert.deepEqual(pascagoulaVariant.commandComplications.rows.map(row => row.name), ["No Complication", "Shifting Sand", "Ash Fall", "Volcanic Eruptions", "Crevasse", "Increased Repair Costs"]);
 assert.match(pascagoulaVariant.commandComplications.rows[1].text, /40\+ ton units/);
-assert.match(pascagoulaVariant.commandComplications.rows[2].text, /direct and pulse energy/);
-assert.match(pascagoulaVariant.commandComplications.rows[3].text, /ends the Movement Phase/);
+assert.match(pascagoulaVariant.commandComplications.rows[2].text, /direct and pulse energy/i);
+assert.deepEqual(
+  pascagoulaVariant.commandComplications.rows.slice(1, 3).map(row => [row.name, row.effectScope, row.effectId]),
+  [
+    ["Shifting Sand", "shared-battlefield", "pascagoula-shifting-sand"],
+    ["Ash Fall", "shared-battlefield", "pascagoula-ash-fall"]
+  ],
+  "Pascagoula battlefield-wide effects have stable identities for shared presentation"
+);
+assert.equal(pascagoulaVariant.commandComplications.rows.slice(3).every(row => row.effectScope === undefined && row.effectId === undefined), true, "Pascagoula player-specific effects remain independent");
+const pascagoulaComplicationRows = Object.fromEntries(PASCAGOULA_COMMAND_COMPLICATIONS.rows.map(row => [row.name, row]));
+const jewel = { id: "jewel-thieves", name: "Jewel Thieves" };
+const ranger = { id: "ranger-raiders", name: "Ranger Raiders" };
+const groupPascagoulaEffects = entries => groupComplicationEffectEntries(entries.map(([name, side]) => ({ row: pascagoulaComplicationRows[name], side })));
+for (const sharedName of ["Shifting Sand", "Ash Fall"]) {
+  assert.equal(groupPascagoulaEffects([[sharedName, jewel]]).length, 1, sharedName + " displays once when selected only for Jewel Thieves");
+  assert.equal(groupPascagoulaEffects([[sharedName, ranger]]).length, 1, sharedName + " displays once when selected only for Ranger Raiders");
+  const both = groupPascagoulaEffects([[sharedName, jewel], [sharedName, ranger]]);
+  assert.equal(both.length, 1, sharedName + " displays once when both players select it");
+  assert.deepEqual(both[0].sides.map(side => side.id), ["jewel-thieves", "ranger-raiders"], sharedName + " preserves both recorded selections");
+  assert.equal(groupPascagoulaEffects([[sharedName, jewel]]).length, 1, "removing one duplicate " + sharedName + " selection leaves the shared effect active");
+  assert.equal(groupPascagoulaEffects([]).length, 0, "removing both " + sharedName + " selections removes the shared effect");
+}
+assert.equal(groupPascagoulaEffects([["Shifting Sand", jewel], ["Ash Fall", ranger]]).length, 2, "different shared Pascagoula effects each display once");
+for (const playerSpecificName of ["Volcanic Eruptions", "Crevasse", "Increased Repair Costs"]) {
+  const both = groupPascagoulaEffects([[playerSpecificName, jewel], [playerSpecificName, ranger]]);
+  assert.equal(both.length, 2, playerSpecificName + " remains separate for both players");
+  assert.equal(both.every(effect => effect.shared === false), true, playerSpecificName + " is not treated as a shared battlefield effect");
+}
+assert.equal(groupPascagoulaEffects([["Ash Fall", jewel], ["Ash Fall", ranger], ["Crevasse", jewel]]).length, 2, "mixed shared and player-specific effects preserve one card for each actual effect");
+assert.equal(groupPascagoulaEffects([["Shifting Sand", jewel]]).length, 1, "a shared effect remains active alongside an omitted No Complication result");
+assert.equal(groupPascagoulaEffects([]).length, 0, "No Complication selections produce no active effect cards");
+const daharSandstorm = DAHAR_COMMAND_COMPLICATIONS.rows.find(row => row.name === "Sandstorm");
+assert.equal(groupComplicationEffectEntries([{ row: daharSandstorm, side: jewel, sharedEffectId: "dahar::Sandstorm" }, { row: daharSandstorm, side: ranger, sharedEffectId: "dahar::Sandstorm" }]).length, 1, "Dahar shared environmental effects remain deduplicated");
+const leBlancSandstorm = LE_BLANC_COMMAND_COMPLICATIONS.rows.find(row => row.name === "Unexpected Sandstorm");
+assert.equal(groupComplicationEffectEntries([{ row: leBlancSandstorm, side: jewel, sharedEffectId: "le-blanc::Unexpected Sandstorm" }, { row: leBlancSandstorm, side: ranger, sharedEffectId: "le-blanc::Unexpected Sandstorm" }]).length, 1, "Le Blanc shared sandstorm remains deduplicated");
+const lucerneRain = LUCERNE_COMMAND_COMPLICATIONS.rows.find(row => row.name === "Heavy Rainfall");
+const lucerneSwarms = LUCERNE_COMMAND_COMPLICATIONS.rows.find(row => row.name === "Voracious Reptile Swarms");
+assert.equal(groupComplicationEffectEntries([{ row: lucerneRain, side: jewel, sharedEffectId: "lucerne::Heavy Rainfall" }, { row: lucerneRain, side: ranger, sharedEffectId: "lucerne::Heavy Rainfall" }]).length, 1, "Lucerne shared weather remains deduplicated");
+assert.equal(groupComplicationEffectEntries([{ row: lucerneSwarms, side: jewel }, { row: lucerneSwarms, side: ranger }]).length, 2, "Lucerne player-specific reptile swarms remain independently additive");
+assert.match(pascagoulaVariant.commandComplications.rows[3].text, /ending the Movement Phase/);
 assert.match(pascagoulaVariant.commandComplications.rows[4].text, /delayed one turn/);
 assert.match(pascagoulaVariant.commandComplications.rows[5].text, /additional 50 percent/);
-assert.match(pascagoulaVariant.commandComplications.note, /does not specify a separate roll timing/);
-assert.match(pascagoulaVariant.commandComplications.note, /each player rolling separately/);
-assert.deepEqual(pascagoulaVariant.sourceRefs, ["Draconis Reach pp. 104–106", "Objective Raid p. 171", "Campaign withdrawal and exit rules p. 31", "Command complications procedure p. 30", "Current Draconis Reach master errata"]);
+assert.match(pascagoulaVariant.commandComplications.note, /each player’s complication separately.*Independent Command Rights \(\+0\)/i);
+assert.deepEqual(pascagoulaVariant.sourceRefs, ["Draconis Reach pp. 103–107", "Objective Raid p. 171", "Campaign withdrawal and exit rules p. 31", "Command complications procedure p. 30", "Current Draconis Reach master errata"]);
 assert.equal(MISSION_OPFOR_OVERRIDES.pascagoula["jewel-thieves"].scales["1"].primary, "Chimera CHA-2K (3/4) | Jenner JR7-C2 (3/4)");
+assert.match(MISSION_OPFOR_OVERRIDES.pascagoula["jewel-thieves"].scales["2"].primary, /Daimyo DMO-5K.*Dragon DRG-5Nr/);
+assert.match(MISSION_OPFOR_OVERRIDES.pascagoula["jewel-thieves"].scales["3"].primary, /Nova Cat T/);
+assert.deepEqual(PASCAGOULA_MOUNTAINS_MAPSHEETS.map(row => row[1]), ["Foothills #1", "Foothills #2", "Washout #1", "Washout #2", "Mines #1", "Mines #2"]);
+assert.equal(PASCAGOULA_PROVISIONAL_RULES.length, 3);
+assert.match(PASCAGOULA_PROVISIONAL_RULES.join(" "), /manual.*tactical winner.*all surviving Ryus.*at least one Ryu.*remains unresolved/i);
+
+const jewelDefender = pascagoula.tracks[1].outcomes["jewel-thieves"];
+const rangerDefender = pascagoula.tracks[1].outcomes["ranger-raiders"];
+assert.deepEqual([jewelDefender.attacker, jewelDefender.defender], ["ranger-raiders", "jewel-thieves"], "Jewel victory makes Jewel Thieves the Track 2 Defender");
+assert.deepEqual([rangerDefender.attacker, rangerDefender.defender], ["jewel-thieves", "ranger-raiders"], "Ranger victory makes Ranger Raiders the Track 2 Defender");
+for (const outcome of [jewelDefender, rangerDefender]) {
+  assert.equal(outcome.variant.commandComplications, PASCAGOULA_COMMAND_COMPLICATIONS);
+  assert.deepEqual(outcome.variant.referenceTables[0].rows, PASCAGOULA_MOUNTAINS_MAPSHEETS);
+  assert.match(outcome.variant.setupDetails.join(" "), /damage and ammunition expenditure carry over.*No repairs, ammunition reloading, or purchases/i);
+  assert.match(outcome.variant.setupDetails.join(" "), /standard Pursuit footprint.*Mountains Terrain table.*at least half.*hills/i);
+}
+assert.match(jewelDefender.variant.setupDetails.join(" "), /Jewel Thieves \(Defender\).*own Scale-based force.*surviving Ryu.*Ranger Raiders \(Attacker\).*surviving Fifth Ghost/i);
+assert.match(jewelDefender.variant.defenderExtractionText, /Defender home edge/);
+assert.match(rangerDefender.variant.setupDetails.join(" "), /Ranger Raiders \(Defender\).*surviving force from Track 1.*captured Ryu/i);
+assert.match(rangerDefender.variant.setupDetails.join(" "), /Mule DropShip.*5 hexes.*10 inches.*central hex plus all six adjacent.*6-inch AOE.*Gunnery 4 \/ Piloting 5.*within 2 inches/i);
+assert.match(rangerDefender.variant.defenderExtractionText, /Mule.*removed from play/);
 const leBlanc = HOT_SPOTS.find(item => item.id === "le-blanc");
 assert.equal(leBlanc.tracks[0].trackId, "objective-raid", "Le Blanc Track 1 remains an Objective Raid variant");
 assert.equal(leBlanc.tracks[0].displayName, "Objective Raid · Wreck the Place");
@@ -253,9 +317,18 @@ assert.ok(app.includes("renderReferenceObjectives") && css.includes("objective-r
 assert.ok(app.includes('state.mode = button.dataset.mode') && app.includes('document.body.dataset.mode = state.mode'), "attacker/defender/both tracking views are wired");
 assert.ok(app.includes('$("#attacker-bar").style.width') && app.includes('$("#defender-bar").style.width'), "live score comparison bars update from current totals");
 assert.ok(app.includes('data-action=\"increment\"') && app.includes('data-action=\"decrement\"'), "repeatable component/VP objectives expose counters");
-for (const term of ["referenceTrack", "scaleNotesFor", "scaleNotesByScale", "sourceReferenceText", "displayObjective", "renderCommandComplications", "commandComplications", "objectiveOverrides", "Gem Convoy Raid", "Modified Objective Raid", "one component per functioning hand actuator per turn", "removed from play and cannot return", "Destroying a Ryu does not itself award victory"]) {
+for (const term of ["referenceTrack", "scaleNotesFor", "scaleNotesByScale", "sourceReferenceText", "displayObjective", "renderCommandComplications", "commandComplications", "objectiveOverrides", "Gem Convoy Raid", "Modified Objective Raid", "one component per functioning hand actuator per turn", "removed from play and cannot return", "Special tactical victory"]) {
   assert.ok((app + data).includes(term), term + " Pascagoula variant behavior is present");
 }
+for (const term of ["pascagoulaExtractionKey", "pascagoulaObjectiveSuppressed", "data-pascagoula-ryu-extracted", "Defender scoring prerequisite", "selectedWinner(1) || \"unresolved\""]) assert.ok(app.includes(term), term + " Pascagoula branch scoring behavior is present");
+assert.match(app, /row\.effectScope === "shared-battlefield"/, "shared battlefield complications use explicit scope metadata rather than display text");
+assert.match(app, /data-complication-effect=.*effect\.effectId/, "shared complication cards retain the stable effect identity");
+assert.match(app, /Shared battlefield condition/, "shared Pascagoula cards are identified as battlefield conditions");
+assert.match(app, /displayedCount = groupComplicationEffectEntries\(activeCount\)\.length/, "collapsed complication summaries count grouped effects rather than raw selections");
+assert.match(app, /objective\.id !== "orders-defender"/, "Pascagoula extraction suppresses only non-Orders Defender objectives");
+assert.match(app, /pascagoulaObjectiveSuppressed\(objective, side\).*return 0/s, "effective Defender VP is zero before extraction");
+assert.match(app, /state\.tacticalInputs\[pascagoulaExtractionKey\(\)\] = input\.checked/, "the Ryu extraction checkbox updates scoring immediately");
+assert.match(app, /trackOne && selectedSideId === "ranger-raiders"/, "playing Ranger Raiders uses the mandatory Fifth Ghost roster only in Track 1");
 for (const term of ["renderNewIvaarsenSetupInputs", "newIvaarsenCharacterAvailability", "renderNewIvaarsenTacticalReference", "stephensons-building-total", "isf-building-total", "Ryuken-ni Support BattleMechs", "BUILDING-DIFFERENCE SUPPORT"]) assert.ok(app.includes(term), term + " New Ivaarsen tactical behavior is present");
 for (const term of ["Long Tom Support Attacks: ", "2 * state.scale", "BSP Mechanized Infantry Platoons: ", "BSP Striker Light Tanks: ", "Math.max(0, Number(isf) - Number(steph))"]) assert.ok(app.includes(term), term + " computed New Ivaarsen support behavior is present");
 assert.doesNotMatch(JSON.stringify(newIvaarsen), /campaignState|reputation calculator|purchase history/i, "New Ivaarsen remains tactical-reference only");
@@ -275,7 +348,7 @@ assert.ok(app.includes('"Mercenary": "mercenary-pirate"'), "Le Blanc mercenary p
 assert.ok(css.includes("hire-reference-card") && css.includes("hire-card-grid") && css.includes("hire-card-divider"), "Temporary Hire cards use the focused nutrition-label-inspired layout");
 assert.match(css, /@media[\s\S]*hire-card-grid \{ grid-template-columns: 1fr;/, "Temporary Hire cards stack at the mobile breakpoint");
 assert.ok(html.includes("master errata") && html.includes("topic,90893.0.html"), "current Draconis Reach master errata is identified in the source verification panel");
-assert.match(html, /RULES SOURCES[\s\S]*First Printing[\s\S]*11 November 2026[\s\S]*25 November 2026[\s\S]*Amber text indicates a provisional rules interpretation pending official clarification/);
+assert.match(html, /RULES SOURCES[\s\S]*First Printing[\s\S]*11 November 2026[\s\S]*26 November 2026[\s\S]*Amber text indicates a provisional rules interpretation pending official clarification/);
 assert.ok(css.includes(".provisional-rule") && css.includes(".sr-only"), "provisional rules have visible and assistive semantics");
 assert.ok(css.includes("@media") && css.includes("flex-wrap: wrap"), "responsive layout rules remain present");
 assert.ok(HOT_SPOTS.length >= 10, "the location selector includes the Draconis Reach mission briefs currently mapped");
@@ -1034,7 +1107,7 @@ assert.match(app, /Eclipse Expeditions Special Operations.*Guildmaster Phil News
 assert.match(app, /both participating forces are Mercenary.*Mercenary\/Pirate OpFor table/i);
 assert.match(app, /same completed-objective|Current score: Attacker|currently successfully completes the track/);
 assert.match(app, /renderTemporaryHires\(referenceTrack\.temporaryHires, referenceTrack\.temporaryHireNote\)/, "Temporary Hire cards accept contract-aware hiring guidance");
-assert.match(html, /new-ivaarsen/, "Hot Spots uses the New Ivaarsen asset cache key");
+assert.match(html, /pascagoula/, "Hot Spots uses the Pascagoula asset cache key");
 assert.ok(css.includes("campaign-field input") && css.includes("hire-card-grid") && css.includes("@media"), "Lucerne controls and reused Temporary Hire cards retain responsive styling");
 
 assert.match(html, /<details[^>]+id="hotspot-setup"[^>]+open>/, "Hot Spot Setup starts expanded");
@@ -1044,7 +1117,7 @@ assert.match(html, /id="complication-configuration"/, "Hot Spot Setup contains t
 assert.match(html, /<h2 id="derived-track-title" class="derived-track-title">/, "the resolved track has one prominent gameplay heading");
 assert.doesNotMatch(html, />Tracking view</i, "the redundant visible Tracking View label is removed");
 assert.doesNotMatch(html, /class="source-strip"|PRIMARY SOURCE|ERRATA INCORPORATED/, "the redundant top source banner is removed");
-assert.match(html, /RULES SOURCES[\s\S]*First Printing[\s\S]*11 November 2026[\s\S]*25 November 2026[\s\S]*topic,90893\.0\.html/, "the centralized Rules Sources section retains the complete source and errata record");
+assert.match(html, /RULES SOURCES[\s\S]*First Printing[\s\S]*11 November 2026[\s\S]*26 November 2026[\s\S]*topic,90893\.0\.html/, "the centralized Rules Sources section retains the complete source and errata record");
 assert.match(html, /aria-label="Score display"/, "the score-side controls retain an accessible group name");
 assert.match(app, /mission-card-head.*<h2>Mission Brief<\/h2>/, "Mission Brief replaces the duplicate track heading in the reference card");
 assert.doesNotMatch(app, /mission-card-head.*<h2>Track pending<\/h2>/, "unresolved conditional tracks also use Mission Brief instead of a duplicate status heading");
@@ -1065,7 +1138,8 @@ const resetTrackBody = app.match(/function resetTrack\(\) \{([\s\S]*?)\n\}/)?.[1
 assert.match(resetTrackBody, /state\.trackSequence\[state\.hotSpotId\].*state\.trackId/s, "Reset Objectives is scoped to the current Hot Spot sequence and resolved track");
 assert.match(resetTrackBody, /state\.progress/, "Reset Objectives clears objective progress");
 assert.match(resetTrackBody, /state\.vpSelections/, "Reset Objectives clears objective VP selections");
-for (const preservedState of ["clearComplicationSelections", "tacticalInputs", "opforForceTypes", "daharMission", "lucerneMission", "sourceRollSelections", "selectionValues"]) {
+assert.match(resetTrackBody, /pascagoulaExtractionRequired\(\).*delete state\.tacticalInputs\[pascagoulaExtractionKey\(\)\]/s, "Reset Objectives clears only the current Pascagoula extraction prerequisite");
+for (const preservedState of ["clearComplicationSelections", "opforForceTypes", "daharMission", "lucerneMission", "sourceRollSelections", "selectionValues"]) {
   assert.ok(!resetTrackBody.includes(preservedState), "Reset Objectives preserves " + preservedState);
 }
 assert.match(app, /function renderSetupConfiguration\(referenceTrack\)/, "battlefield and complication configuration share the Hot Spot Setup renderer");
@@ -1078,7 +1152,7 @@ assert.match(app, /\$\("#hotspot-setup"\)\.addEventListener\("change"/, "complic
 assert.doesNotMatch(renderOpForBody, /data-complication-choice/, "generated OpFor rendering remains separate from complication selection");
 assert.ok(css.includes("setup-configuration-card") && css.includes("complication-selection-status"), "battlefield and complication setup remain responsive and visibly grouped");
 
-assert.deepEqual(PLAYER_VISIBLE_HOT_SPOT_IDS, ["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen"], "only completed and verified contracts are player-visible in source order");
+assert.deepEqual(PLAYER_VISIBLE_HOT_SPOT_IDS, ["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula"], "only completed and verified contracts are player-visible in source order");
 assert.equal(PLAYER_VISIBLE_HOT_SPOT_IDS.every(id => HOT_SPOTS.some(hotSpot => hotSpot.id === id)), true, "every visible contract retains its source data");
 assert.equal(HOT_SPOTS.some(hotSpot => hotSpot.id === "new-ivaarsen"), true, "New Ivaarsen contract data is available to the verified-location filter");
 assert.match(app, /const VISIBLE_HOT_SPOTS = HOT_SPOTS\.filter/, "the browser uses one centralized approved-location filter");
@@ -1099,7 +1173,7 @@ assert.deepEqual(MELCHER_GRASSLANDS_MAPSHEETS.map(row => row[2]), ["BB", "AGOAC"
 assert.equal(MELCHER_BLACK_MARKET.length, 11, "Melcher includes all Black Market AgroMech results");
 assert.equal(MELCHER_COMMAND_COMPLICATIONS.rows.length, 5, "Melcher includes the full resolved Command Complications bracket");
 assert.equal(MELCHER_TEMPORARY_HIRES.length, 2, "Melcher includes both named temporary hires");
-assert.match(app, /"melcher", "new-ivaarsen"\]\);/, "Melcher and New Ivaarsen use the shared interactive complication and simplified OpFor workflows");
+assert.match(app, /"melcher", "new-ivaarsen", "pascagoula"\]\);/, "Melcher, New Ivaarsen, and Pascagoula use the shared interactive complication and simplified OpFor workflows");
 assert.match(app, /Math\.min\(objective\.maxCount \?\? Infinity/, "repeatable objectives honor source-defined maximum counts");
 const hotSpotsHeader = html.match(/<header class="topbar">[\s\S]*?<\/header>/)?.[0] || "";
 const coreHeader = coreHtml.match(/<header class="topbar">[\s\S]*?<\/header>/)?.[0] || "";
