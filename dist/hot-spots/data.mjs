@@ -2757,37 +2757,99 @@ const xhosaTrack3StrikeVariant = xhosaVariant("strike", {
   ]
 });
 
-const actOfPiracyCommandComplications = {
-  ref: "Draconis Reach pp. 30, 126",
-  note: "Official contract procedure: roll this table once for the track, not once per player. The browser displays the complete table without selecting or applying a complication automatically.",
+export const ACT_OF_PIRACY_SYSTEMS = Object.freeze([
+  { roll: 1, id: "beaumont", name: "Beaumont", terrain: "Savannah", loot: "Agricultural machinery", militiaFaction: "Federated Suns", condition: "None" },
+  { roll: 2, id: "de-berry", name: "De Berry", terrain: "Grassland", loot: "Mining machinery", militiaFaction: "Mercenary", condition: "Ice" },
+  { roll: 3, id: "tancredi-iv", name: "Tancredi IV", terrain: "Urban", loot: "Laser weapons", militiaFaction: "Draconis Combine", condition: "Repair-only payment option" },
+  { roll: 4, id: "mirach", name: "Mirach", terrain: "Mountains", loot: "Ores", militiaFaction: "Mercenary", condition: "Low gravity" },
+  { roll: 5, id: "johnsondale", name: "Johnsondale", terrain: "Urban", loot: "Combat vehicles", militiaFaction: "Federated Suns", condition: "Vehicles or components" },
+  { roll: 6, id: "hazelhurst", name: "Hazelhurst", terrain: "Hills", loot: "Casks of wine", militiaFaction: "Raven Alliance", condition: "Cargo movement restriction" }
+]);
+
+export function resolveActOfPiracyScenario(protectedRoll, attackedRoll, johnsondaleChoice = "", scale = 1) {
+  const protectedSystem = ACT_OF_PIRACY_SYSTEMS.find(system => system.roll === Number(protectedRoll)) || null;
+  const attackedSystem = ACT_OF_PIRACY_SYSTEMS.find(system => system.roll === Number(attackedRoll)) || null;
+  const branch = !protectedSystem || !attackedSystem
+    ? "unresolved"
+    : protectedSystem.roll === attackedSystem.roll
+      ? "same-system"
+      : "different-system";
+  const resolvedChoice = attackedSystem?.id === "johnsondale" && ["components", "completed-vehicles"].includes(johnsondaleChoice)
+    ? johnsondaleChoice
+    : "";
+  const boundedScale = Math.min(3, Math.max(1, Math.trunc(Number(scale) || 1)));
+  return {
+    protectedSystem,
+    attackedSystem,
+    branch,
+    branchLabel: branch === "same-system"
+      ? "Player commands fight"
+      : branch === "different-system"
+        ? "Law controls local Militia Garrison"
+        : "Opposition unresolved",
+    militiaRequired: branch === "different-system",
+    militiaFaction: branch === "different-system" ? attackedSystem.militiaFaction : null,
+    johnsondaleChoice: resolvedChoice,
+    johnsondaleChoiceRequired: attackedSystem?.id === "johnsondale" && !resolvedChoice,
+    strikerSupportCount: resolvedChoice === "completed-vehicles" ? boundedScale * 2 : 0
+  };
+}
+
+export const ACT_OF_PIRACY_TERRAIN_TABLES = Object.freeze({
+  grassland: {
+    title: "Grasslands Terrain · Table 1 (1D6)",
+    headers: ["Roll", "Mapsheet", "Source"],
+    rows: [["1", "Grassland #1", "BattleTech: Beginner Box"], ["2", "Grassland #2", "A Game of Armored Combat"], ["3", "Grassland #3", "A Game of Armored Combat"], ["4", "Woodland", "MapPack: Grasslands"], ["5", "Open Terrain #2", "MapPack: Grasslands"], ["6", "Open Terrain #3", "MapPack: Grasslands"]]
+  },
+  hills: {
+    title: "Hills Terrain · Table 2 (1D6)",
+    headers: ["Roll", "Mapsheet", "Source"],
+    rows: [["1", "Hilltops #1", "Clan Invasion"], ["2", "Foothills #2", "MapPack: Grasslands"], ["3", "Rolling Hills #1", "MapPack: Grasslands"], ["4", "Rolling Hills #2", "Clan Invasion"], ["5", "Rolling Hills #3", "MapPack: Grasslands"], ["6", "Rolling Hills #4", "MapPack: Grasslands"]]
+  },
+  mountains: {
+    title: "Mountains Terrain · Table 3 (1D6)",
+    headers: ["Roll", "Mapsheet", "Source"],
+    rows: [["1", "Foothills #1", "MapPack: Grasslands"], ["2", "Foothills #2", "MapPack: Grasslands"], ["3", "Washout #1", "MapPack: Deserts"], ["4", "Washout #2", "MapPack: Deserts"], ["5", "Mines #1", "MapPack: Deserts"], ["6", "Mines #2", "MapPack: Deserts"]]
+  },
+  savannah: {
+    title: "Savannah Terrain · Table 9 (1D6)",
+    headers: ["Roll", "Mapsheet", "Source"],
+    rows: [["1", "River Delta / Drainage Basin #1", "MapPack: Savannah"], ["2", "River Delta / Drainage Basin #2", "MapPack: Savannah"], ["3", "Large Lakes #1", "MapPack: Savannah"], ["4", "Large Lakes #2", "MapPack: Savannah"], ["5", "BattleTech", "MapPack: Savannah"], ["6", "City Ruins", "MapPack: Savannah"]]
+  },
+  urban: {
+    title: "Urban Terrain · Table 10 (1D6)",
+    headers: ["Roll", "Mapsheet", "Source"],
+    rows: [["1", "Corporate Campus", "MapPack: City"], ["2", "Family Quarters", "MapPack: City"], ["3", "HPG Heliport", "MapPack: City"], ["4", "Business District", "MapPack: City"], ["5", "Shopping District", "MapPack: City"], ["6", "HPG Offices", "MapPack: City"]]
+  }
+});
+
+export const ACT_OF_PIRACY_COMMAND_COMPLICATIONS = {
+  ref: "Draconis Reach pp. 30, 126 · Core Rulebook with errata v0.1 pp. 123–124, 156 (verified in the originating Chat) · printed cross-references: BMM p. 79 and AS:CE pp. 56, 60 (not independently verified in Local Work)",
+  note: "Resolve one 1D6 roll for the entire track, not one roll per player. Select the result already rolled at the table; the browser does not roll dice.",
+  sharedSingle: true,
+  singleResult: true,
   rows: [
     { roll: "1–3", name: "No Complication", text: "No effect." },
-    { roll: "4", name: "Minefield", text: "Each player may place two Minefield Supports within 3 hexes (AS: 5 inches) of the map’s center line. See p. 56, AS:CE; p. 79, BMM; or the BattleTech: Mercenaries box set." },
-    { roll: "5", name: "Meeting in the field", text: "The two forces encounter each other. Only half of each player’s units, rounded up, may deploy on Turn 1. The remainder may enter the map on Turn 2." },
-    { roll: "6", name: "Torrential downpour", text: "Torrential rain turns all clear, Depth 0 water hexes into mud. If there are fewer than six clear, Depth 0 water hexes, each player may select three hexes to reach at least six mud hexes. For Alpha Strike, the opposing player may place two 6-inch AOE mud terrain templates. Mud: a hex covered in mud adds +1 MP cost per hex; entering a mud hex forces a Piloting Skill Roll; all PSRs made in a mud hex, including the entering roll, receive a +1 target number modifier. For Alpha Strike, any unit moving through mud may bog down; see p. 60, AS:CE." }
+    { roll: "4", name: "Minefield", effectScope: "shared-battlefield", effectId: "piracy-minefield", text: "Each player may place two Minefield Supports within 3 hexes (Alpha Strike: 5 inches) of the map’s center line. This is one shared complication with an independent two-Minefield allowance for each player. The scenario allowance overrides Objective Raid’s ordinary Attacker Minefield restriction. General BattleTech minefield procedures: Core Rulebook with errata v0.1 p. 156, verified in the originating Chat. Printed cross-references retained: BMM p. 79, AS:CE p. 56, and the BattleTech: Mercenaries box set; the BMM and AS:CE passages were not independently inspected in Local Work." },
+    { roll: "5", name: "Meeting in the Field", effectScope: "shared-battlefield", effectId: "piracy-meeting-in-field", text: "Only half of each player’s units, rounded up, may deploy on Turn 1. The remainder may enter the map on Turn 2." },
+    { roll: "6", name: "Torrential Downpour", effectScope: "shared-battlefield", effectId: "piracy-downpour", text: "BattleTech: all clear, Depth 0 water hexes become mud. If fewer than six qualifying hexes exist, each player may select three hexes to reach at least six mud hexes. Mud adds +1 MP per hex; entering mud requires a Piloting Skill Roll; all PSRs made in mud, including the entry PSR, receive +1 to the target number. These explicit scenario rules replace rather than stack with the different general mud treatment in Core Rulebook with errata v0.1 pp. 123–124, verified in the originating Chat. Alpha Strike: the opposing player may place two 6-inch AOE mud terrain templates; units moving through mud may bog down. Printed cross-reference AS:CE p. 60 was not independently inspected in Local Work." }
   ]
 };
 
 const actOfPiracySystemTable = [
-  "System result 1 — Beaumont (Savannah): loot is Agricultural Machinery; use the Federated Suns opposing force table; no special conditions.",
-  "System result 2 — De Berry (Grassland): loot is Mining Machinery; use the Mercenary opposing force table. Ice: all water and all Level 1+ hexes are covered in ice. Piloting or driving Skill checks made while on an ice hex receive a +4 target number modifier. For Alpha Strike, all terrain features cost an additional +1 MP per inch from ice.",
-  "System result 3 — Tancredi IV (Urban): loot is Laser Weapons; use the Draconis Combine opposing force table. Lasers: the raiding player may take some or all payment from the Piracy Payment Table for this raid as repair-only funds; double those Support Points and keep them in a separate repair pool.",
-  "System result 4 — Mirach (Mountains): loot is Ores; use the Mercenary opposing force table. Low Gravity: all units have +1 Walking/Cruising MP. For Alpha Strike, all units have +2 inches MV.",
-  "System result 5 — Johnsondale (Urban): loot is Combat Vehicles; use the Federated Suns opposing force table. Salvage choice: when this track is rolled, the raiding player chooses whether to capture completed vehicles or only components. If only components are chosen, there are no special conditions. If vehicles are chosen, each objective component is a shutdown Striker Light Tank, the Law player receives two free Striker Light Tanks per Scale, and captured Strikers join the capturing player’s force after the contract instead of being sold as standard components. If using BSP, each component retrieved gives one free Striker Light Tank for one track use, up to one Striker per Scale per track.",
-  "System result 6 — Hazelhurst (Hills): loot is Casks of Wine; use the Raven Alliance opposing force table. Units carrying the raid objective may not move more than half their MV or 8 inches, whichever is slower, without destroying the cargo."
+  "System result 1 — Beaumont (Savannah): loot is Agricultural machinery; use the Federated Suns opposing force table; no special conditions.",
+  "System result 2 — De Berry (Grassland): loot is Mining machinery; use the Mercenary opposing force table. Ice: all water and all Level 1+ hexes are covered in ice. Piloting or driving Skill checks made while on an ice hex receive the scenario-specific +4 target number modifier; do not stack the general +1 ice modifier from Core Rulebook with errata v0.1 p. 124, verified in the originating Chat. For Alpha Strike, all terrain features cost an additional +1 MP per inch from ice.",
+  "System result 3 — Tancredi IV (Urban): loot is Laser weapons; use the Draconis Combine opposing force table. The raiding player may designate some or all applicable Piracy Payment as repair-only funds; double those Support Points and keep them in a separate repair-only pool. Add 1 to the Piracy Component Table roll.",
+  "System result 4 — Mirach (Mountains): loot is Ores; use the Mercenary opposing force table. Low Gravity: all units have +1 Walking/Cruising MP. For Alpha Strike, all units have +2 inches MV. This simplified scenario effect does not assign a G-rating or add the general gravity effects from Core Rulebook with errata v0.1 p. 121, verified in the originating Chat. Add 1 to the Piracy Component Table roll.",
+  "System result 5 — Johnsondale (Urban): loot is Combat vehicles; use the Federated Suns opposing force table. The raiding player chooses components or completed vehicles when this track is resolved.",
+  "System result 6 — Hazelhurst (Hills): loot is Casks of wine; use the Raven Alliance opposing force table. Alpha Strike: units carrying the raid objective may not move more than half their MV or 8 inches, whichever is lower, without destroying the cargo. The approved provisional BattleTech conversion is shown with the battlefield instructions."
 ];
 
-const actOfPiracySystemRollOptions = [
-  { value: "1", label: "1 · Beaumont (Savannah)" },
-  { value: "2", label: "2 · De Berry (Grassland)" },
-  { value: "3", label: "3 · Tancredi IV (Urban)" },
-  { value: "4", label: "4 · Mirach (Mountains)" },
-  { value: "5", label: "5 · Johnsondale (Urban)" },
-  { value: "6", label: "6 · Hazelhurst (Hills)" }
-];
+const actOfPiracySystemRollOptions = ACT_OF_PIRACY_SYSTEMS.map(system => ({ value: String(system.roll), label: system.roll + " · " + system.name + " (" + system.terrain + ")" }));
 
 const actOfPiracyVariant = {
   page: 124,
+  pageRef: "pp. 124–127",
   displayName: "Act of Piracy · Objective Raid",
   type: "Opposing Contract",
   summary: "A one-track piracy contract using the standard Objective Raid mission. Pirates always attack while the Law protects a randomly selected system or controls a generated local militia force.",
@@ -2796,9 +2858,9 @@ const actOfPiracyVariant = {
     "Pirates are always the Attacker; the Law is always the Defender."
   ],
   setupDetails: [
-    "Official contract sequence: both sides are player-controlled mercenaries. The first month is travel; the second month is the single Objective Raid track; the third month is travel while the Pirates sell their goods or escape and the Law repairs its position.",
-    "The Law rolls 1D6 to determine which system it is protecting. The Pirates then roll 1D6 to determine which system is attacked and the special conditions. If the Pirates attack the system the Law is garrisoning, the two mercenaries battle each other. Otherwise, the Law controls a generated local militia garrison force; the system result determines its faction. See the Opposing Force Tables on p. 186.",
-    "If the Law player controls a generated opposing force, that player receives one-half Base Pay as a bonus, cannot receive salvage from this track, and does not take damage or risk units. The browser records this source rule but does not generate the militia force or campaign payment automatically.",
+    "Official contract sequence: both sides are player-controlled Mercenary commands. The first month is travel; the second month is the single Objective Raid track; the third month is travel while the Pirates sell their goods or escape and the Law recovers from the operation.",
+    "The Law rolls 1D6 to determine which system it is protecting. The Pirates then roll 1D6 to determine which system is attacked and the special conditions. If the Pirates attack the system the Law is garrisoning, the two Mercenary commands battle each other. Otherwise, the Law controls a generated local Militia Garrison force; the attacked system determines its faction. See the Opposing Force Tables on p. 186.",
+    "If the Law player controls a generated opposing force, that player receives one-half Base Pay as a bonus, cannot receive salvage from this track, and does not take damage or risk units. The optional force tool can display the required Militia Garrison configuration; campaign payment, salvage, repairs, and roster risk remain reference-only.",
     "System, loot, opposing force, and condition table:",
     ...actOfPiracySystemTable,
     "Piracy Goods & Components Table: roll 1D6. Goods acquired / payment per component: 1 — None / 250 SP; 2 — 375 SP / 300 SP; 3 — 750 SP / 400 SP; 4 — 1,250 SP / 500 SP; 5 — 1,500 SP / 550 SP; 6 — 1,650 SP / 600 SP; 7 — no goods entry / 650 SP. The goods payment is multiplied by contract Scale. Add 1 to the Piracy Component Table roll if the track takes place on Tancredi IV or Mirach."
@@ -2817,11 +2879,35 @@ const actOfPiracyVariant = {
       note: "The Pirates roll 1D6 to determine which system is attacked and which system conditions apply."
     }
   ],
-  scaleNotesByScale: {
-    "1": ["Piracy Goods Table payment is multiplied by contract Scale 1. Johnsondale provides two free Striker Light Tanks to the Law per the source rule."],
-    "2": ["Piracy Goods Table payment is multiplied by contract Scale 2. Johnsondale provides four free Striker Light Tanks to the Law per the source rule."],
-    "3": ["Piracy Goods Table payment is multiplied by contract Scale 3. Johnsondale provides six free Striker Light Tanks to the Law per the source rule."]
-  },
+  selectionControls: [{
+    id: "johnsondale-loot",
+    label: "Johnsondale raid objective",
+    placeholder: "Choose components or completed vehicles",
+    note: "The raiding player resolves this choice when Johnsondale is selected as the attacked system.",
+    visibleWhen: { sourceRollId: "pirates-attacked-system", value: "5" },
+    options: [{ value: "components", label: "Components" }, { value: "completed-vehicles", label: "Completed vehicles" }]
+  }],
+  battlefieldRules: [
+    { text: "BattleTech battlefield size: Scale 1 uses one mapsheet; Scale 2 uses two mapsheets; Scale 3 uses four mapsheets. Roll separately on the attacked system’s terrain table for each required mapsheet.", whenSelection: { sourceRollId: "pirates-attacked-system", values: ["1", "2", "3", "4", "5", "6"] } },
+    { text: "Alpha Strike battlefield width: Scale 1 uses 36 inches; Scales 2–3 use 48 inches. Use the attacked system’s primary terrain to place terrain under Draconis Reach p. 154.", whenSelection: { sourceRollId: "pirates-attacked-system", values: ["1", "2", "3", "4", "5", "6"] } },
+    { text: "Beaumont: use Savannah terrain. Loot: Agricultural machinery. No special system condition.", whenSelection: { sourceRollId: "pirates-attacked-system", value: "1" } },
+    { text: "De Berry: use Grassland terrain. Ice covers all water and Level 1+ hexes. Piloting or driving Skill checks made while on ice receive the scenario-specific +4 target number modifier; do not stack the general +1 ice modifier. Alpha Strike terrain features cost an additional +1 MP per inch from ice. General BattleTech ice reference: Core Rulebook with errata v0.1 p. 124, verified in the originating Chat.", whenSelection: { sourceRollId: "pirates-attacked-system", value: "2" } },
+    { text: "Tancredi IV: use Urban terrain. The repair-only Piracy Payment option and component-roll modifier are campaign references; no additional battlefield modifier applies.", whenSelection: { sourceRollId: "pirates-attacked-system", value: "3" } },
+    { text: "Mirach: use Mountains terrain. BattleTech units receive +1 Walking/Cruising MP; Alpha Strike units receive +2 inches MV. The scenario assigns no G-rating and adds no other general gravity effects. General BattleTech gravity reference: Core Rulebook with errata v0.1 p. 121, verified in the originating Chat.", whenSelection: { sourceRollId: "pirates-attacked-system", value: "4" } },
+    { text: "Johnsondale: use Urban terrain. Resolve the components or completed-vehicles choice above before applying scenario support.", whenSelection: { sourceRollId: "pirates-attacked-system", value: "5" } },
+    { text: "Hazelhurst: use Hills terrain. Alpha Strike: a unit carrying the raid objective may not move more than half its MV or 8 inches, whichever is lower, without destroying the cargo.", whenSelection: { sourceRollId: "pirates-attacked-system", value: "6" } }
+  ],
+  battlefieldProvisional: [{
+    text: "BattleTech — approved provisional interpretation: a unit carrying the raid objective may not move more than half its applicable movement allowance or 4 hexes, whichever is lower, without destroying the cargo. This reference does not decide rounding, modifier order, terrain MP expenditure, movement-mode treatment, or automate cargo destruction.",
+    whenSelection: { sourceRollId: "pirates-attacked-system", value: "6" }
+  }],
+  referenceTables: [
+    { ...ACT_OF_PIRACY_TERRAIN_TABLES.savannah, whenSelection: { sourceRollId: "pirates-attacked-system", value: "1" } },
+    { ...ACT_OF_PIRACY_TERRAIN_TABLES.grassland, whenSelection: { sourceRollId: "pirates-attacked-system", value: "2" } },
+    { ...ACT_OF_PIRACY_TERRAIN_TABLES.urban, whenSelection: { sourceRollId: "pirates-attacked-system", values: ["3", "5"] } },
+    { ...ACT_OF_PIRACY_TERRAIN_TABLES.mountains, whenSelection: { sourceRollId: "pirates-attacked-system", value: "4" } },
+    { ...ACT_OF_PIRACY_TERRAIN_TABLES.hills, whenSelection: { sourceRollId: "pirates-attacked-system", value: "6" } }
+  ],
   special: [
     ...TRACKS.find(track => track.id === "objective-raid").special,
     "Victory — official source rule: if either player successfully completes the track, that player wins the contract.",
@@ -2830,8 +2916,34 @@ const actOfPiracyVariant = {
     "Purchase Options — official source rule: neither employer has ’Mechs available. Each month, roll 2D6; on a 7+ one ’Mech is for sale, and on an 11+ two are for sale. If a ’Mech is available, roll on the Sea Fox Purchase Options Table on p. 176. The browser displays these campaign rules without performing purchases or bookkeeping.",
     "Law opposing-force exception — official source rule: when the Law controls a generated local militia force, the Law player receives half Base Pay, cannot claim salvage, and does not carry damage or unit risk from the track."
   ],
-  commandComplications: actOfPiracyCommandComplications,
-  sourceRefs: ["Draconis Reach pp. 124–126", "Objective Raid p. 171", "Command complications procedure p. 30", "Opposing Force Tables p. 186", "Piracy rules pp. 25, 36, 176", "Current Draconis Reach master errata"]
+  commandComplications: ACT_OF_PIRACY_COMMAND_COMPLICATIONS,
+  sourceRefs: ["Draconis Reach pp. 124–127", "Objective Raid p. 171", "Command complications and terrain procedure p. 30", "Terrain and mapsheets pp. 150–156", "Opposing Force Tables p. 186", "Piracy rules pp. 25, 36, 176", "Core Rulebook with errata v0.1 pp. 121–124, 156 (verified in the originating Chat)", "Printed cross-references retained: BMM p. 79 and AS:CE pp. 56, 60 (not independently verified in Local Work)", "Current Draconis Reach master errata"]
+};
+
+const actOfPiracyContractReference = {
+  summary: [
+    "Act of Piracy — printed sidebar identifier N/A; combined Mission Brief identifier 0000015A–B; employer None; location and primary terrain Random; Piracy; 3 months; Base Pay 0 percent (0); Support 0 percent (0); Transportation 0 percent (0); Salvage Rights 100 percent (13), incorporating official errata; Independent Command (11).",
+    "Garrison — contract 0000015B; employer Local government; location and primary terrain Random; Garrison; 3 months; Base Pay 100 percent (7); Support 0 percent (1); Transportation 100 percent (9); Salvage Rights 60 percent (9); Independent Command (11), nonnegotiable.",
+    "Both permanent player commands are Mercenary forces. Pirates are always the tactical Attacker; Law is always the Defender. A generated local Militia Garrison is separate from the Law player’s permanent command."
+  ],
+  progression: [
+    "Intensity 1. Month 1 is travel. Month 2 is one Objective Raid. Month 3 is travel while Pirates sell their goods or escape and Law recovers from the operation.",
+    "Act of Piracy terms are nonnegotiable. There is no employer, Base Pay, or combat bonus. Pirates pay their own transport and maintenance; those costs may temporarily take funds below zero without becoming Warchest Debt until the contract ends.",
+    "If protected and attacked systems differ, Law controls the attacked system’s generated Militia Garrison. Law receives one-half Base Pay as a reference-only bonus, cannot receive salvage from this track, and risks no permanent-command units or damage.",
+    "Piracy Reputation (p. 25): after the act, roll 2D6 against TN 9+. A victorious act applies a −2 TN modifier. Success has no Reputation effect; failure loses 1 Reputation per 500 SP earned by piracy, rounded up."
+  ],
+  tables: [
+    { title: "System, terrain, loot, and local militia", headers: ["1D6", "System", "Terrain", "Loot", "Generated militia faction", "Condition"], rows: ACT_OF_PIRACY_SYSTEMS.map(system => [String(system.roll), system.name, system.terrain, system.loot, system.militiaFaction, system.condition]) },
+    { title: "Piracy Goods and Components", headers: ["1D6", "Goods per Scale", "Per component"], rows: [["1", "None", "250 SP"], ["2", "375 SP", "300 SP"], ["3", "750 SP", "400 SP"], ["4", "1,250 SP", "500 SP"], ["5", "1,500 SP", "550 SP"], ["6", "1,650 SP", "600 SP"], ["7", "—", "650 SP"]] }
+  ],
+  victory: [
+    "A player who successfully completes the single Objective Raid wins the contract. Successful completion requires at least one completed objective and more objective VP than the opponent; equal VP means neither side successfully completes the track.",
+    "At contract conclusion Pirates make two external payment rolls: one Goods roll paid per contract Scale regardless of tactical result, and one Components roll paid per qualifying component. Add 1 to the Components roll for Tancredi IV or Mirach. Johnsondale completed vehicles replace ordinary component sales.",
+    "Official corrected example: Goods roll 4 at Scale 2 gives 2,500 SP; six components at 500 SP give 3,000 SP; total 5,500 SP less 3,600 SP transport and maintenance leaves 1,900 SP. Negative funds after payment become Warchest Debt under p. 36."
+  ],
+  purchaseOptions: [
+    "Neither employer provides BattleMechs. Each month roll 2D6 externally: on 7+ one BattleMech is available; on 11+ two are available. Resolve available units on the Sea Fox Purchase Options Table, p. 176. Purchases, repairs, and roster changes remain outside the browser."
+  ]
 };
 
 const malloryCampaignSetupDetails = [
@@ -3662,10 +3774,11 @@ export const HOT_SPOTS = [
     name: "Act of Piracy",
     region: "Random System",
     terrain: "Random",
-    source: "Draconis Reach pp. 124–126",
+    source: "Draconis Reach pp. 124–127",
     opforMode: "source-table",
-    note: "Act of Piracy and Garrison are opposing one-track contracts. Pirates are always the Attacker in the Objective Raid; the Law is always the Defender. System selection, loot, conditions, campaign payments, and the Law’s generated-force exception remain source-reference rules rather than automatic campaign bookkeeping.",
-    sides: [factionSide("pirates", "Pirates", "Mercenary"), factionSide("law", "The Law", "Local")],
+    note: "Act of Piracy and Garrison are opposing one-track contracts. Pirates are always the Attacker in the Objective Raid; the Law is always the Defender. Resolve both systems in Setup; the attacked system determines the battlefield, tactical condition, loot, and any generated Militia Garrison faction. Campaign payments and roster changes remain reference-only.",
+    sides: [factionSide("pirates", "Pirates", "Mercenary"), factionSide("law", "The Law", "Mercenary")],
+    contractReference: actOfPiracyContractReference,
     tracks: [
       fixedHotSpotTrack(1, "objective-raid", "pirates", "law", { variant: actOfPiracyVariant })
     ]
@@ -3713,6 +3826,6 @@ export const HOT_SPOTS = [
   }
 ];
 
-export const PLAYER_VISIBLE_HOT_SPOT_IDS = Object.freeze(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress", "xhosa-vii"]);
+export const PLAYER_VISIBLE_HOT_SPOT_IDS = Object.freeze(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress", "xhosa-vii", "act-of-piracy"]);
 
 

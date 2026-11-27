@@ -1,4 +1,4 @@
-import { adjustDaharEarnedVp, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_PROVISIONAL_RULES, evaluateAltaVistaCampaign, evaluateProtectionPursuit, evaluateXhosaTruckOutcome, FACTION_COLORS, GENERAL_RULES, groupComplicationEffectEntries, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_PROVISIONAL_RULES, MISSION_OPFOR_OVERRIDES, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PASCAGOULA_PROVISIONAL_RULES, PLAYER_VISIBLE_HOT_SPOT_IDS, protectionPartisanSupport, RECON_DENY_ATTACKER_OBJECTIVE_IDS, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=xhosa-vii";
+import { ACT_OF_PIRACY_SYSTEMS, adjustDaharEarnedVp, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_PROVISIONAL_RULES, evaluateAltaVistaCampaign, evaluateProtectionPursuit, evaluateXhosaTruckOutcome, FACTION_COLORS, GENERAL_RULES, groupComplicationEffectEntries, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_PROVISIONAL_RULES, MISSION_OPFOR_OVERRIDES, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PASCAGOULA_PROVISIONAL_RULES, PLAYER_VISIBLE_HOT_SPOT_IDS, protectionPartisanSupport, RECON_DENY_ATTACKER_OBJECTIVE_IDS, resolveActOfPiracyScenario, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=acts-of-piracy-supplemental";
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -124,7 +124,7 @@ function currentHotSpot() {
 
 const approvedHotSpotIds = new Set(PLAYER_VISIBLE_HOT_SPOT_IDS);
 const VISIBLE_HOT_SPOTS = HOT_SPOTS.filter(hotSpot => approvedHotSpotIds.has(hotSpot.id));
-const interactiveComplicationContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress", "xhosa-vii"]);
+const interactiveComplicationContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress", "xhosa-vii", "act-of-piracy"]);
 
 function complicationRowKey(row, index) {
   return "effect-" + index + "-" + row.roll;
@@ -151,7 +151,9 @@ function currentComplicationProfile(table = currentComplicationTable()) {
   if (!table?.rows?.length || !interactiveComplicationContracts.has(hotSpot.id)) return null;
   if (hotSpot.id === "alta-vista" && state.trackId === "retreat") return null;
   if (hotSpot.id === "lucerne" && state.trackId === "bio-gen-raid") return null;
-  const participants = hotSpot.id === "alta-vista"
+  const participants = table.sharedSingle
+    ? [{ id: "shared", name: "Shared track", faction: "Local", color: FACTION_COLORS.Local }]
+    : hotSpot.id === "alta-vista"
     ? hotSpot.sides.filter(side => side.id === "escobar")
     : hotSpot.sides;
   return { hotSpot, table, participants };
@@ -221,11 +223,19 @@ function sideById(sideId) {
   return side;
 }
 
-const simplifiedContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress", "xhosa-vii"]);
+const simplifiedContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress", "xhosa-vii", "act-of-piracy"]);
 
 function generatedOpForConfiguration() {
   const hotSpot = currentHotSpot();
   const selected = sideById(state.selectedSide[hotSpot.id]);
+  if (hotSpot.id === "act-of-piracy") {
+    const scenario = actOfPiracyScenario();
+    return {
+      side: scenario.militiaRequired ? { id: "law-militia", name: "Law-controlled local militia", faction: scenario.militiaFaction } : null,
+      faction: scenario.militiaFaction,
+      choices: []
+    };
+  }
   if (!simplifiedContracts.has(hotSpot.id)) return { side: selected, faction: selected?.faction, choices: [] };
   const opposing = hotSpot.sides.find(side => side.id !== selected?.id) || null;
   let choices = [];
@@ -305,6 +315,21 @@ function selectedSourceRoll(sequence, roll) {
   return state.sourceRollSelections[sourceRollKey(sequence, roll.id)] || "";
 }
 
+function actOfPiracyScenario() {
+  if (state.hotSpotId !== "act-of-piracy") return resolveActOfPiracyScenario(null, null);
+  const sequence = Number(currentHotSpotStep()?.sequence || 1);
+  const variant = resolvedHotSpotStep()?.variant;
+  const protectedRoll = variant?.sourceRolls?.find(roll => roll.id === "law-protected-system");
+  const attackedRoll = variant?.sourceRolls?.find(roll => roll.id === "pirates-attacked-system");
+  const johnsondale = variant?.selectionControls?.find(selection => selection.id === "johnsondale-loot");
+  return resolveActOfPiracyScenario(
+    protectedRoll ? selectedSourceRoll(sequence, protectedRoll) : null,
+    attackedRoll ? selectedSourceRoll(sequence, attackedRoll) : null,
+    johnsondale ? selectedVariantSelection(sequence, johnsondale) : "",
+    state.scale
+  );
+}
+
 function sourceRollLabel(sequence, roll) {
   const selected = selectedSourceRoll(sequence, roll);
   return roll.options.find(option => option.value === selected)?.label || "Not selected";
@@ -322,8 +347,15 @@ function selectedVariantSelection(sequence, selection) {
 function variantConditionMatches(sequence, condition) {
   if (!condition) return true;
   const variant = resolvedHotSpotStep()?.variant;
+  if (condition.sourceRollId) {
+    const roll = variant?.sourceRolls?.find(item => item.id === condition.sourceRollId);
+    const selected = roll ? selectedSourceRoll(sequence, roll) : "";
+    return condition.values?.length ? condition.values.includes(selected) : selected === condition.value;
+  }
   const selection = variant?.selectionControls?.find(item => item.id === condition.id);
-  return Boolean(selection) && selectedVariantSelection(sequence, selection) === condition.value;
+  if (!selection) return false;
+  const selected = selectedVariantSelection(sequence, selection);
+  return condition.values?.length ? condition.values.includes(selected) : selected === condition.value;
 }
 
 function variantSelectionLabel(sequence, selection) {
@@ -975,7 +1007,12 @@ function renderOpFor() {
   const container = $("#opfor-display");
   if (!container) return;
   const hotSpot = currentHotSpot();
-  if (hotSpot.opforMode === "source-table") {
+  const piracyScenario = hotSpot.id === "act-of-piracy" ? actOfPiracyScenario() : null;
+  if (hotSpot.opforMode === "source-table" && hotSpot.id !== "act-of-piracy") {
+    container.innerHTML = "";
+    return;
+  }
+  if (hotSpot.id === "act-of-piracy" && !piracyScenario?.militiaRequired) {
     container.innerHTML = "";
     return;
   }
@@ -1017,11 +1054,16 @@ function renderOpFor() {
   const forceBody = row?.note
     ? '<div class="opfor-instruction"><span>Source instruction for result ' + esc(row.roll) + '</span><strong>' + esc(row.note) + '</strong><small>Follow that source instruction to build the full force.</small></div>'
     : '<div class="opfor-force-grid"><div><span>Primary force</span><ul>' + forceList(row?.primary) + '</ul></div><div><span>Support force</span><ul>' + forceList(row?.support) + '</ul></div><div><span>Alternate force</span><ul>' + forceList(row?.alternate) + '</ul></div></div>';
+  const piracyNote = hotSpot.id === "act-of-piracy"
+    ? '<p class="opfor-note"><strong>Scenario force:</strong> Militia Garrison with a +0 force-type modifier. The Law player controls this generated force instead of risking their permanent Mercenary command.' + (piracyScenario?.attackedSystem?.id === "johnsondale" && piracyScenario.johnsondaleChoice === "completed-vehicles" ? ' Add the mandatory ' + piracyScenario.strikerSupportCount + ' free Law Striker Light Tanks shown in Tactical Support.' : '') + '</p>'
+    : "";
+  const generatedTitle = hotSpot.id === "act-of-piracy" ? "Generated scenario force" : "Generated opposing force";
+  const generatedLabel = hotSpot.id === "act-of-piracy" ? "Law-controlled force" : "Generated opponent";
   container.innerHTML =
-    '<article class="opfor-card"><div class="opfor-card-head"><div><span class="panel-kicker">TAKING ONE FOR THE TEAM</span><h3>Generated opposing force</h3><p>' + esc(selected.name) + ' · ' + esc(table.label) + ' · Scale ' + esc(String(state.scale)) + ' · Result ' + esc(row?.roll || "—") + '</p></div><label class="opfor-roll-control" for="opfor-roll"><span>Your 1D6 roll</span><select id="opfor-roll" aria-label="Your 1D6 roll">' + opforRollOptions() + '</select></label></div>' +
-    forceTypeControl + '<div class="opfor-card-meta"><span>Generated opponent: <strong>' + esc(selected.name) + '</strong></span><span>Faction table: <strong>' + esc(table.label) + '</strong></span><span>Source p. ' + esc(String(scale?.sourcePage || "—")) + '</span></div>' +
+    '<article class="opfor-card"><div class="opfor-card-head"><div><span class="panel-kicker">TAKING ONE FOR THE TEAM</span><h3>' + generatedTitle + '</h3><p>' + esc(selected.name) + ' · ' + esc(table.label) + ' · Scale ' + esc(String(state.scale)) + ' · Result ' + esc(row?.roll || "—") + '</p></div><label class="opfor-roll-control" for="opfor-roll"><span>Your 1D6 roll</span><select id="opfor-roll" aria-label="Your 1D6 roll">' + opforRollOptions() + '</select></label></div>' +
+    forceTypeControl + '<div class="opfor-card-meta"><span>' + generatedLabel + ': <strong>' + esc(selected.name) + '</strong></span><span>Faction table: <strong>' + esc(table.label) + '</strong></span><span>Source p. ' + esc(String(scale?.sourcePage || "—")) + '</span></div>' +
     '<div class="opfor-result"><div class="opfor-result-label">1D6 result</div><output>' + esc(String(state.opforRoll)) + '</output><span>Choose the result you rolled at the table.</span></div>' +
-    clanNote + forceBody +
+    piracyNote + clanNote + forceBody +
     '<p class="opfor-rule">Use the Primary Force. Add the Support Force when the required Battlefield Support rules are available; otherwise use the Alternate Force for an all-’Mech force.</p>' +
     '<div class="reference-citation">Source: ' + esc(SOURCES.opposingForces) + '</div></article>';
 }
@@ -1084,6 +1126,15 @@ function renderHotSpotSetup() {
   if (selectedSourceRolls.length) {
     $("#hotspot-summary").insertAdjacentHTML("beforeend", '<div class="hotspot-summary-note"><strong>Selected source rolls:</strong> ' + esc(selectedSourceRolls.map(roll => roll.label + " — " + sourceRollLabel(step.sequence, roll)).join(" · ")) + "</div>");
   }
+  if (hotSpot.id === "act-of-piracy") {
+    const scenario = actOfPiracyScenario();
+    const branchText = scenario.branch === "same-system"
+      ? "Same system: Pirates fight the Law player’s permanent Mercenary command."
+      : scenario.branch === "different-system"
+        ? "Different systems: Law controls a generated " + scenario.militiaFaction + " Militia Garrison at " + scenario.attackedSystem.name + "."
+        : "Select both resolved systems before determining the opposition branch.";
+    $("#hotspot-summary").insertAdjacentHTML("beforeend", '<div class="hotspot-summary-note"><strong>Resolved opposition:</strong> ' + esc(branchText) + '</div>');
+  }
   const selectedVariantSelections = (resolved?.variant?.selectionControls || []).filter(selection => selectedVariantSelection(step.sequence, selection));
   if (selectedVariantSelections.length) {
     $("#hotspot-summary").insertAdjacentHTML("beforeend", '<div class="hotspot-summary-note"><strong>Selected setup choices:</strong> ' + esc(selectedVariantSelections.map(selection => selection.label + " — " + variantSelectionLabel(step.sequence, selection)).join(" · ")) + "</div>");
@@ -1099,10 +1150,14 @@ function renderHotSpotSetup() {
     scaleNote.hidden = !hotSpot.fixedScaleNote;
   }
   const takingToggle = $("#taking-one-for-team").closest("label");
-  takingToggle.style.display = sourceTableMode ? "none" : "";
+  const piracyScenario = hotSpot.id === "act-of-piracy" ? actOfPiracyScenario() : null;
+  takingToggle.style.display = sourceTableMode && !piracyScenario?.militiaRequired ? "none" : "";
   if (hotSpot.opforMode === "gladiator") {
     takingToggle.querySelector("strong").textContent = "Use the Gladiator Generator";
     takingToggle.querySelector("small").textContent = "Show the source procedure for creating a non-player duelist.";
+  } else if (hotSpot.id === "act-of-piracy") {
+    takingToggle.querySelector("strong").textContent = "Generate the local Militia Garrison";
+    takingToggle.querySelector("small").textContent = "Show the attacked system’s required Militia Garrison configuration from the source tables.";
   } else {
     takingToggle.querySelector("strong").textContent = "Taking one for the team";
     takingToggle.querySelector("small").textContent = "Show a generated opposing force using the selected military side and Force Scale.";
@@ -1200,6 +1255,10 @@ function battlefieldConfigurationParts(referenceTrack) {
 }
 
 function battlefieldSelectionSummary(referenceTrack) {
+  if (currentHotSpot().id === "act-of-piracy") {
+    const scenario = actOfPiracyScenario();
+    return scenario.attackedSystem ? scenario.attackedSystem.name + " · " + scenario.attackedSystem.terrain : "Attacked system unresolved";
+  }
   const { tables } = battlefieldConfigurationParts(referenceTrack);
   let summary = tables[0]?.title || currentHotSpot().terrain + " battlefield";
   if (currentHotSpot().id === "protection") {
@@ -1210,6 +1269,31 @@ function battlefieldSelectionSummary(referenceTrack) {
     if (responseLabel && variantConditionMatches(sequence, { id: "battlefield-type", value: "atlantis" })) summary += " · " + responseLabel;
   }
   return summary;
+}
+
+function appliedComplicationSummary() {
+  const profile = currentComplicationProfile();
+  const selection = profile ? complicationSelectionState(profile.table) : null;
+  if (!selection?.appliedOnce) return "Complication not applied";
+  const names = profile.table.rows.filter((row, index) => profile.participants.some(side => (selection.applied[side.id] || []).includes(complicationRowKey(row, index)))).map(row => row.name);
+  return names.join(" + ") || "No Complication";
+}
+
+function hotSpotSetupSummaryParts(referenceTrack) {
+  const selected = sideById(state.selectedSide[currentHotSpot().id]);
+  const resolved = resolvedHotSpotStep();
+  const parts = [currentHotSpot().name, resolved?.displayName || currentTrack()?.name || currentHotSpotStep()?.label || "Track pending", selected?.name || "Military side", "Scale " + state.scale];
+  if (currentHotSpot().id === "act-of-piracy") {
+    const scenario = actOfPiracyScenario();
+    parts.push("Protected: " + (scenario.protectedSystem?.name || "unresolved"));
+    parts.push("Attacked: " + (scenario.attackedSystem ? scenario.attackedSystem.name + " (" + scenario.attackedSystem.terrain + ")" : "unresolved"));
+    parts.push(scenario.branchLabel);
+    if (scenario.attackedSystem?.id === "johnsondale") parts.push("Raid objective: " + (scenario.johnsondaleChoice === "completed-vehicles" ? "Completed vehicles" : scenario.johnsondaleChoice === "components" ? "Components" : "unresolved"));
+    parts.push(appliedComplicationSummary());
+  } else {
+    parts.push(battlefieldSelectionSummary(referenceTrack));
+  }
+  return parts;
 }
 
 function displayObjective(objective, variant) {
@@ -1415,12 +1499,17 @@ function renderInteractiveComplications(profile) {
     const cells = profile.participants.map(side => {
       if (isRollTwiceRow(row)) return '<td class="complication-reference-only">Reference only</td>';
       const checked = (selection.draft[side.id] || []).includes(key);
-      return '<td><label class="complication-choice"><input type="checkbox" data-complication-choice="' + esc(key) + '" data-complication-force="' + esc(side.id) + '"' + (checked ? " checked" : "") + '><span>' + (checked ? "Selected" : "Select") + '</span></label></td>';
+      const type = profile.table.singleResult ? "radio" : "checkbox";
+      const name = profile.table.singleResult ? ' name="complication-' + esc(complicationSelectionKey()) + '"' : "";
+      return '<td><label class="complication-choice"><input type="' + type + '"' + name + ' data-complication-choice="' + esc(key) + '" data-complication-force="' + esc(side.id) + '"' + (checked ? " checked" : "") + '><span>' + (checked ? "Selected" : "Select") + '</span></label></td>';
     }).join("");
     return '<tr><th scope="row"><span class="complication-roll">' + esc(row.roll) + '</span><strong>' + esc(row.name) + '</strong><small>' + esc(row.text) + '</small></th>' + cells + '</tr>';
   }).join("");
   const provisional = profile.table.provisional?.length ? '<div class="complication-provisional">' + renderProvisionalRules(profile.table.provisional) + '</div>' : "";
-  return '<div class="complication-selector"><div class="complication-selector-head"><p>Select the complications already resolved at the table. Roll Twice is an instruction to resolve additional outcomes outside the browser.</p></div><div class="shared-rule-table-wrap"><table class="shared-rule-table command-complications-table interactive-complications"><thead><tr><th scope="col">Resolved effect</th>' + headerCells + '</tr></thead><tbody>' + rows + '</tbody></table></div>' + provisional + '<div class="complication-actions"><button type="button" data-apply-complications="true">Apply Complications</button></div></div>';
+  const instruction = profile.table.singleResult
+    ? "Select the one shared result already resolved for this track. No dice are rolled automatically."
+    : "Select the complications already resolved at the table. Roll Twice is an instruction to resolve additional outcomes outside the browser.";
+  return '<div class="complication-selector"><div class="complication-selector-head"><p>' + instruction + '</p></div><div class="shared-rule-table-wrap"><table class="shared-rule-table command-complications-table interactive-complications"><thead><tr><th scope="col">Resolved effect</th>' + headerCells + '</tr></thead><tbody>' + rows + '</tbody></table></div>' + provisional + '<div class="complication-actions"><button type="button" data-apply-complications="true">Apply Complications</button></div></div>';
 }
 
 function renderCommandComplicationsSetup(table) {
@@ -1454,14 +1543,18 @@ function renderSetupConfiguration(referenceTrack) {
     ? '<ul class="rule-list">' + items.map(item => '<li>' + esc(item) + '</li>').join("") + '</ul>'
     : '<p class="reference-copy">No contract-specific mapsheet table or Alpha Strike terrain override applies. Use the selected track’s battlefield rules.</p>';
   const tableMarkup = tables.map(table => '<div class="setup-battlefield-table"><div class="label">' + esc(table.title) + '</div>' + renderBattlefieldTable(table) + '</div>').join("");
-  const provisional = referenceTrack.battlefieldProvisional?.length ? '<div class="complication-provisional">' + renderProvisionalRules(referenceTrack.battlefieldProvisional) + '</div>' : "";
+  const sequence = currentHotSpotStep()?.sequence || 1;
+  const provisionalRules = (referenceTrack.battlefieldProvisional || [])
+    .filter(rule => typeof rule === "string" || variantConditionMatches(sequence, rule.whenSelection))
+    .map(rule => typeof rule === "string" ? rule : rule.text);
+  const provisional = provisionalRules.length ? '<div class="complication-provisional">' + renderProvisionalRules(provisionalRules) + '</div>' : "";
   battlefieldContainer.innerHTML = '<section class="setup-configuration-card battlefield-configuration-card"><div class="panel-kicker">BATTLEFIELD CONFIGURATION</div><p class="setup-configuration-summary">' + esc(battlefieldSelectionSummary(referenceTrack)) + ' · Scale ' + esc(String(state.scale)) + '</p>' + procedure + tableMarkup + provisional + '</section>';
   complicationContainer.innerHTML = renderNewIvaarsenSetupInputs() + renderCommandComplicationsSetup(referenceTrack.commandComplications);
 
   const setupSummary = $("#hotspot-setup-summary");
   const selected = sideById(state.selectedSide[currentHotSpot().id]);
   const resolved = resolvedHotSpotStep();
-  if (setupSummary) setupSummary.textContent = [currentHotSpot().name, resolved?.displayName || currentTrack()?.name || currentHotSpotStep()?.label || "Track pending", selected?.name || "Military side", "Scale " + state.scale, battlefieldSelectionSummary(referenceTrack)].join(" · ");
+  if (setupSummary) setupSummary.textContent = hotSpotSetupSummaryParts(referenceTrack).join(" · ");
 }
 
 function renderTemporaryHires(hires, note = "Use these cards after the players resolve hiring under Draconis Reach pp. 29 and 89. Availability, force limits, Support Point costs, repairs, and replacement follow those rules.") {
@@ -1552,6 +1645,35 @@ function renderNewIvaarsenTacticalReference() {
 function renderCurrentTrackInputs() {
   const hotSpot = currentHotSpot();
   const step = currentHotSpotStep();
+  if (hotSpot.id === "act-of-piracy") {
+    const scenario = actOfPiracyScenario();
+    if (!scenario.attackedSystem) {
+      return '<div class="reference-section current-track-inputs"><div class="panel-kicker">SYSTEM RESOLUTION REQUIRED</div><p class="reference-copy">Select the Pirates’ attacked system in Hot Spot Setup before applying battlefield terrain or system-specific tactical effects.</p></div>';
+    }
+    const system = scenario.attackedSystem;
+    if (system.id === "de-berry") {
+      return '<div class="reference-section current-track-inputs"><div class="panel-kicker">DE BERRY · APPLIED TACTICAL CONDITION</div><p class="reference-copy"><strong>Ice:</strong> all water and Level 1+ hexes are covered in ice. Piloting or driving Skill checks made while on an ice hex receive a +4 target number modifier. For Alpha Strike, all terrain features cost an additional +1 MP per inch from ice.</p></div>';
+    }
+    if (system.id === "tancredi-iv") {
+      return '<div class="reference-section current-track-inputs"><div class="panel-kicker">TANCREDI IV · PAYMENT REFERENCE</div><p class="reference-copy">The raiding player may designate some or all applicable Piracy Payment as repair-only funds. Double those designated Support Points and keep them in a separate repair-only pool. Add 1 to the Piracy Component Table roll. Resolve payment and repairs outside the browser.</p></div>';
+    }
+    if (system.id === "mirach") {
+      return '<div class="reference-section current-track-inputs"><div class="panel-kicker">MIRACH · APPLIED TACTICAL CONDITION</div><p class="reference-copy"><strong>Low gravity:</strong> BattleTech units receive +1 Walking/Cruising MP; Alpha Strike units receive +2 inches MV. Add 1 to the Piracy Component Table roll outside the browser.</p></div>';
+    }
+    if (system.id === "hazelhurst") {
+      return '<div class="reference-section current-track-inputs"><div class="panel-kicker">HAZELHURST · APPLIED TACTICAL CONDITION</div><p class="reference-copy"><strong>Casks of wine:</strong> units carrying the raid objective may not move more than half their MV or 8 inches, whichever is slower, without destroying the cargo.</p></div>';
+    }
+    if (system.id === "johnsondale") {
+      if (!scenario.johnsondaleChoice) {
+        return '<div class="reference-section current-track-inputs"><div class="panel-kicker">JOHNSONDALE · RAID OBJECTIVE REQUIRED</div><p class="reference-copy">Choose Components or Completed vehicles in Hot Spot Setup before applying Johnsondale’s tactical support.</p></div>';
+      }
+      if (scenario.johnsondaleChoice === "components") {
+        return '<div class="reference-section current-track-inputs"><div class="panel-kicker">JOHNSONDALE · COMPONENTS</div><p class="reference-copy">Use standard Objective Raid components. No Johnsondale-specific Striker support or captured-vehicle replacement applies.</p></div>';
+      }
+      return '<div class="reference-section tactical-support-section"><div class="panel-kicker">TACTICAL SUPPORT · JOHNSONDALE COMPLETED VEHICLES</div><div class="active-complication-grid"><article class="active-complication-extra"><strong>Shutdown objective Strikers</strong><span>Each objective component is represented by a shutdown Striker Light Tank.</span></article><article class="active-complication-extra"><strong>Law support · ' + scenario.strikerSupportCount + ' Striker Light Tanks</strong><span>Two free scenario-provided Striker Light Tanks per Scale; current Scale ' + state.scale + '.</span></article><article class="active-complication-extra"><strong>Captured vehicles and BSP substitution</strong><span>Captured component Strikers join the capturing force after the contract instead of being sold as ordinary components. If using BSP, each retrieved component provides one free Striker for one track, maximum one per Scale per track. Resolve future roster and support use outside the browser.</span></article></div></div>';
+    }
+    return "";
+  }
   if (hotSpot.id === "xhosa-vii" && Number(step?.sequence) === 2) {
     const deliveredObjective = currentObjectives().find(item => item.id === "supply-trucks-exit");
     const stoppedObjective = currentObjectives().find(item => item.id === "stop-supply-trucks");
@@ -1793,7 +1915,7 @@ function renderScore() {
   $("#defender-bar").style.width = (defender / max * 100) + "%";
   $("#score-difference").textContent = protectionOutcome.attackerSuccessful && protectionCaptureOverride()
     ? "Platinum Sands successfully completes the track · Kanagawa Group does not"
-    : attacker === defender ? "Tie" : (attacker > defender ? "Attacker leads by " + (attacker - defender) : "Defender leads by " + (defender - attacker));
+    : attacker === defender ? (currentHotSpot().id === "act-of-piracy" ? "Tie · neither side successfully completes the track" : "Tie") : (attacker > defender ? "Attacker leads by " + (attacker - defender) : "Defender leads by " + (defender - attacker));
   $("#score-difference").className = "difference " + (protectionCaptureOverride() ? "attacker-lead" : attacker === defender ? "tie" : attacker > defender ? "attacker-lead" : "defender-lead");
 }
 
@@ -2100,7 +2222,7 @@ $("#hotspot-setup").addEventListener("change", event => {
   const noComplicationKey = profile.table.rows.map(complicationRowKey).find((key, index) => isNoComplicationRow(profile.table.rows[index]) && complicationRowAppliesToSide(profile.table.rows[index], forceId));
   const chosen = new Set(selection.draft[forceId] || []);
   if (input.checked) {
-    if (rowKey === noComplicationKey) {
+    if (profile.table.singleResult || rowKey === noComplicationKey) {
       chosen.clear();
       chosen.add(rowKey);
     } else {

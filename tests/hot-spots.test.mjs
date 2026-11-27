@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { adjustDaharEarnedVp, achernarInitialDefectors, ALTA_VISTA_COMMAND_COMPLICATIONS, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_MAPSHEET_TABLE, DAHAR_PROVISIONAL_RULES, DAHAR_TRACK_RESULTS, evaluateAltaVistaCampaign, evaluateProtectionPursuit, FACTION_COLORS, GENERAL_RULES, groupComplicationEffectEntries, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_MAPSHEET_TABLE, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LE_BLANC_TEMPORARY_HIRES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_MAPSHEET_TABLE, LUCERNE_PROVISIONAL_RULES, LUCERNE_TEMPORARY_HIRES, LUCERNE_TRACK_RESULTS, MELCHER_BLACK_MARKET, MELCHER_COMMAND_COMPLICATIONS, MELCHER_GRASSLANDS_MAPSHEETS, MELCHER_TEMPORARY_HIRES, MISSION_OPFOR_OVERRIDES, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_COMMAND_COMPLICATIONS, NEW_IVAARSEN_LIGHT_URBAN_MAPSHEETS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PASCAGOULA_COMMAND_COMPLICATIONS, PASCAGOULA_MOUNTAINS_MAPSHEETS, PASCAGOULA_PROVISIONAL_RULES, PLAYER_VISIBLE_HOT_SPOT_IDS, PROTECTION_ATLANTIS_MAPSHEETS, PROTECTION_COMMAND_COMPLICATIONS, PROTECTION_PROVISIONAL_RULES, PROTECTION_STANDARD_MAPSHEETS, PROTECTION_TEMPORARY_HIRES, protectionPartisanSupport, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
+import { ACT_OF_PIRACY_COMMAND_COMPLICATIONS, ACT_OF_PIRACY_SYSTEMS, ACT_OF_PIRACY_TERRAIN_TABLES, adjustDaharEarnedVp, achernarInitialDefectors, ALTA_VISTA_COMMAND_COMPLICATIONS, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_MAPSHEET_TABLE, DAHAR_PROVISIONAL_RULES, DAHAR_TRACK_RESULTS, evaluateAltaVistaCampaign, evaluateProtectionPursuit, FACTION_COLORS, GENERAL_RULES, groupComplicationEffectEntries, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_MAPSHEET_TABLE, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LE_BLANC_TEMPORARY_HIRES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_MAPSHEET_TABLE, LUCERNE_PROVISIONAL_RULES, LUCERNE_TEMPORARY_HIRES, LUCERNE_TRACK_RESULTS, MELCHER_BLACK_MARKET, MELCHER_COMMAND_COMPLICATIONS, MELCHER_GRASSLANDS_MAPSHEETS, MELCHER_TEMPORARY_HIRES, MISSION_OPFOR_OVERRIDES, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_COMMAND_COMPLICATIONS, NEW_IVAARSEN_LIGHT_URBAN_MAPSHEETS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PASCAGOULA_COMMAND_COMPLICATIONS, PASCAGOULA_MOUNTAINS_MAPSHEETS, PASCAGOULA_PROVISIONAL_RULES, PLAYER_VISIBLE_HOT_SPOT_IDS, PROTECTION_ATLANTIS_MAPSHEETS, PROTECTION_COMMAND_COMPLICATIONS, PROTECTION_PROVISIONAL_RULES, PROTECTION_STANDARD_MAPSHEETS, PROTECTION_TEMPORARY_HIRES, protectionPartisanSupport, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, resolveActOfPiracyScenario, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
 import { evaluateXhosaTruckOutcome, SUN_PRAIRIE_COMMAND_COMPLICATIONS, SUN_PRAIRIE_MAPSHEET_TABLE, SUN_PRAIRIE_TACTICAL_SUPPORT, SUN_PRAIRIE_TEMPORARY_HIRES, TIGRESS_COMMAND_COMPLICATIONS, TIGRESS_HILLS_MAPSHEETS, TIGRESS_PROVISIONAL_RULES, TIGRESS_SUTERA_SUPPORT, TIGRESS_TEMPORARY_HIRES, TIGRESS_TRAINEE_SUPPORT, TIGRESS_WOODED_MAPSHEETS, XHOSA_COMMAND_COMPLICATIONS, XHOSA_LOGISTICS_SUPPORT, XHOSA_MAPSHEET_TABLE, XHOSA_PROVISIONAL_RULES, XHOSA_TEMPORARY_HIRES } from "../dist/hot-spots/data.mjs";
 
 const expected = ["Assault", "Breakthrough", "Defend", "Flank", "Meeting Engagement", "Objective Raid", "Pursuit", "Pushback", "Recon", "Retreat", "Strike"];
@@ -545,8 +545,8 @@ assert.match(protectionTrack4.sourceRefs.join(" "), /Draconis Reach pp\. 108–1
 for (const term of ["protectionCaptureOverride", "data-protection-mobile-hq-captured", "Automatically credited by final-turn Mobile HQ capture", "Platinum Sands successfully completes the track", "protectionPartisanSupport", "Same-player Local Partisans \+ Monsoon interaction", '"protection"']) {
   assert.ok(app.includes(term), term + " Protection interaction is wired into the browser");
 }
-assert.ok(app.includes('interactiveComplicationContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress", "xhosa-vii"])'));
-assert.ok(app.includes('simplifiedContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress", "xhosa-vii"])'));
+assert.ok(app.includes('interactiveComplicationContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress", "xhosa-vii", "act-of-piracy"])'));
+assert.ok(app.includes('simplifiedContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress", "xhosa-vii", "act-of-piracy"])'));
 assert.doesNotMatch(TRACKS.find(track => track.id === "recon").special.join(" "), /Level 0 ground as Level 0 water/);
 assert.doesNotMatch(TRACKS.find(track => track.id === "pursuit").special.join(" "), /Mobile HQ/);
 const sunPrairie = HOT_SPOTS.find(item => item.id === "sun-prairie");
@@ -774,36 +774,49 @@ assert.match(app, /Ordinary objective VP remains unchanged/);
 assert.doesNotMatch(TRACKS.find(track => track.id === "breakthrough").setup.join(" "), /MASH vehicles/);
 assert.doesNotMatch(TRACKS.find(track => track.id === "breakthrough").objectives.map(objective => objective.text).join(" "), /logistics truck/);
 const actOfPiracy = HOT_SPOTS.find(item => item.id === "act-of-piracy");
-assert.equal(actOfPiracy.source, "Draconis Reach pp. 124–126");
+assert.equal(actOfPiracy.source, "Draconis Reach pp. 124–127");
 assert.match(actOfPiracy.note, /one-track contracts/);
+assert.deepEqual(actOfPiracy.sides.map(side => [side.id, side.faction]), [["pirates", "Mercenary"], ["law", "Mercenary"]], "both permanent commands are Mercenary forces");
 assert.deepEqual(actOfPiracy.tracks.map(track => [track.sequence, track.trackId, track.attacker, track.defender]), [
   [1, "objective-raid", "pirates", "law"]
 ]);
 const actOfPiracyVariant = actOfPiracy.tracks[0].variant;
 assert.equal(actOfPiracyVariant.displayName, "Act of Piracy · Objective Raid");
 assert.equal(actOfPiracyVariant.type, "Opposing Contract");
+assert.equal(actOfPiracyVariant.pageRef, "pp. 124–127");
 assert.match(actOfPiracyVariant.setup.join(" "), /two Medium objective buildings/);
 assert.match(actOfPiracyVariant.setup.join(" "), /Pirates are always the Attacker/);
+assert.match(actOfPiracyVariant.setupDetails.join(" "), /both sides are player-controlled Mercenary commands/);
 assert.match(actOfPiracyVariant.setupDetails.join(" "), /The Law rolls 1D6/);
 assert.match(actOfPiracyVariant.setupDetails.join(" "), /Pirates then roll 1D6/);
-assert.match(actOfPiracyVariant.setupDetails.join(" "), /generated local militia garrison force/);
-assert.match(actOfPiracyVariant.setupDetails.join(" "), /Beaumont.*Agricultural Machinery.*Federated Suns/);
-assert.match(actOfPiracyVariant.setupDetails.join(" "), /De Berry.*Mining Machinery.*Ice/);
-assert.match(actOfPiracyVariant.setupDetails.join(" "), /Tancredi IV.*Laser Weapons.*repair-only/);
+assert.match(actOfPiracyVariant.setupDetails.join(" "), /generated local Militia Garrison force/);
+assert.match(actOfPiracyVariant.setupDetails.join(" "), /Beaumont.*Agricultural machinery.*Federated Suns/);
+assert.match(actOfPiracyVariant.setupDetails.join(" "), /De Berry.*Mining machinery.*Ice/);
+assert.match(actOfPiracyVariant.setupDetails.join(" "), /Tancredi IV.*Laser weapons.*repair-only/);
 assert.match(actOfPiracyVariant.setupDetails.join(" "), /Mirach.*Ores.*Low Gravity/);
-assert.match(actOfPiracyVariant.setupDetails.join(" "), /Johnsondale.*Combat Vehicles.*Striker Light Tank/);
-assert.match(actOfPiracyVariant.setupDetails.join(" "), /Hazelhurst.*Casks of Wine.*half their MV/);
+assert.match(actOfPiracyVariant.setupDetails.join(" "), /Johnsondale.*Combat vehicles.*components or completed vehicles/);
+assert.match(actOfPiracyVariant.setupDetails.join(" "), /Hazelhurst.*Casks of wine.*half their MV/);
 assert.match(actOfPiracyVariant.setupDetails.join(" "), /Piracy Goods & Components Table/);
 assert.match(actOfPiracyVariant.special.join(" "), /if either player successfully completes the track/);
 assert.match(actOfPiracyVariant.special.join(" "), /no employer, combat bonus, or Base Pay/);
 assert.match(actOfPiracyVariant.special.join(" "), /negative warchest becomes debt/);
 assert.match(actOfPiracyVariant.special.join(" "), /Sea Fox Purchase Options Table/);
-assert.deepEqual(actOfPiracyVariant.commandComplications.rows.map(row => row.roll), ["1–3", "4", "5", "6"]);
-assert.match(actOfPiracyVariant.commandComplications.note, /once for the track, not once per player/);
+assert.equal(actOfPiracyVariant.commandComplications, ACT_OF_PIRACY_COMMAND_COMPLICATIONS);
+assert.equal(ACT_OF_PIRACY_COMMAND_COMPLICATIONS.sharedSingle, true);
+assert.equal(ACT_OF_PIRACY_COMMAND_COMPLICATIONS.singleResult, true);
+assert.deepEqual(ACT_OF_PIRACY_COMMAND_COMPLICATIONS.rows.map(row => row.roll), ["1–3", "4", "5", "6"]);
+assert.match(ACT_OF_PIRACY_COMMAND_COMPLICATIONS.note, /entire track, not one roll per player/);
 assert.match(actOfPiracyVariant.commandComplications.rows[1].text, /two Minefield Supports/);
+assert.match(actOfPiracyVariant.commandComplications.rows[1].text, /independent two-Minefield allowance for each player/);
+assert.match(actOfPiracyVariant.commandComplications.rows[1].text, /overrides Objective Raid’s ordinary Attacker Minefield restriction/);
+assert.match(actOfPiracyVariant.commandComplications.rows[1].text, /Core Rulebook with errata v0\.1 p\. 156, verified in the originating Chat/);
+assert.match(actOfPiracyVariant.commandComplications.rows[1].text, /Printed cross-references retained: BMM p\. 79, AS:CE p\. 56/);
 assert.match(actOfPiracyVariant.commandComplications.rows[2].text, /half.*rounded up/);
-assert.match(actOfPiracyVariant.commandComplications.rows[3].text, /mud/);
+assert.match(actOfPiracyVariant.commandComplications.rows[3].text, /Mud adds \+1 MP per hex.*entering mud requires a Piloting Skill Roll.*all PSRs made in mud.*\+1/s);
+assert.match(actOfPiracyVariant.commandComplications.rows[3].text, /replace rather than stack.*Core Rulebook with errata v0\.1 pp\. 123–124/s);
 assert.match(actOfPiracyVariant.commandComplications.rows[3].text, /bog down/);
+assert.match(actOfPiracyVariant.commandComplications.rows[3].text, /AS:CE p\. 60 was not independently inspected in Local Work/);
+assert.equal(ACT_OF_PIRACY_COMMAND_COMPLICATIONS.rows.some(row => /roll twice/i.test(row.name)), false);
 assert.equal(actOfPiracy.opforMode, "source-table");
 assert.deepEqual(actOfPiracyVariant.sourceRolls.map(roll => [roll.id, roll.options.length]), [
   ["law-protected-system", 6],
@@ -811,11 +824,82 @@ assert.deepEqual(actOfPiracyVariant.sourceRolls.map(roll => [roll.id, roll.optio
 ]);
 assert.match(actOfPiracyVariant.sourceRolls[0].note, /Law rolls 1D6/);
 assert.match(actOfPiracyVariant.sourceRolls[1].note, /Pirates roll 1D6/);
-assert.deepEqual(actOfPiracyVariant.sourceRefs, ["Draconis Reach pp. 124–126", "Objective Raid p. 171", "Command complications procedure p. 30", "Opposing Force Tables p. 186", "Piracy rules pp. 25, 36, 176", "Current Draconis Reach master errata"]);
+assert.match(actOfPiracyVariant.sourceRefs.join(" "), /pp\. 124–127.*p\. 171.*p\. 30.*pp\. 150–156.*p\. 186.*pp\. 25, 36, 176/);
+assert.match(actOfPiracyVariant.sourceRefs.join(" "), /Core Rulebook with errata v0\.1 pp\. 121–124, 156 \(verified in the originating Chat\)/);
+assert.match(actOfPiracyVariant.sourceRefs.join(" "), /BMM p\. 79.*AS:CE pp\. 56, 60.*not independently verified in Local Work/);
+const piracyBattlefieldText = actOfPiracyVariant.battlefieldRules.map(rule => rule.text).join(" ");
+assert.match(piracyBattlefieldText, /De Berry.*scenario-specific \+4.*do not stack the general \+1 ice modifier.*Core Rulebook with errata v0\.1 p\. 124/s);
+assert.doesNotMatch(piracyBattlefieldText, /\+5/);
+assert.match(piracyBattlefieldText, /Mirach.*\+1 Walking\/Cruising MP.*\+2 inches MV.*no G-rating.*Core Rulebook with errata v0\.1 p\. 121/s);
+assert.match(piracyBattlefieldText, /Hazelhurst.*Alpha Strike.*half its MV or 8 inches.*without destroying the cargo/s);
+assert.equal(actOfPiracyVariant.battlefieldProvisional.length, 1, "Acts of Piracy has only the approved Hazelhurst BattleTech interpretation");
+assert.match(actOfPiracyVariant.battlefieldProvisional[0].text, /BattleTech — approved provisional interpretation.*half its applicable movement allowance or 4 hexes.*whichever is lower.*does not decide rounding.*automate cargo destruction/s);
+assert.deepEqual(actOfPiracyVariant.battlefieldProvisional[0].whenSelection, { sourceRollId: "pirates-attacked-system", value: "6" });
+assert.match(ACT_OF_PIRACY_COMMAND_COMPLICATIONS.ref, /Core Rulebook with errata v0\.1 pp\. 123–124, 156.*originating Chat.*BMM p\. 79.*AS:CE pp\. 56, 60.*not independently verified in Local Work/s);
+assert.equal(actOfPiracyVariant.selectionControls[0].id, "johnsondale-loot");
+assert.deepEqual(actOfPiracyVariant.selectionControls[0].options.map(option => option.value), ["components", "completed-vehicles"]);
+assert.equal(actOfPiracyVariant.selectionControls[0].visibleWhen.sourceRollId, "pirates-attacked-system");
+assert.deepEqual(Object.keys(ACT_OF_PIRACY_TERRAIN_TABLES).sort(), ["grassland", "hills", "mountains", "savannah", "urban"]);
+assert.equal(Object.values(ACT_OF_PIRACY_TERRAIN_TABLES).every(table => table.rows.length === 6), true, "all five source mapsheet tables preserve six reference-only results");
+assert.deepEqual(ACT_OF_PIRACY_SYSTEMS.map(system => [system.roll, system.name, system.terrain, system.militiaFaction]), [
+  [1, "Beaumont", "Savannah", "Federated Suns"],
+  [2, "De Berry", "Grassland", "Mercenary"],
+  [3, "Tancredi IV", "Urban", "Draconis Combine"],
+  [4, "Mirach", "Mountains", "Mercenary"],
+  [5, "Johnsondale", "Urban", "Federated Suns"],
+  [6, "Hazelhurst", "Hills", "Raven Alliance"]
+]);
+let matchingPiracyBranches = 0;
+let differentPiracyBranches = 0;
+for (let protectedRoll = 1; protectedRoll <= 6; protectedRoll += 1) {
+  for (let attackedRoll = 1; attackedRoll <= 6; attackedRoll += 1) {
+    const scenario = resolveActOfPiracyScenario(protectedRoll, attackedRoll);
+    assert.equal(scenario.attackedSystem.roll, attackedRoll);
+    assert.equal(scenario.militiaRequired, protectedRoll !== attackedRoll);
+    if (protectedRoll === attackedRoll) {
+      matchingPiracyBranches += 1;
+      assert.equal(scenario.branch, "same-system");
+      assert.equal(scenario.militiaFaction, null);
+    } else {
+      differentPiracyBranches += 1;
+      assert.equal(scenario.branch, "different-system");
+      assert.equal(scenario.militiaFaction, ACT_OF_PIRACY_SYSTEMS[attackedRoll - 1].militiaFaction);
+    }
+  }
+}
+assert.equal(matchingPiracyBranches, 6);
+assert.equal(differentPiracyBranches, 30);
+assert.equal(resolveActOfPiracyScenario(null, 1).branch, "unresolved");
+assert.equal(resolveActOfPiracyScenario(1, null).branch, "unresolved");
+assert.equal(resolveActOfPiracyScenario(1, 5).johnsondaleChoiceRequired, true);
+assert.equal(resolveActOfPiracyScenario(1, 5, "components", 3).strikerSupportCount, 0);
+assert.equal(resolveActOfPiracyScenario(1, 5, "completed-vehicles", 1).strikerSupportCount, 2);
+assert.equal(resolveActOfPiracyScenario(1, 5, "completed-vehicles", 2).strikerSupportCount, 4);
+assert.equal(resolveActOfPiracyScenario(1, 5, "completed-vehicles", 3).strikerSupportCount, 6);
+assert.equal(resolveActOfPiracyScenario(1, 4, "completed-vehicles", 3).johnsondaleChoice, "", "stale Johnsondale choice cannot affect another attacked system");
+assert.ok(actOfPiracy.contractReference, "Acts of Piracy exposes the collapsed Contract Reference");
+assert.match(actOfPiracy.contractReference.summary.join(" "), /N\/A.*0000015A–B.*100 percent \(13\).*0000015B.*60 percent \(9\)/);
+assert.match(actOfPiracy.contractReference.summary.join(" "), /Both permanent player commands are Mercenary forces/);
+assert.match(actOfPiracy.contractReference.progression.join(" "), /Intensity 1.*Month 1.*Month 2.*Objective Raid.*Month 3/);
+assert.match(actOfPiracy.contractReference.progression.join(" "), /TN 9\+.*−2.*1 Reputation per 500 SP/);
+assert.match(actOfPiracy.contractReference.victory.join(" "), /equal VP means neither.*Goods roll 4.*2,500 SP.*3,000 SP.*1,900 SP/);
+assert.match(actOfPiracy.contractReference.purchaseOptions.join(" "), /7\+.*11\+.*Sea Fox Purchase Options Table/);
 assert.doesNotMatch(TRACKS.find(track => track.id === "objective-raid").setup.join(" "), /Pirates are always the Attacker/);
 assert.doesNotMatch(TRACKS.find(track => track.id === "objective-raid").special.join(" "), /Piracy contract terms cannot be negotiated/);
 assert.ok(app.includes("sourceRollSelections") && app.includes("data-source-roll-id"), "Act of Piracy source-roll selectors are wired");
 assert.ok(app.includes('opforMode === "source-table"'), "source-defined opposing-force tables can disable generic OpFor controls");
+assert.match(app, /function actOfPiracyScenario\(\)/);
+assert.match(app, /sourceRollId/);
+assert.match(app, /Generate the local Militia Garrison/);
+assert.match(app, /Militia Garrison with a \+0 force-type modifier/);
+assert.match(app, /SYSTEM RESOLUTION REQUIRED/);
+assert.match(app, /JOHNSONDALE · RAID OBJECTIVE REQUIRED/);
+assert.match(app, /Law support ·.*Striker Light Tanks/);
+assert.match(app, /Tie · neither side successfully completes the track/);
+assert.match(app, /profile\.table\.singleResult/);
+assert.match(app, /type = profile\.table\.singleResult \? "radio" : "checkbox"/);
+assert.match(app, /Protected:.*Attacked:.*Raid objective:/s);
+assert.match(app, /referenceTrack\.battlefieldProvisional \|\| \[\][\s\S]*variantConditionMatches\(sequence, rule\.whenSelection\)/, "conditional battlefield provisional notes render only for their selected branch");
 const gameWorlds = HOT_SPOTS.find(item => item.id === "game-worlds");
 assert.ok(gameWorlds, "Game Worlds is available as a Hot Spot");
 assert.equal(gameWorlds.source, "Draconis Reach pp. 128–131");
@@ -1243,7 +1327,7 @@ assert.match(app, /Eclipse Expeditions Special Operations.*Guildmaster Phil News
 assert.match(app, /both participating forces are Mercenary.*Mercenary\/Pirate OpFor table/i);
 assert.match(app, /same completed-objective|Current score: Attacker|currently successfully completes the track/);
 assert.match(app, /renderTemporaryHires\(referenceTrack\.temporaryHires, referenceTrack\.temporaryHireNote\)/, "Temporary Hire cards accept contract-aware hiring guidance");
-assert.match(html, /app\.mjs\?v=xhosa-vii/, "Hot Spots uses the Xhosa VII asset cache key");
+assert.match(html, /app\.mjs\?v=acts-of-piracy-supplemental/, "Hot Spots uses the Acts of Piracy supplemental asset cache key");
 assert.ok(css.includes("campaign-field input") && css.includes("hire-card-grid") && css.includes("@media"), "Lucerne controls and reused Temporary Hire cards retain responsive styling");
 
 assert.match(html, /<details[^>]+id="hotspot-setup"[^>]+open>/, "Hot Spot Setup starts expanded");
@@ -1288,7 +1372,7 @@ assert.match(app, /\$\("#hotspot-setup"\)\.addEventListener\("change"/, "complic
 assert.doesNotMatch(renderOpForBody, /data-complication-choice/, "generated OpFor rendering remains separate from complication selection");
 assert.ok(css.includes("setup-configuration-card") && css.includes("complication-selection-status"), "battlefield and complication setup remain responsive and visibly grouped");
 
-assert.deepEqual(PLAYER_VISIBLE_HOT_SPOT_IDS, ["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress", "xhosa-vii"], "only completed and verified contracts are player-visible in source order");
+assert.deepEqual(PLAYER_VISIBLE_HOT_SPOT_IDS, ["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress", "xhosa-vii", "act-of-piracy"], "only completed and verified contracts are player-visible in source order");
 assert.equal(PLAYER_VISIBLE_HOT_SPOT_IDS.every(id => HOT_SPOTS.some(hotSpot => hotSpot.id === id)), true, "every visible contract retains its source data");
 assert.equal(HOT_SPOTS.some(hotSpot => hotSpot.id === "new-ivaarsen"), true, "New Ivaarsen contract data is available to the verified-location filter");
 assert.match(app, /const VISIBLE_HOT_SPOTS = HOT_SPOTS\.filter/, "the browser uses one centralized approved-location filter");
@@ -1309,7 +1393,7 @@ assert.deepEqual(MELCHER_GRASSLANDS_MAPSHEETS.map(row => row[2]), ["BB", "AGOAC"
 assert.equal(MELCHER_BLACK_MARKET.length, 11, "Melcher includes all Black Market AgroMech results");
 assert.equal(MELCHER_COMMAND_COMPLICATIONS.rows.length, 5, "Melcher includes the full resolved Command Complications bracket");
 assert.equal(MELCHER_TEMPORARY_HIRES.length, 2, "Melcher includes both named temporary hires");
-assert.match(app, /"melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress", "xhosa-vii"\]\);/, "Melcher through Xhosa VII use the shared interactive complication and simplified OpFor workflows");
+assert.match(app, /"melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress", "xhosa-vii", "act-of-piracy"\]\);/, "Melcher through Acts of Piracy use the shared interactive complication and simplified OpFor workflows");
 assert.match(app, /let maximum = objective\.maxCount \?\? Infinity/, "repeatable objectives honor source-defined maximum counts");
 assert.match(app, /combinedObjectiveProgress\(objective\)/, "repeatable objectives honor shared combined maximum counts");
 const hotSpotsHeader = html.match(/<header class="topbar">[\s\S]*?<\/header>/)?.[0] || "";
