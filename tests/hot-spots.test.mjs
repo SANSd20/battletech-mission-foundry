@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { adjustDaharEarnedVp, achernarInitialDefectors, ALTA_VISTA_COMMAND_COMPLICATIONS, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_MAPSHEET_TABLE, DAHAR_PROVISIONAL_RULES, DAHAR_TRACK_RESULTS, evaluateAltaVistaCampaign, evaluateProtectionPursuit, FACTION_COLORS, GENERAL_RULES, groupComplicationEffectEntries, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_MAPSHEET_TABLE, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LE_BLANC_TEMPORARY_HIRES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_MAPSHEET_TABLE, LUCERNE_PROVISIONAL_RULES, LUCERNE_TEMPORARY_HIRES, LUCERNE_TRACK_RESULTS, MELCHER_BLACK_MARKET, MELCHER_COMMAND_COMPLICATIONS, MELCHER_GRASSLANDS_MAPSHEETS, MELCHER_TEMPORARY_HIRES, MISSION_OPFOR_OVERRIDES, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_COMMAND_COMPLICATIONS, NEW_IVAARSEN_LIGHT_URBAN_MAPSHEETS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PASCAGOULA_COMMAND_COMPLICATIONS, PASCAGOULA_MOUNTAINS_MAPSHEETS, PASCAGOULA_PROVISIONAL_RULES, PLAYER_VISIBLE_HOT_SPOT_IDS, PROTECTION_ATLANTIS_MAPSHEETS, PROTECTION_COMMAND_COMPLICATIONS, PROTECTION_PROVISIONAL_RULES, PROTECTION_STANDARD_MAPSHEETS, PROTECTION_TEMPORARY_HIRES, protectionPartisanSupport, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
-import { SUN_PRAIRIE_COMMAND_COMPLICATIONS, SUN_PRAIRIE_MAPSHEET_TABLE, SUN_PRAIRIE_TACTICAL_SUPPORT, SUN_PRAIRIE_TEMPORARY_HIRES } from "../dist/hot-spots/data.mjs";
+import { SUN_PRAIRIE_COMMAND_COMPLICATIONS, SUN_PRAIRIE_MAPSHEET_TABLE, SUN_PRAIRIE_TACTICAL_SUPPORT, SUN_PRAIRIE_TEMPORARY_HIRES, TIGRESS_COMMAND_COMPLICATIONS, TIGRESS_HILLS_MAPSHEETS, TIGRESS_PROVISIONAL_RULES, TIGRESS_SUTERA_SUPPORT, TIGRESS_TEMPORARY_HIRES, TIGRESS_TRAINEE_SUPPORT, TIGRESS_WOODED_MAPSHEETS } from "../dist/hot-spots/data.mjs";
 
 const expected = ["Assault", "Breakthrough", "Defend", "Flank", "Meeting Engagement", "Objective Raid", "Pursuit", "Pushback", "Recon", "Retreat", "Strike"];
 assert.deepEqual(TRACKS.map(track => track.name), expected, "all eleven Draconis Reach standard tracks are present");
@@ -479,7 +479,7 @@ assert.equal(calculateReconDenyVp(["orders-defender"]), 300, "Defender Orders do
 assert.ok(app.includes("function isReconDeny") && app.includes('state.trackId === "recon"') && app.includes("Read-only projection"), "every Recon track renders Deny as a shared calculated read-only value");
 assert.doesNotMatch(app, /isProtectionTrack1Deny|protectionDenyVp/, "Recon Deny no longer uses Protection-specific scoring logic");
 assert.ok(app.indexOf('if (isReconDeny(objective, side))') < app.indexOf("const vpControl = objective.vpOptions"), "automatic Recon Deny rendering bypasses the manual variable-VP selector");
-assert.ok(app.includes("Remaining Deny points are awarded at the end of Turn 8"), "shared Recon Deny distinguishes projected scoring from final Turn 8 scoring");
+assert.match(app, /Remaining Deny points are awarded at the end of ['"] \+ denyDeadline/, "shared Recon Deny distinguishes projected scoring from the applicable final Turn 8 deadline");
 assert.match(protectionTrack1.setupDetails.join(" "), /second month.*Platinum Sands player as Attacker/);
 assert.deepEqual(PROTECTION_STANDARD_MAPSHEETS.rows.map(row => row[1]), ["Hilltops #1 (CI)", "Desert #3 (AGOAC)", "Rolling Hills #1 (MP: Grasslands)", "Rolling Hills #2 (MP: Grasslands, CI)", "Rolling Hills #3 (MP: Grasslands)", "Sand Drifts #1 (MP: Deserts)"]);
 assert.deepEqual(PROTECTION_ATLANTIS_MAPSHEETS.rows.map(row => row[1]), ["Corporate Campus (MP: City)", "Family Quarters (MP: City)", "HPG Heliport (MP: City)", "Business District (MP: City)", "Shopping District (MP: City)", "HPG Offices (MP: City)"]);
@@ -545,8 +545,8 @@ assert.match(protectionTrack4.sourceRefs.join(" "), /Draconis Reach pp\. 108–1
 for (const term of ["protectionCaptureOverride", "data-protection-mobile-hq-captured", "Automatically credited by final-turn Mobile HQ capture", "Platinum Sands successfully completes the track", "protectionPartisanSupport", "Same-player Local Partisans \+ Monsoon interaction", '"protection"']) {
   assert.ok(app.includes(term), term + " Protection interaction is wired into the browser");
 }
-assert.ok(app.includes('interactiveComplicationContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie"])'));
-assert.ok(app.includes('simplifiedContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie"])'));
+assert.ok(app.includes('interactiveComplicationContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress"])'));
+assert.ok(app.includes('simplifiedContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress"])'));
 assert.doesNotMatch(TRACKS.find(track => track.id === "recon").special.join(" "), /Level 0 ground as Level 0 water/);
 assert.doesNotMatch(TRACKS.find(track => track.id === "pursuit").special.join(" "), /Mobile HQ/);
 const sunPrairie = HOT_SPOTS.find(item => item.id === "sun-prairie");
@@ -587,53 +587,90 @@ assert.doesNotMatch(JSON.stringify(sunPrairie), /Philips Wilson|Steve requests/)
 for (const term of ["places rubble", "places fire", "Shared fire and smoke rules are displayed once above", "renderTacticalSupport(referenceTrack.tacticalSupport)"]) assert.ok(app.includes(term), term + " is wired into Sun Prairie gameplay reference");
 assert.match(app, /profile\.hotSpot\.id === "sun-prairie"[\s\S]*firePlacements[\s\S]*displayedCount \+= firePlacements/, "Sun Prairie collapsed complication summaries count the shared fire condition and independent placement entitlements");
 const tigress = HOT_SPOTS.find(item => item.id === "tigress");
-assert.equal(tigress.source, "Draconis Reach pp. 118–119");
-assert.match(tigress.note, /Meeting Engagement training mission/);
-assert.deepEqual(tigress.tracks.map(track => [track.sequence, track.trackId, track.attacker, track.defender]), [
-  [1, "recon", "legion-trainers", "roughriders"],
-  [2, "meeting-engagement", "legion-trainers", "roughriders"]
-], "Tigress retains its two-track order and roles");
-const tigressTrack1 = tigress.tracks[0].variant;
-assert.equal(tigressTrack1.displayName, "Training Mission · Meeting Engagement → Recon");
-assert.match(tigressTrack1.setup.join(" "), /short edge/);
-assert.match(tigressTrack1.setup.join(" "), /Training mission/);
-assert.doesNotMatch(tigressTrack1.setup.join(" "), /set up anywhere; at least 50 percent/);
-assert.match(tigressTrack1.setupDetails.join(" "), /1D6 − 2 turns/);
-assert.match(tigressTrack1.setupDetails.join(" "), /minimum delay of 2 turns/);
-assert.match(tigressTrack1.setupDetails.join(" "), /scenario-provided trainee ’Mechs/);
-assert.match(tigressTrack1.setupDetails.join(" "), /not purchased units or generated OpFor/);
-assert.match(tigressTrack1.setupDetails.join(" "), /combined BV\/PV of the Legion Trainers and their trainee/);
-assert.match(tigressTrack1.setupDetails.join(" "), /control.*switches from Roughriders Recon to Legion Trainers/);
-assert.match(tigressTrack1.setupDetails.join(" "), /Wooded Terrain table/);
-assert.match(tigressTrack1.setupDetails.join(" "), /standard Recon scenario/);
-assert.match(tigressTrack1.scaleNotesByScale["1"].join(" "), /Vindicator VND-7L.*Gunnery 4 \/ Piloting 6/);
-assert.match(tigressTrack1.scaleNotesByScale["2"].join(" "), /Vindicator VND-7L.*Cicada CDA-4A/);
-assert.match(tigressTrack1.scaleNotesByScale["3"].join(" "), /short lance of three.*officer-cadet/);
-assert.match(tigressTrack1.special.join(" "), /erase all damage sustained/);
-assert.match(tigressTrack1.special.join(" "), /energy weapons return to full power/);
-assert.match(tigressTrack1.special.join(" "), /Ammunition-based weapons are effectively defunct/);
-assert.match(tigressTrack1.special.join(" "), /Gauss weapons are the exception/);
-assert.match(tigressTrack1.special.join(" "), /either or both players may claim victory/);
-assert.match(tigressTrack1.special.join(" "), /Joachim Vierziger/);
-assert.match(tigressTrack1.special.join(" "), /Sea Fox Random Purchase Table/);
-assert.deepEqual(tigressTrack1.commandComplications.rows.map(row => row.roll), ["1–2", "3", "4", "5–6"]);
-assert.match(tigressTrack1.commandComplications.rows[1].text, /both players have entered the map/);
-assert.match(tigressTrack1.commandComplications.rows[1].text, /Defensive Aerospace Support or Artillery Support/);
-assert.match(tigressTrack1.commandComplications.rows[2].text, /Offensive Aerospace Support/);
-assert.match(tigressTrack1.commandComplications.rows[3].text, /To-Hit roll of 12/);
-assert.match(tigressTrack1.commandComplications.note, /Add 1 for Liaison Command/);
-assert.deepEqual(tigressTrack1.sourceRefs, ["Draconis Reach pp. 118–119", "Command complications procedure p. 30", "Current Draconis Reach master errata"]);
+assert.equal(tigress.source, "Draconis Reach pp. 116–119");
+assert.deepEqual(tigress.sides.map(side => [side.id, side.faction, side.contract]), [["legion-trainers", "Mercenary", "312332A"], ["roughriders", "Mercenary", "312332B"]]);
+assert.match(tigress.contractReference.summary.join(" "), /Straight Support \/ 80 percent.*House Command \(7\).*Battle Support \/ 10 percent.*Liaison Command \(8\)/i);
+assert.match(tigress.contractReference.progression.join(" "), /50 percent.*Blade BLD-XR.*Rook NH-2.*Rook NH-3X.*lost when.*leaves the system/i);
+assert.match(tigress.contractReference.victory.join(" "), /independently.*Either or both.*at least one/i);
+assert.equal(tigress.contractReference.tables[0].rows.length, 6);
+assert.match(tigress.contractReference.purchaseOptions.join(" "), /Sea Fox Random Purchase Table.*one roll per month.*two vehicles and two battle armor/i);
+assert.deepEqual(tigress.contractReference.provisional, TIGRESS_PROVISIONAL_RULES);
+assert.equal(TIGRESS_PROVISIONAL_RULES.length, 8, "the final Tigress decision register contains all eight approved interpretations");
+assert.equal(tigress.tracks.length, 2);
+assert.deepEqual(Object.keys(tigress.tracks[0].phases), ["training", "recon"]);
+assert.equal(tigress.tracks[0].phases.training.trackId, "meeting-engagement");
+assert.equal(tigress.tracks[0].phases.recon.trackId, "recon");
+assert.deepEqual([tigress.tracks[0].phases.recon.attacker, tigress.tracks[0].phases.recon.defender], ["roughriders", "legion-trainers"]);
+assert.equal(tigress.tracks[0].phases.training.roleChoiceRequired, true);
+assert.equal(tigress.tracks[1].roleChoiceRequired, true);
+const tigressTraining = tigress.tracks[0].phases.training.variant;
+const tigressRecon = tigress.tracks[0].phases.recon.variant;
+assert.match(tigressTraining.setup.join(" "), /trainees participate from the start.*actual Roughriders.*not yet entered/i);
+assert.match(tigressTraining.setup.join(" "), /equal in BV\/PV.*Energy weapons.*paint rounds/i);
+assert.match(tigressTraining.setupDetails.join(" "), /combined BV\/PV.*1D6 − 2.*minimum of two turns/i);
+assert.match(tigressTraining.setupDetails.join(" "), /trainees’ original home edge.*remain in position.*no redeployment/i);
+assert.equal(tigressTraining.tacticalSupport, TIGRESS_TRAINEE_SUPPORT);
+assert.doesNotMatch(tigressTraining.special.join(" "), /Track End: after the end of any turn when at least one side has no units in play/i);
+assert.match(tigressTraining.special.join(" "), /scheduled arrival.*normal ending conditions do not end overall Track 1.*not.*separate contract track/i);
+assert.match(tigressTraining.special.join(" "), /Training-phase salvage remains unavailable/i);
+assert.deepEqual(Object.keys(TIGRESS_TRAINEE_SUPPORT[0].detailsByScale), ["1", "2", "3"]);
+assert.match(Object.values(TIGRESS_TRAINEE_SUPPORT[0].detailsByScale).flat().join(" "), /Vindicator VND-7L.*Cicada CDA-4A.*Gunnery 4 \/ Piloting 5.*Alpha Strike Skill 4/i);
+assert.match(app, /entry\.detailsByScale\?\.\[String\(state\.scale\)\]/, "Tigress tactical support displays only the roster for the selected Scale");
+assert.match(tigressRecon.special.join(" "), /erase simulated damage.*transfer trainee control.*following turn/i);
+assert.match(tigressRecon.special.join(" "), /ammunition-based weapons are unusable.*does not explode.*Gauss.*newly arrived Roughriders/i);
+assert.match(tigressRecon.special.join(" "), /new Recon turn counter at Recon Turn 1.*Training turns do not consume.*Recon Turn 8/i);
+assert.match(tigressRecon.special.join(" "), /retain.*training-phase VP.*Trainee-earned VP.*does not carry forward/i);
+assert.match(tigressRecon.special.join(" "), /completed Legion Trainers training objective.*Track 1 objective-completion prerequisite.*Roughriders must complete a Recon objective.*tie means neither/i);
+assert.match(tigressRecon.objectiveOverrides["orders-defender"].text, /first two Recon turns/i);
+assert.match(tigressRecon.objectiveOverrides["observe-report"].text, /after four Recon turns/i);
+assert.match(tigressRecon.objectiveOverrides.deny.text, /Recon Turn 8.*before Recon Turn 8/i);
+assert.equal(tigressTraining.referenceTables[0], TIGRESS_WOODED_MAPSHEETS);
+assert.equal(tigressRecon.referenceTables[0], TIGRESS_WOODED_MAPSHEETS);
+assert.deepEqual(TIGRESS_WOODED_MAPSHEETS.rows.map(row => row[1]), ["Woodland", "Scattered Woods", "Grassland #3", "Rolling Hills #2", "Desert #3", "Rolling Hills #1"]);
+assert.deepEqual(TIGRESS_COMMAND_COMPLICATIONS.rows.map(row => row.roll), ["1–2", "3", "4", "5+"]);
+assert.deepEqual(TIGRESS_COMMAND_COMPLICATIONS.rows.slice(1, 3).map(row => row.fixedRecipientId), ["legion-trainers", "roughriders"]);
+assert.deepEqual([TIGRESS_COMMAND_COMPLICATIONS.rows[3].effectScope, TIGRESS_COMMAND_COMPLICATIONS.rows[3].effectId], ["shared-battlefield", "tigress-fatigue"]);
+assert.match(TIGRESS_COMMAND_COMPLICATIONS.note, /House Command \(\+2\).*Liaison Command \(\+1\)/i);
+assert.match(TIGRESS_COMMAND_COMPLICATIONS.provisional.join(" "), /printed 5–6.*5\+.*modified results above 6/i);
+assert.doesNotMatch(TIGRESS_COMMAND_COMPLICATIONS.note + " " + TIGRESS_COMMAND_COMPLICATIONS.provisional.join(" "), /outside the browser|cap|reroll/i);
+assert.equal(TIGRESS_COMMAND_COMPLICATIONS.rows.some(row => /roll twice/i.test(row.name)), false, "Tigress does not invent a Roll Twice result");
+assert.match(TIGRESS_COMMAND_COMPLICATIONS.rows[1].text, /4\/8\/12 BSP.*Defensive Aerospace Support or Artillery Support/i);
+assert.match(TIGRESS_COMMAND_COMPLICATIONS.rows[2].text, /4\/8\/12 BSP.*Offensive Aerospace Support/i);
+assert.match(TIGRESS_COMMAND_COMPLICATIONS.rows[3].text, /To-Hit roll of 12.*near miss.*no damage/i);
+assert.deepEqual(TIGRESS_TEMPORARY_HIRES.map(hire => [hire.name, hire.unit, hire.bv, hire.pv, hire.gunnery, hire.piloting, hire.alphaStrikeSkill, hire.edge, hire.abilities]), [["Joachim Vierziger", "Avatar AV1-OG", "1,775", "34", "1", "3", "2", "4", "Marksman"]]);
+assert.match(TIGRESS_TEMPORARY_HIRES[0].restriction, /300 Support Points.*below 2,000 BV or 80 PV per Scale/i);
 const tigressTrack2 = tigress.tracks[1].variant;
 assert.equal(tigressTrack2.displayName, "Tigress Meeting Engagement");
-assert.match(tigressTrack2.setupDetails.join(" "), /remaining Legion Trainers and trainees/);
-assert.match(tigressTrack2.setupDetails.join(" "), /Captain Sutera Galindo/);
-assert.match(tigressTrack2.setupDetails.join(" "), /Caesar CES-5D/);
-assert.match(tigressTrack2.setupDetails.join(" "), /Gunnery 3 \/ Piloting 3/);
-assert.match(tigressTrack2.setupDetails.join(" "), /Hills Terrain table/);
-assert.match(tigressTrack2.special.join(" "), /loaded with live ammunition/);
+assert.match(tigressTrack2.setupDetails.join(" "), /remaining Legion Trainers and surviving trainees/);
+assert.equal(tigressTrack2.referenceTables[0], TIGRESS_HILLS_MAPSHEETS);
+assert.deepEqual(TIGRESS_HILLS_MAPSHEETS.rows.map(row => row[1]), ["Hilltops #1", "Foothills #2", "Rolling Hills #1", "Rolling Hills #2", "Rolling Hills #3", "Rolling Hills #4"]);
+assert.equal(tigressTrack2.tacticalSupport, TIGRESS_SUTERA_SUPPORT);
+assert.match(TIGRESS_SUTERA_SUPPORT[0].details.join(" "), /Caesar CES-5D.*Gunnery 3 \/ Piloting 3.*Alpha Strike Skill 3.*Five Edge.*Bulwark.*Protector.*handicap 41/i);
+assert.equal(tigressTrack2.tacticalSupport.some(entry => /Philomena Kang/.test(entry.title)), false);
+assert.match(tigressTrack2.special.join(" "), /live ammunition/);
 assert.match(tigressTrack2.special.join(" "), /repair armor damage and replenish ammunition/);
 assert.match(tigressTrack2.special.join(" "), /internal structure damage and critical hits remain/);
-assert.deepEqual(tigressTrack2.sourceRefs, ["Draconis Reach pp. 118–119", "Command complications procedure p. 30", "Current Draconis Reach master errata"]);
+assert.match(tigressTrack2.special.join(" "), /No Track 1 VP carries into Track 2/i);
+assert.match(app, /tigressPhase: "training"/);
+assert.match(app, /step\.phases\[state\.tigressPhase\]/);
+assert.match(app, /function tigressRetainedTrainingVp\(\)/);
+assert.match(app, /function tigressCompletedTrainingObjectiveCount\(\)/);
+assert.match(app, /retainedTrainingCount.*state\.tigressPhase === "recon".*side === "defender"/s);
+assert.match(app, /state\.tigressPhase === "recon" && side === "defender"/);
+assert.match(app, /data-tigress-phase/);
+assert.match(app, /Actual Roughriders arrived — Recon Turn 1/);
+assert.match(app, /completed Legion Trainers training objective satisfies their Track 1 objective-completion prerequisite/i);
+assert.match(app, /denyDeadline.*tigress.*Recon Turn 8.*Turn 8/s);
+const tigressMeetingTrack = TRACKS.find(track => track.id === "meeting-engagement");
+const tigressReconTrack = TRACKS.find(track => track.id === "recon");
+assert.equal(tigressMeetingTrack.objectives.reduce((sum, objective) => sum + objective.vp, 0), 350, "maximum Tigress training VP per side remains 350");
+assert.equal(tigressReconTrack.objectives.filter(objective => objective.side === "attacker").reduce((sum, objective) => sum + objective.vp, 0), 350, "maximum Roughriders Recon VP remains 350");
+assert.equal(50 + Math.max(...tigressReconTrack.objectives.find(objective => objective.id === "deny").vpOptions), 350, "maximum Recon Defender VP remains 350");
+assert.equal(350 + 350, 700, "maximum combined Legion Trainers Track 1 VP remains 700");
+assert.match(app, /hybrid-track/);
+assert.match(app, /meeting-engagement::", base \+ "recon::"/);
+assert.match(app, /row\.fixedRecipientId/);
+assert.match(MISSION_OPFOR_OVERRIDES.tigress["legion-trainers"].scales["3"].primary, /Vindicator VND-7L.*×2 Cicada CDA-4A/i);
 assert.doesNotMatch(TRACKS.find(track => track.id === "recon").setup.join(" "), /training mission|Vindicator VND-7L/);
 assert.doesNotMatch(TRACKS.find(track => track.id === "meeting-engagement").special.join(" "), /Sutera Galindo|live ammunition/);
 const xhosa = HOT_SPOTS.find(item => item.id === "xhosa-vii");
@@ -784,7 +821,7 @@ assert.equal(malloryPlayableTracks.length, 13, "Mallory’s World exposes all 13
 assert.deepEqual([
   protection.tracks[0].trackId,
   sunPrairie.tracks.find(track => track.trackId === "recon").trackId,
-  tigress.tracks[0].trackId,
+  tigress.tracks[0].phases.recon.trackId,
   xhosa.tracks[0].trackId,
   mallory.tracks[0].trackId
 ], ["recon", "recon", "recon", "recon", "recon"], "Protection, Sun Prairie, Tigress, Xhosa VII, and Mallory’s World inherit shared Recon Deny scoring");
@@ -1200,7 +1237,7 @@ assert.match(app, /\$\("#hotspot-setup"\)\.addEventListener\("change"/, "complic
 assert.doesNotMatch(renderOpForBody, /data-complication-choice/, "generated OpFor rendering remains separate from complication selection");
 assert.ok(css.includes("setup-configuration-card") && css.includes("complication-selection-status"), "battlefield and complication setup remain responsive and visibly grouped");
 
-assert.deepEqual(PLAYER_VISIBLE_HOT_SPOT_IDS, ["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie"], "only completed and verified contracts are player-visible in source order");
+assert.deepEqual(PLAYER_VISIBLE_HOT_SPOT_IDS, ["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress"], "only completed and verified contracts are player-visible in source order");
 assert.equal(PLAYER_VISIBLE_HOT_SPOT_IDS.every(id => HOT_SPOTS.some(hotSpot => hotSpot.id === id)), true, "every visible contract retains its source data");
 assert.equal(HOT_SPOTS.some(hotSpot => hotSpot.id === "new-ivaarsen"), true, "New Ivaarsen contract data is available to the verified-location filter");
 assert.match(app, /const VISIBLE_HOT_SPOTS = HOT_SPOTS\.filter/, "the browser uses one centralized approved-location filter");
@@ -1221,7 +1258,7 @@ assert.deepEqual(MELCHER_GRASSLANDS_MAPSHEETS.map(row => row[2]), ["BB", "AGOAC"
 assert.equal(MELCHER_BLACK_MARKET.length, 11, "Melcher includes all Black Market AgroMech results");
 assert.equal(MELCHER_COMMAND_COMPLICATIONS.rows.length, 5, "Melcher includes the full resolved Command Complications bracket");
 assert.equal(MELCHER_TEMPORARY_HIRES.length, 2, "Melcher includes both named temporary hires");
-assert.match(app, /"melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie"\]\);/, "Melcher through Sun Prairie use the shared interactive complication and simplified OpFor workflows");
+assert.match(app, /"melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress"\]\);/, "Melcher through Tigress use the shared interactive complication and simplified OpFor workflows");
 assert.match(app, /Math\.min\(objective\.maxCount \?\? Infinity/, "repeatable objectives honor source-defined maximum counts");
 const hotSpotsHeader = html.match(/<header class="topbar">[\s\S]*?<\/header>/)?.[0] || "";
 const coreHeader = coreHtml.match(/<header class="topbar">[\s\S]*?<\/header>/)?.[0] || "";

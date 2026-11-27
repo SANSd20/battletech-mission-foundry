@@ -33,6 +33,7 @@ const state = {
   campaignState: {},
   complicationSelections: {},
   tacticalInputs: {},
+  tigressPhase: "training",
   daharMission: null,
   leBlancMission: null,
   lucerneMission: null
@@ -123,7 +124,7 @@ function currentHotSpot() {
 
 const approvedHotSpotIds = new Set(PLAYER_VISIBLE_HOT_SPOT_IDS);
 const VISIBLE_HOT_SPOTS = HOT_SPOTS.filter(hotSpot => approvedHotSpotIds.has(hotSpot.id));
-const interactiveComplicationContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie"]);
+const interactiveComplicationContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress"]);
 
 function complicationRowKey(row, index) {
   return "effect-" + index + "-" + row.roll;
@@ -159,7 +160,8 @@ function currentComplicationProfile(table = currentComplicationTable()) {
 function complicationSelectionKey() {
   const step = currentHotSpotStep();
   const branch = state.hotSpotId === "pascagoula" && Number(step?.sequence) === 2 ? selectedWinner(1) || "unresolved" : null;
-  return [state.hotSpotId, step?.sequence || 1, state.trackId || "pending", branch].filter(value => value !== null).join("::");
+  const trackKey = state.hotSpotId === "tigress" && Number(step?.sequence) === 1 ? "hybrid-track" : state.trackId || "pending";
+  return [state.hotSpotId, step?.sequence || 1, trackKey, branch].filter(value => value !== null).join("::");
 }
 
 function complicationSelectionState(table = currentComplicationTable()) {
@@ -219,7 +221,7 @@ function sideById(sideId) {
   return side;
 }
 
-const simplifiedContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie"]);
+const simplifiedContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress"]);
 
 function generatedOpForConfiguration() {
   const hotSpot = currentHotSpot();
@@ -254,6 +256,10 @@ function currentMissionOpForOverride() {
   if (hotSpot.id === "pascagoula") {
     const trackOne = Number(currentHotSpotStep()?.sequence) === 1;
     return trackOne && selectedSideId === "ranger-raiders" ? MISSION_OPFOR_OVERRIDES.pascagoula?.["jewel-thieves"] || null : null;
+  }
+  if (hotSpot.id === "tigress") {
+    const trainingPhase = Number(currentHotSpotStep()?.sequence) === 1 && state.tigressPhase === "training";
+    return trainingPhase && selectedSideId === "legion-trainers" ? MISSION_OPFOR_OVERRIDES.tigress?.["legion-trainers"] || null : null;
   }
   return MISSION_OPFOR_OVERRIDES[hotSpot.id]?.[selectedSideId] || null;
 }
@@ -680,6 +686,9 @@ function resolvedHotSpotStep() {
   const step = currentHotSpotStep();
   if (!step) return null;
   let outcome = step;
+  if (step.phases && currentHotSpot().id === "tigress") {
+    outcome = step.phases[state.tigressPhase] || step.phases.training;
+  }
   if (step.requires?.length) {
     const winners = step.requires.map(sequence => selectedWinner(sequence));
     if (winners.some(winner => !winner)) return { step, unresolved: true, winners };
@@ -839,18 +848,45 @@ function objectiveEarnedVp(objective, side, display = objective) {
   return adjustDaharEarnedVp(earned, affected);
 }
 
+function tigressRetainedTrainingVp() {
+  if (currentHotSpot().id !== "tigress" || Number(currentHotSpotStep()?.sequence) !== 1) return 0;
+  const trainingAttacker = state.roleSelections[roleKey(1)] || "";
+  if (!trainingAttacker) return 0;
+  const legionTacticalSide = trainingAttacker === "legion-trainers" ? "attacker" : "defender";
+  const meeting = TRACKS.find(track => track.id === "meeting-engagement");
+  return meeting.objectives.reduce((total, objective) => {
+    const value = state.progress[progressKey("meeting-engagement", objective.id, legionTacticalSide)];
+    if (!value) return total;
+    const vp = Number(state.vpSelections[progressKey("meeting-engagement", objective.id, legionTacticalSide)] ?? objective.vp);
+    return total + (objective.repeatable ? Number(value) * vp : vp);
+  }, 0);
+}
+
+function tigressCompletedTrainingObjectiveCount() {
+  if (currentHotSpot().id !== "tigress" || Number(currentHotSpotStep()?.sequence) !== 1) return 0;
+  const trainingAttacker = state.roleSelections[roleKey(1)] || "";
+  if (!trainingAttacker) return 0;
+  const legionTacticalSide = trainingAttacker === "legion-trainers" ? "attacker" : "defender";
+  const meeting = TRACKS.find(track => track.id === "meeting-engagement");
+  return meeting.objectives.filter(objective => Boolean(state.progress[progressKey("meeting-engagement", objective.id, legionTacticalSide)])).length;
+}
+
 function completedObjectiveCount(side) {
   const track = currentTrack();
   if (!track) return 0;
   const variant = resolvedHotSpotStep()?.variant;
   const objectives = variant?.objectives || track.objectives;
   if (protectionCaptureOverride() && side === "attacker") return objectives.filter(objective => applies(objective, side)).length;
-  return objectives.filter(objective => {
+  const phaseCount = objectives.filter(objective => {
     if (!applies(objective, side)) return false;
     if (pascagoulaObjectiveSuppressed(objective, side)) return false;
     if (isReconDeny(objective, side)) return reconDenyVp() > 0;
     return objective.repeatable ? Number(getProgress(objective, side)) > 0 : Boolean(getProgress(objective, side));
   }).length;
+  const retainedTrainingCount = currentHotSpot().id === "tigress" && Number(currentHotSpotStep()?.sequence) === 1 && state.tigressPhase === "recon" && side === "defender"
+    ? tigressCompletedTrainingObjectiveCount()
+    : 0;
+  return phaseCount + retainedTrainingCount;
 }
 
 function trackScore(side) {
@@ -858,10 +894,14 @@ function trackScore(side) {
   if (!track) return 0;
   const variant = resolvedHotSpotStep()?.variant;
   const objectives = variant?.objectives || track.objectives;
-  return objectives.reduce((total, objective) => {
+  const phaseScore = objectives.reduce((total, objective) => {
     const display = displayObjective(objective, variant);
     return total + objectiveEarnedVp(objective, side, display);
   }, 0);
+  const retained = currentHotSpot().id === "tigress" && Number(currentHotSpotStep()?.sequence) === 1 && state.tigressPhase === "recon" && side === "defender"
+    ? tigressRetainedTrainingVp()
+    : 0;
+  return phaseScore + retained;
 }
 
 function modeLabel() {
@@ -942,10 +982,10 @@ function renderOpFor() {
     container.innerHTML =
       '<article class="opfor-card"><div class="opfor-card-head"><div><span class="panel-kicker">TAKING ONE FOR THE TEAM</span><h3>Mission-specific opposing force</h3><p>' + esc(override.label) + ' · Scale ' + esc(String(state.scale)) + '</p></div><div class="opfor-roll-control"><span>Mission roster</span><strong>Fixed by Force Scale</strong></div></div>' +
       '<div class="opfor-card-meta"><span>Military side: <strong>' + esc(selected.name) + '</strong></span><span>Mission roster: <strong>' + esc(override.label) + '</strong></span><span>Source p. ' + esc(String(scale?.sourcePage || override.sourcePage || "—")) + '</span></div>' +
-      '<div class="opfor-result"><div class="opfor-result-label">MISSION FORCE</div><output class="mission-scale-output">Scale ' + esc(String(state.scale)) + '</output><span>No 1D6 table roll is used for this Pascagoula roster.</span></div>' +
+      '<div class="opfor-result"><div class="opfor-result-label">MISSION FORCE</div><output class="mission-scale-output">Scale ' + esc(String(state.scale)) + '</output><span>No generic 1D6 OpFor table roll is used for this mission roster.</span></div>' +
       forceBody +
       '<p class="opfor-rule">Use the mission-specific force listed for the selected Force Scale. The generic faction OpFor roll table is not used for this exception.</p>' +
-      '<div class="reference-citation">Source: ' + esc(SOURCES.primary) + ' · Pascagoula mission brief p. ' + esc(String(override.sourcePage || "—")) + '</div></article>';
+      '<div class="reference-citation">Source: ' + esc(SOURCES.primary) + ' · ' + esc(hotSpot.name) + ' mission brief p. ' + esc(String(override.sourcePage || "—")) + '</div></article>';
     return;
   }
   const row = currentOpForRow();
@@ -1265,13 +1305,14 @@ function renderActiveComplications(profile, selection) {
     if (isRollTwiceRow(row)) continue;
     if (row.supportOnly) continue;
     const key = complicationRowKey(row, index);
-    const affected = profile.participants.filter(side => (selection.applied[side.id] || []).includes(key));
-    if (!affected.length) continue;
+    const selectors = profile.participants.filter(side => (selection.applied[side.id] || []).includes(key));
+    if (!selectors.length) continue;
     if (isNoComplicationRow(row)) continue;
-    for (const side of affected) {
+    for (const selector of selectors) {
+      const side = row.fixedRecipientId ? profile.participants.find(item => item.id === row.fixedRecipientId) || selector : selector;
       const sharedEffectId = row.effectScope === "shared-battlefield"
         ? row.effectId
-        : sharedNames.has(row.name) || (profile.hotSpot.id === "achernar" && row.name === "Republic Spider" && affected.length > 1)
+        : sharedNames.has(row.name) || (profile.hotSpot.id === "achernar" && row.name === "Republic Spider" && selectors.length > 1)
           ? profile.hotSpot.id + "::" + row.name
           : null;
       effectEntries.push({ row, side, sharedEffectId });
@@ -1298,14 +1339,17 @@ function renderInteractiveComplications(profile) {
     const activeCount = profile.table.rows.reduce((entries, row, index) => {
       if (isNoComplicationRow(row) || isRollTwiceRow(row)) return entries;
       const key = complicationRowKey(row, index);
-      const affected = profile.participants.filter(item => (selection.applied[item.id] || []).includes(key));
+      const selectors = profile.participants.filter(item => (selection.applied[item.id] || []).includes(key));
       const legacyShared = new Set(["Sandstorm", "Heatwave", "Unexpected Sandstorm", "Heavy Rainfall"]);
       const sharedEffectId = row.effectScope === "shared-battlefield"
         ? row.effectId
-        : legacyShared.has(row.name) || (profile.hotSpot.id === "achernar" && row.name === "Republic Spider" && affected.length > 1)
+        : legacyShared.has(row.name) || (profile.hotSpot.id === "achernar" && row.name === "Republic Spider" && selectors.length > 1)
           ? profile.hotSpot.id + "::" + row.name
           : null;
-      for (const side of affected) entries.push({ row, side, sharedEffectId });
+      for (const selector of selectors) {
+        const side = row.fixedRecipientId ? profile.participants.find(item => item.id === row.fixedRecipientId) || selector : selector;
+        entries.push({ row, side, sharedEffectId });
+      }
       return entries;
     }, []);
     let displayedCount = groupComplicationEffectEntries(activeCount).length;
@@ -1393,7 +1437,10 @@ function renderTemporaryHires(hires, note = "Use these cards after the players r
 
 function renderTacticalSupport(entries) {
   if (!entries?.length) return "";
-  const cards = entries.map(entry => '<article class="active-complication-extra"><strong>' + esc(entry.title) + '</strong><span>' + esc(entry.association) + '</span><ul class="rule-list">' + entry.details.map(detail => '<li>' + esc(detail) + '</li>').join("") + '</ul><span class="reference-citation">Source: ' + esc(entry.source) + '</span></article>').join("");
+  const cards = entries.map(entry => {
+    const details = [...(entry.details || []), ...(entry.detailsByScale?.[String(state.scale)] || [])];
+    return '<article class="active-complication-extra"><strong>' + esc(entry.title) + '</strong><span>' + esc(entry.association) + '</span><ul class="rule-list">' + details.map(detail => '<li>' + esc(detail) + '</li>').join("") + '</ul><span class="reference-citation">Source: ' + esc(entry.source) + '</span></article>';
+  }).join("");
   return '<div class="reference-section tactical-support-section"><div class="panel-kicker">TACTICAL SUPPORT · REFERENCE ONLY</div><div class="active-complication-grid">' + cards + '</div></div>';
 }
 
@@ -1470,6 +1517,10 @@ function renderNewIvaarsenTacticalReference() {
 function renderCurrentTrackInputs() {
   const hotSpot = currentHotSpot();
   const step = currentHotSpotStep();
+  if (hotSpot.id === "tigress" && Number(step?.sequence) === 1) {
+    const training = state.tigressPhase === "training";
+    return '<div class="reference-section current-track-inputs tigress-phase-control"><div class="panel-kicker">TRACK 1 · CURRENT PHASE</div><label><span>Tabletop phase</span><select data-tigress-phase="true"><option value="training"' + (training ? ' selected' : '') + '>Training — Meeting Engagement</option><option value="recon"' + (!training ? ' selected' : '') + '>Actual Roughriders arrived — Recon Turn 1</option></select></label><p class="reference-copy">' + esc(training ? "Record the transition only when the actual Roughriders arrive. Training objective progress is preserved and Meeting Engagement’s normal ending conditions do not end Track 1 before the scheduled arrival." : "Start a new Recon clock at Recon Turn 1. Legion Trainers’ retained training VP and completed training objectives are preserved separately; the phase can be corrected without duplicating score.") + '</p>' + renderProvisionalRules(hotSpot.contractReference.provisional.slice(1)) + '</div>';
+  }
   if (hotSpot.id === "protection") {
     const variant = resolvedHotSpotStep()?.variant;
     const battlefield = variant?.selectionControls?.find(item => item.id === "battlefield-type");
@@ -1571,6 +1622,7 @@ function renderReference() {
   const contractReference = renderContractReference();
   const tacticalSupport = renderTacticalSupport(referenceTrack.tacticalSupport);
   const temporaryHires = renderTemporaryHires(referenceTrack.temporaryHires, referenceTrack.temporaryHireNote);
+  const trackProvisional = referenceTrack.provisionalRules?.length ? '<div class="reference-section"><div class="panel-kicker">PROVISIONAL INTERPRETATIONS</div>' + renderProvisionalRules(referenceTrack.provisionalRules) + '</div>' : "";
   const newIvaarsenTacticalReference = renderNewIvaarsenTacticalReference();
   const referenceTables = (referenceTrack.referenceTables || []).filter(table => !isBattlefieldConfigurationTable(table)).map(table => '<div class="reference-section"><div class="panel-kicker">' + esc(table.title) + '</div>' + renderGeneratorTable("", table) + '</div>').join("");
   const sourceReferenceText = referenceTrack.sourceRefs?.join(" · ") || SOURCES.primary + " · selected track " + pageReference;
@@ -1588,6 +1640,7 @@ function renderReference() {
       hotSpotBrief +
       contractReference +
       currentTrackInputs +
+      trackProvisional +
       newIvaarsenTacticalReference +
       '<div class="reference-section"><div class="panel-kicker">BATTLEFIELD & SETUP</div><ul class="rule-list">' + setup + "</ul></div>" +
       (setupDetails ? '<div class="reference-section"><div class="panel-kicker">DEPLOYMENT DETAILS</div><ul class="rule-list">' + setupDetails + "</ul></div>" : "") +
@@ -1656,15 +1709,19 @@ function renderTracker() {
   const protectionCaptureRow = track && protectionTrackFourActive()
     ? '<tr class="prerequisite-row protection-capture-row"><th scope="row"><div class="objective-title">Mobile HQ final-turn capture</div><div class="objective-rule">Platinum Sands holds the Mobile HQ captured at the end of the final turn.</div><div class="objective-vp">When checked, all three Platinum Sands objectives are credited for 450 effective VP and Platinum Sands alone successfully completes the track. Kanagawa Group progress is preserved.</div></th><td class="attacker-col"><label class="check-control"><input type="checkbox" data-protection-mobile-hq-captured="true"' + (protectionCaptureOverride() ? " checked" : "") + '><span class="checkmark"></span><span class="control-copy">' + (protectionCaptureOverride() ? "Captured" : "Not captured") + '</span></label></td><td class="defender-col"><span class="not-applicable" aria-label="Not applicable">—</span></td></tr>'
     : "";
+  const tigressRetainedRow = track && currentHotSpot().id === "tigress" && Number(currentHotSpotStep()?.sequence) === 1 && state.tigressPhase === "recon"
+    ? '<tr class="prerequisite-row tigress-retained-row"><th scope="row"><div class="objective-title">Retained training result</div><div class="objective-rule">Legion Trainers retain VP earned during the training phase. A completed Legion Trainers training objective satisfies their Track 1 objective-completion prerequisite; they do not also need a Recon objective. Trainee-earned VP controlled by the Roughriders player does not carry forward.</div><div class="objective-vp">Separate contribution derived from the preserved Meeting Engagement objective record.</div></th><td class="attacker-col"><span class="not-applicable" aria-label="Not applicable">—</span></td><td class="defender-col"><div class="calculated-vp"><strong>' + tigressRetainedTrainingVp() + ' VP</strong><span>' + tigressCompletedTrainingObjectiveCount() + ' completed training objective' + (tigressCompletedTrainingObjectiveCount() === 1 ? '' : 's') + '</span></div></td></tr>'
+    : "";
   const pendingRoleRow = '<tr><th scope="row" colspan="3" class="pending-track">' + esc(resolved?.variant?.roleChoicePendingInstruction || "Select the Attacker to display objectives.") + '</th></tr>';
-  $("#objective-body").innerHTML = track ? (resolved?.rolePending ? pendingRoleRow : extractionRow + protectionCaptureRow + displayedObjectives.map(objective => {
+  $("#objective-body").innerHTML = track ? (resolved?.rolePending ? pendingRoleRow : extractionRow + protectionCaptureRow + tigressRetainedRow + displayedObjectives.map(objective => {
     const display = displayObjective(objective, variant);
     const calculatedDeny = isReconDeny(objective);
     const objectiveText = display.text;
     const denyVp = calculatedDeny ? objectiveEarnedVp(objective, "defender", display) : 0;
     const vpLabel = calculatedDeny ? "Projected: " + denyVp + " VP" : (display.vpOptions ? display.vpOptions.join(" / ") + " VP (select value)" : display.vp + " VP" + (display.repeatable ? " each" : ""));
     const extractionNote = pascagoulaObjectiveSuppressed(objective, "defender") ? '<div class="calculated-vp-note">Defender VP is currently suppressed until at least one Ryu is extracted.</div>' : "";
-    const projectionNote = (calculatedDeny ? '<div class="calculated-vp-note">Projected Deny VP follows the printed Deny schedule as the Attacker completes objectives. Remaining Deny points are awarded at the end of Turn 8.' + (daharGibberishApplies("defender") ? " Dahar Complication 7 deducts 20 VP once from the earned Deny objective." : "") + '</div>' : "") + extractionNote;
+    const denyDeadline = currentHotSpot().id === "tigress" && Number(currentHotSpotStep()?.sequence) === 1 ? "Recon Turn 8" : "Turn 8";
+    const projectionNote = (calculatedDeny ? '<div class="calculated-vp-note">Projected Deny VP follows the printed Deny schedule as the Attacker completes objectives. Remaining Deny points are awarded at the end of ' + denyDeadline + '.' + (daharGibberishApplies("defender") ? " Dahar Complication 7 deducts 20 VP once from the earned Deny objective." : "") + '</div>' : "") + extractionNote;
     return '<tr><th scope="row"><div class="objective-title">' + esc(display.name) + '</div><div class="objective-rule">' + esc(objectiveText) + '</div><div class="objective-vp">' + vpLabel + "</div>" + projectionNote + "</th>" +
       '<td class="attacker-col">' + objectiveControl(objective, "attacker", display) + "</td>" +
       '<td class="defender-col">' + objectiveControl(objective, "defender", display) + "</td></tr>";
@@ -1706,9 +1763,12 @@ function renderAll() {
 
 function resetTrack() {
   const branch = state.hotSpotId === "pascagoula" && Number(state.trackSequence[state.hotSpotId]) === 2 ? "::" + (selectedWinner(1) || "unresolved") : "";
-  const prefix = state.hotSpotId + "::" + (state.trackSequence[state.hotSpotId] || "") + "::" + (state.trackId || "") + branch + "::";
-  Object.keys(state.progress).filter(key => key.startsWith(prefix)).forEach(key => delete state.progress[key]);
-  Object.keys(state.vpSelections).filter(key => key.startsWith(prefix)).forEach(key => delete state.vpSelections[key]);
+  const base = state.hotSpotId + "::" + (state.trackSequence[state.hotSpotId] || "") + "::";
+  const prefixes = state.hotSpotId === "tigress" && Number(state.trackSequence[state.hotSpotId]) === 1
+    ? [base + "meeting-engagement::", base + "recon::"]
+    : [base + (state.trackId || "") + branch + "::"];
+  Object.keys(state.progress).filter(key => prefixes.some(prefix => key.startsWith(prefix))).forEach(key => delete state.progress[key]);
+  Object.keys(state.vpSelections).filter(key => prefixes.some(prefix => key.startsWith(prefix))).forEach(key => delete state.vpSelections[key]);
   if (pascagoulaExtractionRequired()) delete state.tacticalInputs[pascagoulaExtractionKey()];
   if (protectionTrackFourActive()) delete state.tacticalInputs[protectionCaptureKey()];
   renderAll();
@@ -1721,7 +1781,7 @@ $("#hot-spot-select").addEventListener("change", event => {
 });
 
 $("#hot-spot-track-select").addEventListener("change", event => {
-  if (interactiveComplicationContracts.has(state.hotSpotId)) clearComplicationSelections(state.hotSpotId);
+  if (interactiveComplicationContracts.has(state.hotSpotId) && state.hotSpotId !== "tigress") clearComplicationSelections(state.hotSpotId);
   state.trackSequence[state.hotSpotId] = Number(event.target.value);
   state.trackId = null;
   renderAll();
@@ -1941,6 +2001,11 @@ $("#hotspot-campaign-state").addEventListener("click", event => {
 });
 
 $("#mission-reference").addEventListener("change", event => {
+  if (event.target.dataset.tigressPhase) {
+    state.tigressPhase = event.target.value === "recon" ? "recon" : "training";
+    renderAll();
+    return;
+  }
   if (event.target.dataset.melcherSupportRecipient) {
     state.tacticalInputs[tacticalInputKey("melcher-support-" + event.target.dataset.melcherSupportRecipient)] = event.target.value;
     renderReference();
