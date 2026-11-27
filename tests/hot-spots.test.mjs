@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { adjustDaharEarnedVp, achernarInitialDefectors, ALTA_VISTA_COMMAND_COMPLICATIONS, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_MAPSHEET_TABLE, DAHAR_PROVISIONAL_RULES, DAHAR_TRACK_RESULTS, evaluateAltaVistaCampaign, FACTION_COLORS, GENERAL_RULES, groupComplicationEffectEntries, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_MAPSHEET_TABLE, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LE_BLANC_TEMPORARY_HIRES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_MAPSHEET_TABLE, LUCERNE_PROVISIONAL_RULES, LUCERNE_TEMPORARY_HIRES, LUCERNE_TRACK_RESULTS, MELCHER_BLACK_MARKET, MELCHER_COMMAND_COMPLICATIONS, MELCHER_GRASSLANDS_MAPSHEETS, MELCHER_TEMPORARY_HIRES, MISSION_OPFOR_OVERRIDES, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_COMMAND_COMPLICATIONS, NEW_IVAARSEN_LIGHT_URBAN_MAPSHEETS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PASCAGOULA_COMMAND_COMPLICATIONS, PASCAGOULA_MOUNTAINS_MAPSHEETS, PASCAGOULA_PROVISIONAL_RULES, PLAYER_VISIBLE_HOT_SPOT_IDS, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
+import { adjustDaharEarnedVp, achernarInitialDefectors, ALTA_VISTA_COMMAND_COMPLICATIONS, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_MAPSHEET_TABLE, DAHAR_PROVISIONAL_RULES, DAHAR_TRACK_RESULTS, evaluateAltaVistaCampaign, evaluateProtectionPursuit, FACTION_COLORS, GENERAL_RULES, groupComplicationEffectEntries, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_MAPSHEET_TABLE, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LE_BLANC_TEMPORARY_HIRES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_MAPSHEET_TABLE, LUCERNE_PROVISIONAL_RULES, LUCERNE_TEMPORARY_HIRES, LUCERNE_TRACK_RESULTS, MELCHER_BLACK_MARKET, MELCHER_COMMAND_COMPLICATIONS, MELCHER_GRASSLANDS_MAPSHEETS, MELCHER_TEMPORARY_HIRES, MISSION_OPFOR_OVERRIDES, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_COMMAND_COMPLICATIONS, NEW_IVAARSEN_LIGHT_URBAN_MAPSHEETS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PASCAGOULA_COMMAND_COMPLICATIONS, PASCAGOULA_MOUNTAINS_MAPSHEETS, PASCAGOULA_PROVISIONAL_RULES, PLAYER_VISIBLE_HOT_SPOT_IDS, PROTECTION_ATLANTIS_MAPSHEETS, PROTECTION_COMMAND_COMPLICATIONS, PROTECTION_PROVISIONAL_RULES, PROTECTION_STANDARD_MAPSHEETS, PROTECTION_TEMPORARY_HIRES, protectionPartisanSupport, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
 
 const expected = ["Assault", "Breakthrough", "Defend", "Flank", "Meeting Engagement", "Objective Raid", "Pursuit", "Pushback", "Recon", "Retreat", "Strike"];
 assert.deepEqual(TRACKS.map(track => track.name), expected, "all eleven Draconis Reach standard tracks are present");
@@ -453,7 +453,15 @@ for (const term of ["renderAchernarCampaignState", "survivorsAfterTrack3", "surv
 assert.match(html, /Source-specific cross-track records are included only where a tactical force or contract-victory rule requires them/);
 const protection = HOT_SPOTS.find(item => item.id === "protection");
 assert.equal(protection.tracks[2].outcomes["platinum-sands|kanagawa-group"].roleChoice, true, "Protection mixed results expose the source roll-off choice");
-assert.match(protection.note, /contract 138910A–B/);
+assert.equal(protection.terrain, "Wetlands", "Protection uses its printed Wetlands primary terrain");
+assert.deepEqual(protection.sides.map(side => side.faction), ["Mercenary", "Mercenary"], "both Protection participating forces are Mercenary");
+assert.deepEqual(protection.sides.map(side => side.contract), ["138910A", "138910B"]);
+assert.match(protection.contractReference.summary.join(" "), /Platinum Sands Supplemental Security Agreement.*Protection Garrison/);
+assert.match(protection.contractReference.summary.join(" "), /Base Pay 110 percent.*Base Pay 100 percent/);
+assert.match(protection.contractReference.progression.join(" "), /Month 1 has no track.*Month 6 has no track/);
+assert.match(protection.contractReference.progression.join(" "), /Sea Fox Purchase Options Table/);
+assert.match(protection.contractReference.victory.join(" "), /most track victories.*tie ends in a draw/i);
+assert.equal(PROTECTION_PROVISIONAL_RULES.length, 4);
 const protectionTrack1 = protection.tracks[0].variant;
 assert.equal(protectionTrack1.displayName, "Protection Recon");
 assert.deepEqual(RECON_DENY_ATTACKER_OBJECTIVE_IDS, ["orders-attacker", "identify-opposition", "preemptive-strike", "observe-report"]);
@@ -472,12 +480,18 @@ assert.doesNotMatch(app, /isProtectionTrack1Deny|protectionDenyVp/, "Recon Deny 
 assert.ok(app.indexOf('if (isReconDeny(objective, side))') < app.indexOf("const vpControl = objective.vpOptions"), "automatic Recon Deny rendering bypasses the manual variable-VP selector");
 assert.ok(app.includes("Remaining Deny points are awarded at the end of Turn 8"), "shared Recon Deny distinguishes projected scoring from final Turn 8 scoring");
 assert.match(protectionTrack1.setupDetails.join(" "), /second month.*Platinum Sands player as Attacker/);
-assert.match(protectionTrack1.special.join(" "), /Level 0 ground as Level 0 water/);
-assert.match(protectionTrack1.special.join(" "), /six Depth 1 water tokens/);
-assert.match(protectionTrack1.special.join(" "), /Atlantis City/);
-assert.match(protectionTrack1.special.join(" "), /Do not apply this option unless the table establishes it/);
-assert.match(protectionTrack1.special.join(" "), /50 Support Points per track/);
-assert.doesNotMatch(protectionTrack1.special.join(" "), /Warchest Points/);
+assert.deepEqual(PROTECTION_STANDARD_MAPSHEETS.rows.map(row => row[1]), ["Hilltops #1 (CI)", "Desert #3 (AGOAC)", "Rolling Hills #1 (MP: Grasslands)", "Rolling Hills #2 (MP: Grasslands, CI)", "Rolling Hills #3 (MP: Grasslands)", "Sand Drifts #1 (MP: Deserts)"]);
+assert.deepEqual(PROTECTION_ATLANTIS_MAPSHEETS.rows.map(row => row[1]), ["Corporate Campus (MP: City)", "Family Quarters (MP: City)", "HPG Heliport (MP: City)", "Business District (MP: City)", "Shopping District (MP: City)", "HPG Offices (MP: City)"]);
+assert.match(protectionTrack1.battlefieldRules.map(rule => rule.text).join(" "), /Level 0 ground as Level 0 water/);
+assert.match(protectionTrack1.battlefieldRules.map(rule => rule.text).join(" "), /six Depth 1 water tokens/);
+assert.match(protectionTrack1.battlefieldRules.map(rule => rule.text).join(" "), /Do not apply Protection’s BattleTech-only Level 0 flooding/);
+assert.deepEqual(protectionTrack1.selectionControls[0].options.map(option => option.value), ["standard", "atlantis"]);
+assert.equal(protectionTrack1.selectionControls[1].visibleWhen.value, "atlantis");
+assert.deepEqual(protectionTrack1.referenceTables, [PROTECTION_STANDARD_MAPSHEETS, PROTECTION_ATLANTIS_MAPSHEETS]);
+assert.equal(PROTECTION_TEMPORARY_HIRES[0].name, "Surf Rock");
+assert.deepEqual([PROTECTION_TEMPORARY_HIRES[0].unit, PROTECTION_TEMPORARY_HIRES[0].bv, PROTECTION_TEMPORARY_HIRES[0].pv], ["Thunderbolt TDR-12R", "1,975", "41"]);
+assert.match(PROTECTION_TEMPORARY_HIRES[0].restriction, /50 Support Points per participating track.*50 Support Points for each unit/);
+assert.doesNotMatch(JSON.stringify(PROTECTION_TEMPORARY_HIRES), /Warchest Points/);
 assert.equal(protectionTrack1.commandComplications.rows.length, 6, "Protection exposes all command complication results");
 assert.deepEqual(protectionTrack1.commandComplications.rows.map(row => row.roll), ["1–3", "4", "5", "6", "7", "8+"]);
 assert.deepEqual(protectionTrack1.commandComplications.rows.map(row => row.name), ["No Complication", "R&R", "Less Support", "Local Partisans", "Monsoon", "Roll Twice"]);
@@ -486,18 +500,52 @@ assert.match(protectionTrack1.commandComplications.rows[3].text, /two additional
 assert.match(protectionTrack1.commandComplications.rows[4].text, /reduce all hex levels by 1/);
 assert.match(protectionTrack1.commandComplications.rows[5].text, /Roll twice and apply both effects/);
 assert.equal(protectionTrack1.commandComplications.rows[5].name, "Roll Twice");
-assert.match(protectionTrack1.commandComplications.note, /each player rolls 1D6/);
+assert.equal(PROTECTION_COMMAND_COMPLICATIONS.rows[3].supportOnly, true);
+assert.deepEqual([PROTECTION_COMMAND_COMPLICATIONS.rows[4].effectScope, PROTECTION_COMMAND_COMPLICATIONS.rows[4].effectId], ["shared-battlefield", "protection-monsoon"]);
+assert.match(protectionTrack1.commandComplications.note, /House Command \(\+2\).*Liaison Command \(\+1\)/);
+assert.deepEqual(protectionPartisanSupport("standard", true, false), { quantity: 2, naval: true });
+assert.deepEqual(protectionPartisanSupport("standard", true, true), { quantity: 2, naval: true });
+assert.deepEqual(protectionPartisanSupport("atlantis", true, false), { quantity: 2, naval: false });
+assert.deepEqual(protectionPartisanSupport("atlantis", true, true), { quantity: 2, naval: true });
+assert.equal(protectionPartisanSupport("atlantis", false, true), null);
 const protectionTrack2 = protection.tracks[1].outcomes["platinum-sands"].variant;
 assert.match(protectionTrack2.setupDetails.join(" "), /winner of Track 1 is the Attacker/);
+assert.equal(protection.tracks[1].outcomes["kanagawa-group"].attacker, "kanagawa-group");
+assert.equal(protection.tracks[2].outcomes["platinum-sands|platinum-sands"].trackId, "assault");
+assert.equal(protection.tracks[2].outcomes["kanagawa-group|kanagawa-group"].trackId, "pushback");
 const protectionTrack3Mixed = protection.tracks[2].outcomes["platinum-sands|kanagawa-group"];
+const protectionTrack3MixedReverse = protection.tracks[2].outcomes["kanagawa-group|platinum-sands"];
 assert.match(protectionTrack3Mixed.variant.setupDetails.join(" "), /2D6 roll-off/);
 assert.match(protectionTrack3Mixed.variant.setupDetails.join(" "), /higher result may choose Attacker or Defender/);
 assert.equal(protectionTrack3Mixed.variant.roleChoiceLabel, "Choose the side assigned to the Attacker role after the 2D6 roll-off");
+assert.equal(protectionTrack3Mixed.variant.roleChoicePendingInstruction, "Select the Attacker to display objectives.");
+for (const mixedOutcome of [protectionTrack3Mixed, protectionTrack3MixedReverse]) {
+  assert.equal(mixedOutcome.trackId, "flank", "both mixed-winner sequences identify Flank");
+  assert.equal(mixedOutcome.roleChoiceRequired, true, "mixed-winner Flank requires an explicit Attacker choice");
+  assert.equal(mixedOutcome.roleChoicePlainLabels, true, "Protection role options use the two player-facing force names");
+}
+assert.match(app, /roleChoiceRequired && !selectedInitiator[\s\S]*rolePending: true/, "unanswered required role choices remain pending");
+assert.match(app, /<option value="">Select Attacker…<\/option>/, "Protection Flank exposes an unanswered Attacker option");
+assert.match(app, /resolved\?\.rolePending \? pendingRoleRow/, "pending role choices suppress objective rows");
+assert.match(app, /displayedObjectives = resolved\?\.rolePending \? \[\] : objectives/, "pending role choices do not expose Flank scoring controls");
+assert.match(app, /step\.requires\.map\(selectedWinner\)\.join\("\|"\)/, "conditional role choices are isolated by the resolved winner branch");
+assert.doesNotMatch(app, /state\.roleSelections\[roleKey\(step\.sequence\)\] \|\| currentHotSpot\(\)\.sides\[0\]\.id/, "required role choice does not silently default to the first force");
 const protectionTrack4 = protection.tracks[3].variant;
+assert.deepEqual([protection.tracks[3].attacker, protection.tracks[3].defender], ["platinum-sands", "kanagawa-group"]);
 assert.match(protectionTrack4.setupDetails.join(" "), /Mobile HQ/);
 assert.match(protectionTrack4.special.join(" "), /successful capture causes no damage/);
 assert.match(protectionTrack4.special.join(" "), /maximum combat bonus pay/);
-assert.deepEqual(protectionTrack4.sourceRefs, ["Draconis Reach pp. 110–112", "Command complications procedure p. 30", "Current Draconis Reach master errata"]);
+assert.deepEqual(evaluateProtectionPursuit({ captureHeld: true, attackerVp: 0, defenderVp: 0 }), { attackerVp: 450, defenderVp: 0, attackerSuccessful: true, defenderSuccessful: false });
+assert.deepEqual(evaluateProtectionPursuit({ captureHeld: true, attackerVp: 150, defenderVp: 250 }), { attackerVp: 450, defenderVp: 250, attackerSuccessful: true, defenderSuccessful: false });
+assert.deepEqual(evaluateProtectionPursuit({ captureHeld: true, attackerVp: 450, defenderVp: 450 }), { attackerVp: 450, defenderVp: 450, attackerSuccessful: true, defenderSuccessful: false });
+assert.deepEqual(evaluateProtectionPursuit({ captureHeld: false, attackerVp: 150, defenderVp: 100, attackerObjectives: 2, defenderObjectives: 1 }), { attackerVp: 150, defenderVp: 100, attackerSuccessful: true, defenderSuccessful: false });
+assert.deepEqual(evaluateProtectionPursuit({ captureHeld: false, attackerVp: 450, defenderVp: 450, attackerObjectives: 3, defenderObjectives: 3 }), { attackerVp: 450, defenderVp: 450, attackerSuccessful: false, defenderSuccessful: false });
+assert.match(protectionTrack4.sourceRefs.join(" "), /Draconis Reach pp\. 108–112.*General rules pp\. 29–31/);
+for (const term of ["protectionCaptureOverride", "data-protection-mobile-hq-captured", "Automatically credited by final-turn Mobile HQ capture", "Platinum Sands successfully completes the track", "protectionPartisanSupport", "Same-player Local Partisans \+ Monsoon interaction", '"protection"']) {
+  assert.ok(app.includes(term), term + " Protection interaction is wired into the browser");
+}
+assert.ok(app.includes('interactiveComplicationContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection"])'));
+assert.ok(app.includes('simplifiedContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection"])'));
 assert.doesNotMatch(TRACKS.find(track => track.id === "recon").special.join(" "), /Level 0 ground as Level 0 water/);
 assert.doesNotMatch(TRACKS.find(track => track.id === "pursuit").special.join(" "), /Mobile HQ/);
 const sunPrairie = HOT_SPOTS.find(item => item.id === "sun-prairie");
@@ -1107,7 +1155,7 @@ assert.match(app, /Eclipse Expeditions Special Operations.*Guildmaster Phil News
 assert.match(app, /both participating forces are Mercenary.*Mercenary\/Pirate OpFor table/i);
 assert.match(app, /same completed-objective|Current score: Attacker|currently successfully completes the track/);
 assert.match(app, /renderTemporaryHires\(referenceTrack\.temporaryHires, referenceTrack\.temporaryHireNote\)/, "Temporary Hire cards accept contract-aware hiring guidance");
-assert.match(html, /pascagoula/, "Hot Spots uses the Pascagoula asset cache key");
+assert.match(html, /app\.mjs\?v=protection/, "Hot Spots uses the Protection asset cache key");
 assert.ok(css.includes("campaign-field input") && css.includes("hire-card-grid") && css.includes("@media"), "Lucerne controls and reused Temporary Hire cards retain responsive styling");
 
 assert.match(html, /<details[^>]+id="hotspot-setup"[^>]+open>/, "Hot Spot Setup starts expanded");
@@ -1152,7 +1200,7 @@ assert.match(app, /\$\("#hotspot-setup"\)\.addEventListener\("change"/, "complic
 assert.doesNotMatch(renderOpForBody, /data-complication-choice/, "generated OpFor rendering remains separate from complication selection");
 assert.ok(css.includes("setup-configuration-card") && css.includes("complication-selection-status"), "battlefield and complication setup remain responsive and visibly grouped");
 
-assert.deepEqual(PLAYER_VISIBLE_HOT_SPOT_IDS, ["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula"], "only completed and verified contracts are player-visible in source order");
+assert.deepEqual(PLAYER_VISIBLE_HOT_SPOT_IDS, ["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection"], "only completed and verified contracts are player-visible in source order");
 assert.equal(PLAYER_VISIBLE_HOT_SPOT_IDS.every(id => HOT_SPOTS.some(hotSpot => hotSpot.id === id)), true, "every visible contract retains its source data");
 assert.equal(HOT_SPOTS.some(hotSpot => hotSpot.id === "new-ivaarsen"), true, "New Ivaarsen contract data is available to the verified-location filter");
 assert.match(app, /const VISIBLE_HOT_SPOTS = HOT_SPOTS\.filter/, "the browser uses one centralized approved-location filter");
@@ -1173,7 +1221,7 @@ assert.deepEqual(MELCHER_GRASSLANDS_MAPSHEETS.map(row => row[2]), ["BB", "AGOAC"
 assert.equal(MELCHER_BLACK_MARKET.length, 11, "Melcher includes all Black Market AgroMech results");
 assert.equal(MELCHER_COMMAND_COMPLICATIONS.rows.length, 5, "Melcher includes the full resolved Command Complications bracket");
 assert.equal(MELCHER_TEMPORARY_HIRES.length, 2, "Melcher includes both named temporary hires");
-assert.match(app, /"melcher", "new-ivaarsen", "pascagoula"\]\);/, "Melcher, New Ivaarsen, and Pascagoula use the shared interactive complication and simplified OpFor workflows");
+assert.match(app, /"melcher", "new-ivaarsen", "pascagoula", "protection"\]\);/, "Melcher, New Ivaarsen, Pascagoula, and Protection use the shared interactive complication and simplified OpFor workflows");
 assert.match(app, /Math\.min\(objective\.maxCount \?\? Infinity/, "repeatable objectives honor source-defined maximum counts");
 const hotSpotsHeader = html.match(/<header class="topbar">[\s\S]*?<\/header>/)?.[0] || "";
 const coreHeader = coreHtml.match(/<header class="topbar">[\s\S]*?<\/header>/)?.[0] || "";

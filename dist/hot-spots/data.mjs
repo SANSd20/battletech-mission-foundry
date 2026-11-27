@@ -2256,41 +2256,146 @@ export const LUCERNE_TRACK_RESULTS = Object.freeze([
   { id: "bio-gen-raid", label: "Bio-Gen Raid · mandatory sixth played track", trackId: "bio-gen-raid", attacker: "eclipse", defender: "bio-gen", variant: lucerneOverlay("bio-gen-raid", { includeComplications: false }) }
 ]);
 
-const protectionCommandComplications = {
+export const PROTECTION_PROVISIONAL_RULES = Object.freeze([
+  "Alpha Strike uses the general terrain-placement procedure on pp. 154–155. Protection’s BattleTech-only Level 0 flooding and water-token conversion are not translated into invented Alpha Strike dimensions or quantities.",
+  "For Roll Twice, apply the selecting force’s Command Rights modifier to the initial and secondary rolls, resolve exactly two secondary results, reroll secondary Roll Twice results and duplicate effects other than No Complication, and do not recurse.",
+  "In Atlantis City, Local Partisans become naval patrol boats only when the same player resolved both Local Partisans and Monsoon through Roll Twice; another player’s Monsoon does not convert that support award.",
+  "If Platinum Sands holds the Mobile HQ at the end of the final turn, Platinum Sands alone successfully completes the track even when both sides have 450 effective VP."
+]);
+
+export const PROTECTION_STANDARD_MAPSHEETS = Object.freeze({
+  title: "Standard Protection Mapsheet Table",
+  headers: ["1D6", "Mapsheet"],
+  rows: [
+    ["1", "Hilltops #1 (CI)"],
+    ["2", "Desert #3 (AGOAC)"],
+    ["3", "Rolling Hills #1 (MP: Grasslands)"],
+    ["4", "Rolling Hills #2 (MP: Grasslands, CI)"],
+    ["5", "Rolling Hills #3 (MP: Grasslands)"],
+    ["6", "Sand Drifts #1 (MP: Deserts)"]
+  ],
+  whenSelection: { id: "battlefield-type", value: "standard" }
+});
+
+export const PROTECTION_ATLANTIS_MAPSHEETS = Object.freeze({
+  title: "Atlantis City Mapsheet Table",
+  headers: ["1D6", "Mapsheet"],
+  rows: [
+    ["1", "Corporate Campus (MP: City)"],
+    ["2", "Family Quarters (MP: City)"],
+    ["3", "HPG Heliport (MP: City)"],
+    ["4", "Business District (MP: City)"],
+    ["5", "Shopping District (MP: City)"],
+    ["6", "HPG Offices (MP: City)"]
+  ],
+  whenSelection: { id: "battlefield-type", value: "atlantis" }
+});
+
+export const PROTECTION_TEMPORARY_HIRES = Object.freeze([
+  {
+    name: "Surf Rock",
+    identity: "Old Man Hawthorne · local retired MechWarrior",
+    unit: "Thunderbolt TDR-12R",
+    bv: "1,975",
+    pv: "41",
+    gunnery: "4",
+    piloting: "5",
+    alphaStrikeSkill: "4",
+    edge: "3",
+    abilities: "No additional special pilot ability is stated.",
+    restriction: "50 Support Points per participating track, plus 50 Support Points for each unit he destroys. Resolve availability, eligibility, payment, repairs, and replacement from the sourcebook.",
+    source: "Draconis Reach p. 112 · current errata"
+  }
+]);
+
+export function protectionPartisanSupport(battlefieldType, localPartisans, samePlayerMonsoon) {
+  if (!localPartisans) return null;
+  return {
+    quantity: 2,
+    naval: battlefieldType !== "atlantis" || Boolean(samePlayerMonsoon)
+  };
+}
+
+export function evaluateProtectionPursuit({ captureHeld = false, attackerVp = 0, defenderVp = 0, attackerObjectives = 0, defenderObjectives = 0 } = {}) {
+  if (captureHeld) {
+    return { attackerVp: 450, defenderVp, attackerSuccessful: true, defenderSuccessful: false };
+  }
+  return {
+    attackerVp,
+    defenderVp,
+    attackerSuccessful: attackerObjectives > 0 && attackerVp > defenderVp,
+    defenderSuccessful: defenderObjectives > 0 && defenderVp > attackerVp
+  };
+}
+
+export const PROTECTION_COMMAND_COMPLICATIONS = {
   ref: "Draconis Reach pp. 30, 111",
-  note: "Official procedure: after determining the mapsheets, each player rolls 1D6. Add 1 for Liaison Command, 2 for House Command, or 3 for Integrated Command. The browser displays the complete table but does not select or apply a complication automatically.",
+  note: "Select each player’s already-resolved result. Protection uses House Command (+2) for Platinum Sands and Liaison Command (+1) for Kanagawa Group; Independent is +0 and Integrated is +3. The browser does not roll dice or select Command Rights.",
+  provisional: PROTECTION_PROVISIONAL_RULES.slice(1, 3),
   rows: [
     { roll: "1–3", name: "No Complication", text: "No complication applies." },
-    { roll: "4", name: "R&R", text: "Your employer provided good rest and relaxation at a local resort, but the enemy arrived during it. Take a −2 penalty to Initiative rolls for the first 2 turns." },
-    { roll: "5", name: "Less Support", text: "Last-minute changes to the battle plan leave you with less support. Reduce the Battlefield Support available to you for the track by 10 BSP (AS: 2 BSP) per Scale." },
-    { roll: "6", name: "Local Partisans", text: "Your opponent receives support from a local partisan group: two additional Vedette Medium Tank battlefield assets. On standard maps, these Vedettes represent patrol boats. Change their motive type from Tracked to Naval, allow them to enter Depth 0 and deeper water hexes, and treat them as Level 0 (surface) for shooting." },
-    { roll: "7", name: "Monsoon", text: "Your employer determines that monsoon conditions offer the perfect opportunity to attack. On standard maps, reduce all hex levels by 1 as a storm surge floods the area. On Atlantis City maps, treat every Level 0 hex as Depth 0 water. All attacks receive an additional +1 target number modifier at medium range and +2 at long range (AS: +1 target number modifier to all weapon attacks at medium or long range)." },
+    { roll: "4", name: "R&R", effectScope: "player-specific", text: "Your employer provided good rest and relaxation at a local resort, but the enemy arrived during it. Take a −2 penalty to Initiative rolls for the first 2 turns." },
+    { roll: "5", name: "Less Support", effectScope: "player-specific", text: "Last-minute changes to the battle plan leave you with less support. Reduce the Battlefield Support available to you for the track by 10 BSP (AS: 2 BSP) per Scale." },
+    { roll: "6", name: "Local Partisans", effectScope: "opposing-support", effectId: "protection-local-partisans", supportOnly: true, text: "Your opponent receives support from a local partisan group: two additional Vedette Medium Tank battlefield assets. On standard maps, these Vedettes represent patrol boats. Change their motive type from Tracked to Naval, allow them to enter Depth 0 and deeper water hexes, and treat them as Level 0 (surface) for shooting." },
+    { roll: "7", name: "Monsoon", effectScope: "shared-battlefield", effectId: "protection-monsoon", text: "Your employer determines that monsoon conditions offer the perfect opportunity to attack. On standard maps, reduce all hex levels by 1 as a storm surge floods the area. On Atlantis City maps, treat every Level 0 hex as Depth 0 water. All attacks receive an additional +1 target number modifier at medium range and +2 at long range (AS: +1 target number modifier to all weapon attacks at medium or long range)." },
     { roll: "8+", name: "Roll Twice", text: "Roll twice and apply both effects. Do not reroll No Complication, but reroll any other duplicate effect. If both options 6 and 7 are rolled, the Vedettes represent patrol boats crazy enough to sail into the flooded streets of Atlantis City." }
   ]
 };
 
-const protectionWaterRules = [
-  "Protection maps — official source rule: after rolling for the standard mapsheets, treat all Level 0 ground as Level 0 water. Each player receives six Depth 1 water tokens to place in Level 0 water hexes; two Depth 1 tokens may be stacked to create a Depth 2 water hex. These adjustments make tracked and wheeled assets more difficult or potentially impossible to use, so select assets accordingly.",
-  "Standard Protection mapsheet table: roll 1D6 — 1 Hilltops #1 (CI); 2 Desert #3 (AGOAC); 3 Rolling Hills #1 (MP: Grasslands); 4 Rolling Hills #2 (MP: Grasslands, CI); 5 Rolling Hills #3 (MP: Grasslands); 6 Sand Drifts #1 (MP: Deserts).",
-  "Atlantis City option — official source rule: the Attacker may instead engage at the capital, Atlantis City, by taking a −1 Reputation penalty. Use the Atlantis City mapsheet table; those mapsheets are not modified by the Protection water rules. The Defender then chooses either to check fire, giving all Gunnery rolls for the track a +1 target number modifier and gaining +1 Reputation regardless of the outcome, or to take a −1 Reputation penalty and engage without the Gunnery penalty. Do not apply this option unless the table establishes it.",
-  "Atlantis City mapsheet table: roll 1D6 — 1 Corporate Campus (MP: City); 2 Family Quarters (MP: City); 3 HPG Heliport (MP: City); 4 Business District (MP: City); 5 Shopping District (MP: City); 6 HPG Offices (MP: City)."
+const protectionBattlefieldSelections = [
+  {
+    id: "battlefield-type",
+    label: "Battlefield type",
+    placeholder: "Choose the battlefield",
+    default: "standard",
+    options: [
+      { value: "standard", label: "Standard Protection battlefield" },
+      { value: "atlantis", label: "Atlantis City" }
+    ],
+    note: "The Attacker may choose Atlantis City and take the printed −1 Reputation consequence. Reputation is recorded outside the browser."
+  },
+  {
+    id: "atlantis-response",
+    label: "Defender response at Atlantis City",
+    placeholder: "Choose the Defender’s response",
+    options: [
+      { value: "check-fire", label: "Check fire · +1 to all Gunnery rolls" },
+      { value: "engage", label: "Engage without restriction" }
+    ],
+    note: "Check fire grants the Defender +1 Reputation regardless of outcome. Engaging without restriction costs the Defender −1 Reputation. Reputation is recorded outside the browser.",
+    visibleWhen: { id: "battlefield-type", value: "atlantis" }
+  }
 ];
 
-const protectionCampaignRules = [
-  "Protection campaign victory — official source rule: the player with the most track victories wins the contract. A tie ends in a draw.",
-  "Temporary Hire — official source rule: the first time a mercenary force cannot field at least two-thirds of the maximum permissible BV/PV for its next track, a local mercenary offers services. The player may choose whether to pay that mercenary to participate in each track.",
-  "Surf Rock — optional local mercenary: Old Man Hawthorne pilots a Thunderbolt TDR-12R (1,975 BV / 41 PV), has three Edge tokens, Piloting 5 and Gunnery 4 (AS: Skill 4), and demands 50 Support Points per track plus a 50-point bonus for each unit he destroys.",
-  "Purchase Options — official campaign rule: each month, roll 2D6; on 7+ one ’Mech is available for purchase, and on 11+ two are available. Roll on the Sea Fox Purchase Options Table (p. 176) for each. If a ’Mech is available, the player may also purchase vehicles or battle armor from the Sea Fox Tanker and Battle Armor Options Tables, up to two purchases of each per month."
-];
+function protectionBattlefieldRules(trackId) {
+  const sizeRules = trackId === "pursuit"
+    ? []
+    : [
+        { text: "At Scale 1, use one mapsheet.", scales: [1] },
+        { text: "At Scales 2–3, use two mapsheets or one neoprene BattleMat.", scales: [2, 3] }
+      ];
+  return [
+    ...sizeRules,
+    { text: "BattleTech standard battlefield: after determining the mapsheets, treat all Level 0 ground as Level 0 water. Each player receives six Depth 1 water tokens to place in Level 0 water hexes; two Depth 1 tokens may be stacked to create a Depth 2 water hex. Tracked and wheeled assets may be difficult or impossible to use, so select assets accordingly.", whenSelection: { id: "battlefield-type", value: "standard" } },
+    { text: "Alpha Strike terrain — approved provisional treatment: use the general terrain-placement requirements on pp. 154–155 and the base terrain type of the selected mapsheet or majority of mapsheets. Do not apply Protection’s BattleTech-only Level 0 flooding or water-token conversion. Ordinary water terrain required by the general rules remains available.", whenSelection: { id: "battlefield-type", value: "standard" } },
+    { text: "Atlantis City: use the city mapsheets exactly as printed. Do not apply the standard Protection water modifications. Applicable Command Complications may still modify the battlefield.", whenSelection: { id: "battlefield-type", value: "atlantis" } }
+  ];
+}
 
 function protectionVariant(trackId, extra = {}) {
   const base = TRACKS.find(track => track.id === trackId);
   const { special: extraSpecial = [], ...rest } = extra;
   return {
     ...rest,
-    special: [...(base?.special || []), ...protectionWaterRules, ...protectionCampaignRules, ...extraSpecial],
-    commandComplications: protectionCommandComplications,
-    sourceRefs: ["Draconis Reach pp. 110–112", "Command complications procedure p. 30", "Current Draconis Reach master errata"]
+    special: [...(base?.special || []), ...extraSpecial],
+    battlefieldRules: protectionBattlefieldRules(trackId),
+    selectionControls: protectionBattlefieldSelections,
+    referenceTables: [PROTECTION_STANDARD_MAPSHEETS, PROTECTION_ATLANTIS_MAPSHEETS],
+    battlefieldProvisional: [PROTECTION_PROVISIONAL_RULES[0]],
+    commandComplications: PROTECTION_COMMAND_COMPLICATIONS,
+    temporaryHires: PROTECTION_TEMPORARY_HIRES,
+    temporaryHireNote: "Surf Rock becomes available under the printed Protection threshold on p. 112. Use pp. 29, 32, 35, and 112 for eligibility, force limits, payment, repairs, replacement, and permanent hiring; the browser provides tactical reference only.",
+    sourceRefs: ["Draconis Reach pp. 108–112", "General rules pp. 29–31, 39–40, 150–155", "Selected standard track pp. 167–175", "Current Draconis Reach master errata"]
   };
 }
 
@@ -2317,7 +2422,8 @@ const protectionTrack3Variant = protectionVariant("flank", {
     "Contract sequence: this is the fourth month. If Platinum Sands won both previous tracks, play Assault with Platinum Sands as Attacker. If Kanagawa Group won both, play Pushback with Kanagawa Group as Attacker. If each side won one previous track, play Flank and resolve the Attacker role by a 2D6 roll-off; the higher result may choose Attacker or Defender."
   ],
   roleChoiceLabel: "Choose the side assigned to the Attacker role after the 2D6 roll-off",
-  roleChoiceHint: "The source says the higher roll may choose Attacker or Defender; record the final role assignment here."
+  roleChoiceHint: "The source says the higher roll may choose Attacker or Defender; record the final role assignment here.",
+  roleChoicePendingInstruction: "Select the Attacker to display objectives."
 });
 
 const protectionTrack4Variant = protectionVariant("pursuit", {
@@ -3263,10 +3369,27 @@ export const HOT_SPOTS = [
     id: "protection",
     name: "Protection",
     region: "Draconis Combine",
-    terrain: "Urban",
-    source: "Draconis Reach pp. 110–112",
-    note: "Protection contract 138910A–B, Intensity 4: the source frames Platinum Sands and Kanagawa Group as opposing player-controlled mercenary contracts. The browser retains the source’s Track 1–4 sequence and winner-dependent roles; contract pay, Reputation bookkeeping, and no-track months remain reference notes rather than automatic calculations.",
-    sides: [factionSide("platinum-sands", "Platinum Sands", "Corporate"), factionSide("kanagawa-group", "Kanagawa Group", "Draconis Combine")],
+    terrain: "Wetlands",
+    source: "Draconis Reach pp. 108–112",
+    trackSelectorLabel: "Track",
+    note: "Select the current Protection tactical track directly. Only prior winners required to resolve the current track are recorded; campaign administration remains outside the browser.",
+    contractReference: {
+      summary: [
+        "138910A · Platinum Sands Supplemental Security Agreement · CEO Arthur Blanchet · Platinum Sands Holdings · Federated Suns sympathies · Platinum Sands participating force Mercenary · Retainer · six months · Base Pay 110 percent (8) · Straight Support / 20 percent (2) · Transportation 100 percent (9) · Salvage Rights 60 percent (9) · House Command (7).",
+        "138910B · Protection Garrison · Governor Kalani Hale · Kanagawa Group · Draconis Combine alignment · Kanagawa Group participating force Mercenary · Retainer · six months · Base Pay 100 percent (7) · Straight Support / 40 percent (3) · Transportation 100 percent (9) · Salvage Rights 40 percent (7) · Liaison Command (8).",
+        "Protection, Draconis Combine · primary terrain Wetlands · Intensity 4 tracks. Source: Draconis Reach pp. 108–112."
+      ],
+      progression: [
+        "Month 1 has no track. Month 2 is Recon. Month 3 is Meeting Engagement. Month 4 is Assault, Pushback, or Flank according to the first two winners. Month 5 is Pursuit. Month 6 has no track.",
+        "Purchase Options: each month roll 2D6; on 7+ one ’Mech is available and on 11+ two are available. Roll once on the Sea Fox Purchase Options Table (p. 176) for each available ’Mech. If a ’Mech is available, up to two vehicles and two battle armor units may also be purchased from the Sea Fox tables. Purchases and payment remain outside the browser."
+      ],
+      victory: ["The player with the most track victories wins the contract. A tie ends in a draw."],
+      provisional: PROTECTION_PROVISIONAL_RULES
+    },
+    sides: [
+      { ...factionSide("platinum-sands", "Platinum Sands", "Mercenary"), contract: "138910A", employer: "CEO Arthur Blanchet · Platinum Sands Holdings", employerAlignment: "Federated Suns sympathies" },
+      { ...factionSide("kanagawa-group", "Kanagawa Group", "Mercenary"), contract: "138910B", employer: "Governor Kalani Hale · Kanagawa Group", employerAlignment: "Draconis Combine" }
+    ],
     tracks: [
       fixedHotSpotTrack(1, "recon", "platinum-sands", "kanagawa-group", { variant: protectionTrack1Variant }),
       winnerDependentTrack(2, [1], {
@@ -3276,8 +3399,8 @@ export const HOT_SPOTS = [
       winnerDependentTrack(3, [1, 2], {
         "platinum-sands|platinum-sands": { trackId: "assault", attacker: "platinum-sands", defender: "kanagawa-group", variant: protectionVariant("assault", { displayName: "Protection Assault", setupDetails: ["Contract sequence: this is the fourth month. Platinum Sands won both previous tracks, so play Assault with Platinum Sands as Attacker."] }) },
         "kanagawa-group|kanagawa-group": { trackId: "pushback", attacker: "kanagawa-group", defender: "platinum-sands", variant: protectionVariant("pushback", { displayName: "Protection Pushback", setupDetails: ["Contract sequence: this is the fourth month. Kanagawa Group won both previous tracks, so play Pushback with Kanagawa Group as Attacker."] }) },
-        "platinum-sands|kanagawa-group": { trackId: "flank", roleChoice: true, variant: protectionTrack3Variant },
-        "kanagawa-group|platinum-sands": { trackId: "flank", roleChoice: true, variant: protectionTrack3Variant }
+        "platinum-sands|kanagawa-group": { trackId: "flank", roleChoice: true, roleChoiceRequired: true, roleChoicePlainLabels: true, variant: protectionTrack3Variant },
+        "kanagawa-group|platinum-sands": { trackId: "flank", roleChoice: true, roleChoiceRequired: true, roleChoicePlainLabels: true, variant: protectionTrack3Variant }
       }, { roleChoiceLabel: protectionTrack3Variant.roleChoiceLabel, roleChoiceHint: protectionTrack3Variant.roleChoiceHint }),
       fixedHotSpotTrack(4, "pursuit", "platinum-sands", "kanagawa-group", { variant: protectionTrack4Variant })
     ]
@@ -3403,6 +3526,6 @@ export const HOT_SPOTS = [
   }
 ];
 
-export const PLAYER_VISIBLE_HOT_SPOT_IDS = Object.freeze(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula"]);
+export const PLAYER_VISIBLE_HOT_SPOT_IDS = Object.freeze(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection"]);
 
 

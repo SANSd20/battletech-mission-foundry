@@ -1,4 +1,4 @@
-import { adjustDaharEarnedVp, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_PROVISIONAL_RULES, evaluateAltaVistaCampaign, FACTION_COLORS, GENERAL_RULES, groupComplicationEffectEntries, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_PROVISIONAL_RULES, MISSION_OPFOR_OVERRIDES, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PASCAGOULA_PROVISIONAL_RULES, PLAYER_VISIBLE_HOT_SPOT_IDS, RECON_DENY_ATTACKER_OBJECTIVE_IDS, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=pascagoula";
+import { adjustDaharEarnedVp, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_PROVISIONAL_RULES, evaluateAltaVistaCampaign, evaluateProtectionPursuit, FACTION_COLORS, GENERAL_RULES, groupComplicationEffectEntries, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_PROVISIONAL_RULES, MISSION_OPFOR_OVERRIDES, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PASCAGOULA_PROVISIONAL_RULES, PLAYER_VISIBLE_HOT_SPOT_IDS, protectionPartisanSupport, RECON_DENY_ATTACKER_OBJECTIVE_IDS, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=protection";
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -123,7 +123,7 @@ function currentHotSpot() {
 
 const approvedHotSpotIds = new Set(PLAYER_VISIBLE_HOT_SPOT_IDS);
 const VISIBLE_HOT_SPOTS = HOT_SPOTS.filter(hotSpot => approvedHotSpotIds.has(hotSpot.id));
-const interactiveComplicationContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula"]);
+const interactiveComplicationContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection"]);
 
 function complicationRowKey(row, index) {
   return "effect-" + index + "-" + row.roll;
@@ -219,7 +219,7 @@ function sideById(sideId) {
   return side;
 }
 
-const simplifiedContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula"]);
+const simplifiedContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection"]);
 
 function generatedOpForConfiguration() {
   const hotSpot = currentHotSpot();
@@ -309,8 +309,15 @@ function variantSelectionKey(sequence, selection) {
 }
 
 function selectedVariantSelection(sequence, selection) {
-  const value = state.selectionValues[variantSelectionKey(sequence, selection)] || "";
+  const value = state.selectionValues[variantSelectionKey(sequence, selection)] || selection.default || "";
   return selection.options.some(option => option.value === value) ? value : "";
+}
+
+function variantConditionMatches(sequence, condition) {
+  if (!condition) return true;
+  const variant = resolvedHotSpotStep()?.variant;
+  const selection = variant?.selectionControls?.find(item => item.id === condition.id);
+  return Boolean(selection) && selectedVariantSelection(sequence, selection) === condition.value;
 }
 
 function variantSelectionLabel(sequence, selection) {
@@ -319,7 +326,11 @@ function variantSelectionLabel(sequence, selection) {
 }
 
 function roleKey(sequence) {
-  return state.hotSpotId + "::role::" + sequence;
+  const step = currentHotSpotStep();
+  const branch = Number(step?.sequence) === Number(sequence) && step?.requires?.length
+    ? step.requires.map(selectedWinner).join("|")
+    : "";
+  return state.hotSpotId + "::role::" + sequence + (branch ? "::" + branch : "");
 }
 
 function campaignDefinition(hotSpot = currentHotSpot()) {
@@ -679,7 +690,11 @@ function resolvedHotSpotStep() {
     outcome = step.results.find(result => result.id === selectedResult) || step.results[0];
   }
   if (outcome.roleChoice) {
-    const selectedInitiator = state.roleSelections[roleKey(step.sequence)] || currentHotSpot().sides[0].id;
+    let selectedInitiator = state.roleSelections[roleKey(step.sequence)] || "";
+    if (outcome.roleChoiceRequired && !selectedInitiator) {
+      return { ...step, ...outcome, attacker: null, defender: null, rolePending: true, unresolved: false };
+    }
+    selectedInitiator ||= currentHotSpot().sides[0].id;
     const opposingSide = currentHotSpot().sides.find(side => side.id !== selectedInitiator)?.id || null;
     outcome = outcome.reverseRoles
       ? { ...outcome, attacker: opposingSide, defender: selectedInitiator }
@@ -752,6 +767,18 @@ function pascagoulaObjectiveSuppressed(objective, side) {
   return pascagoulaExtractionRequired() && side === "defender" && objective.id !== "orders-defender" && !pascagoulaRyuExtracted();
 }
 
+function protectionTrackFourActive() {
+  return currentHotSpot().id === "protection" && Number(currentHotSpotStep()?.sequence) === 4 && state.trackId === "pursuit";
+}
+
+function protectionCaptureKey() {
+  return progressKey("pursuit", "mobile-hq-captured-final-turn", "attacker");
+}
+
+function protectionCaptureOverride() {
+  return protectionTrackFourActive() && Boolean(state.tacticalInputs[protectionCaptureKey()]);
+}
+
 function getProgress(objective, side) {
   const key = progressKey(state.trackId, objective.id, side);
   if (state.progress[key] === undefined) state.progress[key] = objective.repeatable ? 0 : false;
@@ -804,6 +831,7 @@ function daharGibberishApplies(side) {
 function objectiveEarnedVp(objective, side, display = objective) {
   if (!applies(objective, side)) return 0;
   if (pascagoulaObjectiveSuppressed(objective, side)) return 0;
+  if (protectionCaptureOverride() && side === "attacker") return getVp(display, side);
   const affected = daharGibberishApplies(side);
   if (isReconDeny(objective, side)) return adjustDaharEarnedVp(reconDenyVp(), affected);
   const completed = getProgress(objective, side);
@@ -816,6 +844,7 @@ function completedObjectiveCount(side) {
   if (!track) return 0;
   const variant = resolvedHotSpotStep()?.variant;
   const objectives = variant?.objectives || track.objectives;
+  if (protectionCaptureOverride() && side === "attacker") return objectives.filter(objective => applies(objective, side)).length;
   return objectives.filter(objective => {
     if (!applies(objective, side)) return false;
     if (pascagoulaObjectiveSuppressed(objective, side)) return false;
@@ -963,9 +992,12 @@ function renderHotSpotSetup() {
     winnerControls.push('<div class="control-group"><label for="winner-' + sequence + '">' + esc(label) + '</label><select id="winner-' + sequence + '" data-winner-sequence="' + sequence + '"><option value="">' + esc(placeholder) + '</option>' + options.map(option => '<option value="' + esc(option.value) + '"' + (selectedWinner(sequence) === option.value ? " selected" : "") + '>' + esc(option.label) + "</option>").join("") + '</select><span class="control-hint">' + esc(hint) + "</span></div>");
   }
   if (resolved?.roleChoice) {
-    const selectedRole = state.roleSelections[roleKey(step.sequence)] || hotSpot.sides[0]?.id;
+    const selectedRole = state.roleSelections[roleKey(step.sequence)] || (resolved.roleChoiceRequired ? "" : hotSpot.sides[0]?.id);
     const roleSuffix = step.reverseRoles ? " as strategic attacker (Pursuit Defender)" : " as strategic attacker (tactical Attacker)";
-    winnerControls.push('<div class="control-group"><label for="role-choice">' + esc(step.roleChoiceLabel || "Choose the Attacker") + '</label><select id="role-choice" data-role-sequence="' + step.sequence + '">' + hotSpot.sides.map(side => '<option value="' + esc(side.id) + '"' + (selectedRole === side.id ? " selected" : "") + '>' + esc(side.name) + roleSuffix + "</option>").join("") + '</select><span class="control-hint">' + esc(step.roleChoiceHint || "The other side is assigned Defender.") + '</span></div>');
+    const placeholder = resolved.roleChoiceRequired ? '<option value="">Select Attacker…</option>' : "";
+    const options = hotSpot.sides.map(side => '<option value="' + esc(side.id) + '"' + (selectedRole === side.id ? " selected" : "") + '>' + esc(side.name) + (resolved.roleChoicePlainLabels ? "" : roleSuffix) + "</option>").join("");
+    const hint = resolved.rolePending ? (resolved.variant?.roleChoicePendingInstruction || "Select the Attacker to display objectives.") : (step.roleChoiceHint || "The other side is assigned Defender.");
+    winnerControls.push('<div class="control-group"><label for="role-choice">' + esc(step.roleChoiceLabel || "Choose the Attacker") + '</label><select id="role-choice" data-role-sequence="' + step.sequence + '">' + placeholder + options + '</select><span class="control-hint">' + esc(hint) + '</span></div>');
   }
   if (step?.results?.length) {
     const result = state.resultSelections[resultKey(step.sequence)] || step.results[0].id;
@@ -977,6 +1009,7 @@ function renderHotSpotSetup() {
     winnerControls.push('<div class="control-group"><label for="source-roll-' + esc(roll.id) + '">' + esc(roll.label) + '</label><select id="source-roll-' + esc(roll.id) + '" data-source-roll-id="' + esc(roll.id) + '" data-source-roll-sequence="' + esc(String(step.sequence)) + '"><option value="">' + esc(roll.placeholder || "Choose the 1D6 result") + '</option>' + roll.options.map(option => '<option value="' + esc(option.value) + '"' + (selectedRoll === option.value ? " selected" : "") + '>' + esc(option.label) + "</option>").join("") + '</select><span class="control-hint">' + esc(roll.note) + '</span></div>');
   }
   for (const selection of resolved?.variant?.selectionControls || []) {
+    if (!variantConditionMatches(step.sequence, selection.visibleWhen)) continue;
     const selectedValue = selectedVariantSelection(step.sequence, selection);
     winnerControls.push('<div class="control-group"><label for="variant-selection-' + esc(selection.id) + '">' + esc(selection.label) + '</label><select id="variant-selection-' + esc(selection.id) + '" data-selection-id="' + esc(selection.id) + '" data-selection-sequence="' + esc(String(step.sequence)) + '"><option value="">' + esc(selection.placeholder || "Choose a result") + '</option>' + selection.options.map(option => '<option value="' + esc(option.value) + '"' + (selectedValue === option.value ? " selected" : "") + '>' + esc(option.label) + "</option>").join("") + '</select><span class="control-hint">' + esc(selection.note || "Record the source choice for this track.") + '</span></div>');
   }
@@ -1091,14 +1124,29 @@ function isBattlefieldConfigurationTable(table) {
 
 function battlefieldConfigurationParts(referenceTrack) {
   const groups = [referenceTrack.setup || [], referenceTrack.setupDetails || [], referenceTrack.scaleNotes || [], referenceTrack.scaleNotesByScale?.[String(state.scale)] || [], referenceTrack.special || []];
-  const items = [...new Set(groups.flat().filter(isBattlefieldConfigurationText))];
-  const tables = (referenceTrack.referenceTables || []).filter(isBattlefieldConfigurationTable);
+  const sequence = Number(currentHotSpotStep()?.sequence || 1);
+  const structuredRules = (referenceTrack.battlefieldRules || [])
+    .filter(rule => variantConditionMatches(sequence, rule.whenSelection))
+    .filter(rule => !rule.scales?.length || rule.scales.includes(state.scale))
+    .map(rule => rule.text);
+  const items = [...new Set([...groups.flat().filter(isBattlefieldConfigurationText), ...structuredRules])];
+  const tables = (referenceTrack.referenceTables || [])
+    .filter(isBattlefieldConfigurationTable)
+    .filter(table => variantConditionMatches(sequence, table.whenSelection));
   return { items, tables };
 }
 
 function battlefieldSelectionSummary(referenceTrack) {
   const { tables } = battlefieldConfigurationParts(referenceTrack);
-  return tables[0]?.title || currentHotSpot().terrain + " battlefield";
+  let summary = tables[0]?.title || currentHotSpot().terrain + " battlefield";
+  if (currentHotSpot().id === "protection") {
+    const sequence = Number(currentHotSpotStep()?.sequence || 1);
+    const response = referenceTrack.selectionControls?.find(item => item.id === "atlantis-response");
+    const responseValue = response ? selectedVariantSelection(sequence, response) : "";
+    const responseLabel = response?.options.find(option => option.value === responseValue)?.label;
+    if (responseLabel && variantConditionMatches(sequence, { id: "battlefield-type", value: "atlantis" })) summary += " · " + responseLabel;
+  }
+  return summary;
 }
 
 function displayObjective(objective, variant) {
@@ -1139,6 +1187,27 @@ function renderStaticCommandComplications(table) {
 
 function activeComplicationExtras(profile) {
   const hotSpotId = profile.hotSpot.id;
+  if (hotSpotId === "protection") {
+    const variant = resolvedHotSpotStep()?.variant;
+    const sequence = Number(currentHotSpotStep()?.sequence || 1);
+    const battlefield = variant?.selectionControls?.find(item => item.id === "battlefield-type");
+    const atlantis = battlefield ? selectedVariantSelection(sequence, battlefield) === "atlantis" : false;
+    return profile.participants.map(selectingSide => {
+      if (!appliedComplicationNamed(selectingSide.id, "Local Partisans", profile.table)) return "";
+      const recipient = profile.participants.find(item => item.id !== selectingSide.id);
+      const samePlayerMonsoon = appliedComplicationNamed(selectingSide.id, "Monsoon", profile.table);
+      const support = protectionPartisanSupport(atlantis ? "atlantis" : "standard", true, samePlayerMonsoon);
+      const configuration = support.naval
+        ? "Naval patrol boats · may enter Depth 0 and deeper water · treated as Level 0 (surface) for shooting"
+        : "Tracked Vedette Medium Tanks · Atlantis City maps as printed";
+      const interaction = atlantis && samePlayerMonsoon
+        ? "Same-player Local Partisans + Monsoon interaction: this support award uses naval patrol boats."
+        : atlantis
+          ? "Another player’s Monsoon does not convert this independent support award."
+          : "Standard Protection battlefields always use the printed naval patrol-boat conversion.";
+      return '<div class="active-complication-extra"><strong>' + esc(recipient?.name || "Opposing force") + ' receives Local Partisan support</strong><span>' + support.quantity + ' Vedette Medium Tank battlefield assets · ' + esc(configuration) + '</span><span>Selected for ' + esc(selectingSide.name) + '. ' + esc(interaction) + '</span></div>';
+    }).join("");
+  }
   if (hotSpotId === "lucerne") {
     const swarmPlayers = profile.participants.filter(side => appliedComplicationNamed(side.id, "Voracious Reptile Swarms", profile.table)).length;
     if (!swarmPlayers) return "";
@@ -1181,6 +1250,7 @@ function renderActiveComplications(profile, selection) {
   const effectEntries = [];
   for (const [index, row] of profile.table.rows.entries()) {
     if (isRollTwiceRow(row)) continue;
+    if (row.supportOnly) continue;
     const key = complicationRowKey(row, index);
     const affected = profile.participants.filter(side => (selection.applied[side.id] || []).includes(key));
     if (!affected.length) continue;
@@ -1253,7 +1323,8 @@ function renderInteractiveComplications(profile) {
     }).join("");
     return '<tr><th scope="row"><span class="complication-roll">' + esc(row.roll) + '</span><strong>' + esc(row.name) + '</strong><small>' + esc(row.text) + '</small></th>' + cells + '</tr>';
   }).join("");
-  return '<div class="complication-selector"><div class="complication-selector-head"><p>Select the complications already resolved at the table. Roll Twice is an instruction to resolve additional outcomes outside the browser.</p></div><div class="shared-rule-table-wrap"><table class="shared-rule-table command-complications-table interactive-complications"><thead><tr><th scope="col">Resolved effect</th>' + headerCells + '</tr></thead><tbody>' + rows + '</tbody></table></div><div class="complication-actions"><button type="button" data-apply-complications="true">Apply Complications</button></div></div>';
+  const provisional = profile.table.provisional?.length ? '<div class="complication-provisional">' + renderProvisionalRules(profile.table.provisional) + '</div>' : "";
+  return '<div class="complication-selector"><div class="complication-selector-head"><p>Select the complications already resolved at the table. Roll Twice is an instruction to resolve additional outcomes outside the browser.</p></div><div class="shared-rule-table-wrap"><table class="shared-rule-table command-complications-table interactive-complications"><thead><tr><th scope="col">Resolved effect</th>' + headerCells + '</tr></thead><tbody>' + rows + '</tbody></table></div>' + provisional + '<div class="complication-actions"><button type="button" data-apply-complications="true">Apply Complications</button></div></div>';
 }
 
 function renderCommandComplicationsSetup(table) {
@@ -1287,7 +1358,8 @@ function renderSetupConfiguration(referenceTrack) {
     ? '<ul class="rule-list">' + items.map(item => '<li>' + esc(item) + '</li>').join("") + '</ul>'
     : '<p class="reference-copy">No contract-specific mapsheet table or Alpha Strike terrain override applies. Use the selected track’s battlefield rules.</p>';
   const tableMarkup = tables.map(table => '<div class="setup-battlefield-table"><div class="label">' + esc(table.title) + '</div>' + renderBattlefieldTable(table) + '</div>').join("");
-  battlefieldContainer.innerHTML = '<section class="setup-configuration-card battlefield-configuration-card"><div class="panel-kicker">BATTLEFIELD CONFIGURATION</div><p class="setup-configuration-summary">' + esc(battlefieldSelectionSummary(referenceTrack)) + ' · Scale ' + esc(String(state.scale)) + '</p>' + procedure + tableMarkup + '</section>';
+  const provisional = referenceTrack.battlefieldProvisional?.length ? '<div class="complication-provisional">' + renderProvisionalRules(referenceTrack.battlefieldProvisional) + '</div>' : "";
+  battlefieldContainer.innerHTML = '<section class="setup-configuration-card battlefield-configuration-card"><div class="panel-kicker">BATTLEFIELD CONFIGURATION</div><p class="setup-configuration-summary">' + esc(battlefieldSelectionSummary(referenceTrack)) + ' · Scale ' + esc(String(state.scale)) + '</p>' + procedure + tableMarkup + provisional + '</section>';
   complicationContainer.innerHTML = renderNewIvaarsenSetupInputs() + renderCommandComplicationsSetup(referenceTrack.commandComplications);
 
   const setupSummary = $("#hotspot-setup-summary");
@@ -1375,6 +1447,24 @@ function renderNewIvaarsenTacticalReference() {
 function renderCurrentTrackInputs() {
   const hotSpot = currentHotSpot();
   const step = currentHotSpotStep();
+  if (hotSpot.id === "protection") {
+    const variant = resolvedHotSpotStep()?.variant;
+    const battlefield = variant?.selectionControls?.find(item => item.id === "battlefield-type");
+    const response = variant?.selectionControls?.find(item => item.id === "atlantis-response");
+    const battlefieldValue = battlefield ? selectedVariantSelection(step.sequence, battlefield) : "standard";
+    const responseValue = response ? selectedVariantSelection(step.sequence, response) : "";
+    const battlefieldEffect = battlefieldValue === "atlantis"
+      ? responseValue === "check-fire"
+        ? '<div class="reference-section current-track-inputs"><div class="panel-kicker">ATLANTIS CITY · APPLIED TACTICAL MODIFIER</div><p class="reference-copy"><strong>Check fire:</strong> apply a +1 target number modifier to all Gunnery rolls for this track. The Defender gains +1 Reputation regardless of outcome; record Reputation outside the browser.</p></div>'
+        : responseValue === "engage"
+          ? '<div class="reference-section current-track-inputs"><div class="panel-kicker">ATLANTIS CITY · DEFENDER RESPONSE</div><p class="reference-copy">Engage without restriction: no Gunnery modifier applies. The Defender takes the printed −1 Reputation consequence outside the browser.</p></div>'
+          : '<div class="reference-section current-track-inputs"><div class="panel-kicker">ATLANTIS CITY · DEFENDER RESPONSE REQUIRED</div><p class="reference-copy">Choose the Defender’s response in Hot Spot Setup before applying tactical modifiers.</p></div>'
+      : "";
+    const capture = protectionTrackFourActive()
+      ? '<div class="reference-section current-track-inputs"><div class="panel-kicker">MOBILE HQ · CURRENT TRACK</div><p class="reference-copy">Kanagawa Group receives one additional Mobile HQ asset with Gunnery 4, Piloting 5, Alpha Strike Skill 4, and hover movement. If Platinum Sands holds it captured at the end of the final turn, the objective tracker credits all three Platinum Sands objectives and Platinum Sands alone successfully completes the track.</p><p class="reference-copy">Maximum combat bonus entitlement: 150 percent, or 750 Support Points per Scale. Combat-pay administration remains outside the browser.</p>' + renderProvisionalRules([hotSpot.contractReference.provisional[3]]) + '</div>'
+      : "";
+    return battlefieldEffect + capture;
+  }
   if (hotSpot.id === "pascagoula" && Number(step?.sequence) === 1) {
     return '<div class="reference-section current-track-inputs"><div class="panel-kicker">SPECIAL TACTICAL VICTORY</div><p class="reference-copy">Use Pascagoula’s special tactical victory condition to determine the Track 1 winner manually. The Objective Raid VP tracker remains available for objective scoring and does not select the tactical winner.</p>' + renderProvisionalRules(PASCAGOULA_PROVISIONAL_RULES) + '</div>';
   }
@@ -1500,7 +1590,11 @@ function objectiveControl(objective, side, display = objective) {
       display.vpOptions.map(value => '<option value="' + value + '"' + (getVp(display, side) === value ? " selected" : "") + ">" + value + " VP</option>").join("") +
       "</select>"
     : '<span class="vp-badge">' + display.vp + " VP" + (display.repeatable ? " each" : "") + "</span>";
-  const adjusted = daharGibberishApplies(side) ? '<span class="adjusted-vp">Earned after Complication 7: ' + objectiveEarnedVp(objective, side, display) + ' VP</span>' : "";
+  const adjusted = daharGibberishApplies(side)
+    ? '<span class="adjusted-vp">Earned after Complication 7: ' + objectiveEarnedVp(objective, side, display) + ' VP</span>'
+    : protectionCaptureOverride() && side === "attacker"
+      ? '<span class="adjusted-vp">Automatically credited by final-turn Mobile HQ capture; manual progress remains recorded below.</span>'
+      : "";
   if (objective.repeatable) {
     return '<div class="counter-control"><button type="button" class="counter-button" data-action="decrement" data-objective="' + esc(objective.id) + '" data-side="' + side + '" aria-label="Decrease ' + esc(display.name) + '">−</button>' +
       '<output>' + progress + '</output><button type="button" class="counter-button" data-action="increment" data-objective="' + esc(objective.id) + '" data-side="' + side + '" aria-label="Increase ' + esc(display.name) + '">+</button>' +
@@ -1514,6 +1608,7 @@ function renderTracker() {
   const resolved = resolvedHotSpotStep();
   const variant = resolved?.variant;
   const objectives = variant?.objectives || track?.objectives || [];
+  const displayedObjectives = resolved?.rolePending ? [] : objectives;
   const attackerSide = sideById(resolved?.attacker);
   const defenderSide = sideById(resolved?.defender);
   $("#tracker-source").textContent = track ? (variant?.sourceRefs?.join(" · ") || "Draconis Reach " + (track.pageRef || "p. " + track.page)) : currentHotSpot().source;
@@ -1532,7 +1627,11 @@ function renderTracker() {
   const extractionRow = track && pascagoulaExtractionRequired()
     ? '<tr class="prerequisite-row"><th scope="row"><div class="objective-title">Defender scoring prerequisite</div><div class="objective-rule">' + esc(variant?.defenderExtractionText || "At least one Ryu successfully extracted.") + '</div><div class="objective-vp">Orders remains available. Other Defender objectives score 0 VP until this is complete; recorded progress is preserved.</div></th><td class="attacker-col"><span class="not-applicable" aria-label="Not applicable">—</span></td><td class="defender-col"><label class="check-control"><input type="checkbox" data-pascagoula-ryu-extracted="true"' + (pascagoulaRyuExtracted() ? " checked" : "") + '><span class="checkmark"></span><span class="control-copy">' + (pascagoulaRyuExtracted() ? "Extracted" : "Not extracted") + '</span></label></td></tr>'
     : "";
-  $("#objective-body").innerHTML = track ? extractionRow + objectives.map(objective => {
+  const protectionCaptureRow = track && protectionTrackFourActive()
+    ? '<tr class="prerequisite-row protection-capture-row"><th scope="row"><div class="objective-title">Mobile HQ final-turn capture</div><div class="objective-rule">Platinum Sands holds the Mobile HQ captured at the end of the final turn.</div><div class="objective-vp">When checked, all three Platinum Sands objectives are credited for 450 effective VP and Platinum Sands alone successfully completes the track. Kanagawa Group progress is preserved.</div></th><td class="attacker-col"><label class="check-control"><input type="checkbox" data-protection-mobile-hq-captured="true"' + (protectionCaptureOverride() ? " checked" : "") + '><span class="checkmark"></span><span class="control-copy">' + (protectionCaptureOverride() ? "Captured" : "Not captured") + '</span></label></td><td class="defender-col"><span class="not-applicable" aria-label="Not applicable">—</span></td></tr>'
+    : "";
+  const pendingRoleRow = '<tr><th scope="row" colspan="3" class="pending-track">' + esc(resolved?.variant?.roleChoicePendingInstruction || "Select the Attacker to display objectives.") + '</th></tr>';
+  $("#objective-body").innerHTML = track ? (resolved?.rolePending ? pendingRoleRow : extractionRow + protectionCaptureRow + displayedObjectives.map(objective => {
     const display = displayObjective(objective, variant);
     const calculatedDeny = isReconDeny(objective);
     const objectiveText = display.text;
@@ -1543,7 +1642,7 @@ function renderTracker() {
     return '<tr><th scope="row"><div class="objective-title">' + esc(display.name) + '</div><div class="objective-rule">' + esc(objectiveText) + '</div><div class="objective-vp">' + vpLabel + "</div>" + projectionNote + "</th>" +
       '<td class="attacker-col">' + objectiveControl(objective, "attacker", display) + "</td>" +
       '<td class="defender-col">' + objectiveControl(objective, "defender", display) + "</td></tr>";
-  }).join("") :
+  }).join("")) :
     '<tr><th scope="row" colspan="3" class="pending-track">' + esc(resolved?.variant?.nonPlayable ? "This strategic hex cannot be entered and has no tactical objectives." : "Resolve the Hot Spot controls above to load the standard mission objectives.") + '</th></tr>';
   renderScore();
 }
@@ -1551,13 +1650,22 @@ function renderTracker() {
 function renderScore() {
   const attacker = trackScore("attacker");
   const defender = trackScore("defender");
+  const protectionOutcome = evaluateProtectionPursuit({
+    captureHeld: protectionCaptureOverride(),
+    attackerVp: attacker,
+    defenderVp: defender,
+    attackerObjectives: completedObjectiveCount("attacker"),
+    defenderObjectives: completedObjectiveCount("defender")
+  });
   const max = Math.max(attacker, defender, 1);
   $("#attacker-score").textContent = attacker.toLocaleString("en-US");
   $("#defender-score").textContent = defender.toLocaleString("en-US");
   $("#attacker-bar").style.width = (attacker / max * 100) + "%";
   $("#defender-bar").style.width = (defender / max * 100) + "%";
-  $("#score-difference").textContent = attacker === defender ? "Tie" : (attacker > defender ? "Attacker leads by " + (attacker - defender) : "Defender leads by " + (defender - attacker));
-  $("#score-difference").className = "difference " + (attacker === defender ? "tie" : attacker > defender ? "attacker-lead" : "defender-lead");
+  $("#score-difference").textContent = protectionOutcome.attackerSuccessful && protectionCaptureOverride()
+    ? "Platinum Sands successfully completes the track · Kanagawa Group does not"
+    : attacker === defender ? "Tie" : (attacker > defender ? "Attacker leads by " + (attacker - defender) : "Defender leads by " + (defender - attacker));
+  $("#score-difference").className = "difference " + (protectionCaptureOverride() ? "attacker-lead" : attacker === defender ? "tie" : attacker > defender ? "attacker-lead" : "defender-lead");
 }
 
 function renderAll() {
@@ -1576,6 +1684,7 @@ function resetTrack() {
   Object.keys(state.progress).filter(key => key.startsWith(prefix)).forEach(key => delete state.progress[key]);
   Object.keys(state.vpSelections).filter(key => key.startsWith(prefix)).forEach(key => delete state.vpSelections[key]);
   if (pascagoulaExtractionRequired()) delete state.tacticalInputs[pascagoulaExtractionKey()];
+  if (protectionTrackFourActive()) delete state.tacticalInputs[protectionCaptureKey()];
   renderAll();
 }
 
@@ -1967,6 +2076,12 @@ $("#objective-body").addEventListener("click", event => {
 
 $("#objective-body").addEventListener("change", event => {
   const input = event.target;
+  if (input.dataset.protectionMobileHqCaptured) {
+    state.tacticalInputs[protectionCaptureKey()] = input.checked;
+    renderTracker();
+    renderReference();
+    return;
+  }
   if (input.dataset.pascagoulaRyuExtracted) {
     state.tacticalInputs[pascagoulaExtractionKey()] = input.checked;
     renderTracker();
