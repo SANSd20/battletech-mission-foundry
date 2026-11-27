@@ -1,6 +1,6 @@
 export const SOURCES = {
   primary: "Hot Spots: Draconis Reach, First Printing, pp. 167–175",
-  errata: "Hot Spots: Draconis Reach official master errata thread (revision reviewed 11 November 2026; forum rechecked 26 November 2026)",
+  errata: "Hot Spots: Draconis Reach official master errata thread (revision reviewed 11 November 2026; forum rechecked 27 November 2026)",
   supersession: "Draconis Reach supersedes the supplied Hinterlands track text; Hinterlands track corrections are not applied to these records.",
   pascagoula: "Hot Spots: Draconis Reach, First Printing, pp. 103–107; Objective Raid p. 171; Pursuit p. 172; campaign withdrawal and exit rules p. 31; Mountains Terrain Table p. 150; Alpha Strike terrain p. 154; current Draconis Reach master errata",
   militaryPalette: "BattleTech Faction Colors, palettes/military-ui.yaml, verified main e3cd8c9c9899b04aebd314a2a921ad3edd4092f1",
@@ -35,6 +35,21 @@ export const RECON_DENY_ATTACKER_OBJECTIVE_IDS = Object.freeze([
 ]);
 
 export const RECON_DENY_VP_SCHEDULE = Object.freeze([300, 200, 100, 50, 0]);
+
+export function evaluateXhosaTruckOutcome(delivered = 0, stopped = 0) {
+  const boundedDelivered = Math.min(4, Math.max(0, Math.trunc(Number(delivered) || 0)));
+  const boundedStopped = Math.min(4 - boundedDelivered, Math.max(0, Math.trunc(Number(stopped) || 0)));
+  const resolved = boundedDelivered + boundedStopped === 4;
+  return {
+    delivered: boundedDelivered,
+    stopped: boundedStopped,
+    unresolved: 4 - boundedDelivered - boundedStopped,
+    federatedSunsTruckVp: boundedDelivered * 50,
+    draconisCombineTruckVp: boundedStopped * 50,
+    tacticalWinner: resolved ? (boundedDelivered >= 2 ? "federated-suns" : "draconis-combine") : null,
+    trackThreeBranch: resolved ? (boundedDelivered >= 2 ? "assault" : "strike") : null
+  };
+}
 
 export function calculateReconDenyVp(completedObjectiveIds = []) {
   const completed = new Set(completedObjectiveIds);
@@ -2587,23 +2602,64 @@ const tigressTrack2Variant = {
   sourceRefs: ["Tigress Track 2 pp. 116–119", "Meeting Engagement pp. 170–171", "Campaign Pilot Card p. 162", "Hills terrain pp. 150, 154–156", "Temporary Hires p. 29", "Command Complications pp. 30, 118", "Current Draconis Reach master errata"]
 };
 
-const xhosaCommandComplications = {
+export const XHOSA_PROVISIONAL_RULES = Object.freeze([
+  "Logistics trucks must exit through the Draconis Combine home edge—the Defender’s home edge—to count as delivered. This user-approved interpretation reconciles the printed Xhosa wording with standard Breakthrough and remains provisional pending official clarification.",
+  "For Roll Twice, apply the selecting force’s Command Rights modifier to both secondary rolls, resolve exactly two secondary results, reroll secondary Roll Twice and duplicate non-No Complication effects, accept duplicate No Complication results, and do not recurse."
+]);
+
+export const XHOSA_COMMAND_COMPLICATIONS = {
   ref: "Draconis Reach pp. 30, 123",
-  note: "Official campaign procedure: after the mapsheets are determined, each player rolls 1D6 to determine possible complications. Add 1 for Liaison Command, 2 for House Command, or 3 for Integrated Command. The browser displays the complete table without selecting or applying a complication automatically.",
+  note: "After battlefield determination, resolve each player separately and select every resulting effect. Operation Cold Relief uses House Command (+2); Reforged Honor uses Integrated Command (+3). Liaison is +1. The browser does not roll dice or select Command Rights.",
+  provisional: [XHOSA_PROVISIONAL_RULES[1]],
   rows: [
     { roll: "1–3", name: "No Complication", text: "No effect." },
-    { roll: "4", name: "Heavy snowfall", text: "Your forces must fight following a heavy snowfall before they can be properly prepped for the conditions. Reduce running speed by 1 MP (for Alpha Strike, reduce movement by 2 inches and TMM by 1), and halve the MP of Battlefield Support units." },
-    { roll: "5", name: "Active geothermal activity", text: "Steam from active geothermal activity causes havoc with sensors and energy weapons not properly calibrated to the conditions. Apply a +1 target number modifier to pulse and direct-fire energy weapons. For Alpha Strike, any unit with the ENE special ability receives the +1 target number modifier. Your opponent does not suffer these penalties unless they also roll this complication." },
-    { roll: "6", name: "Equipment malfunctions", text: "Harsh conditions result in major equipment malfunctions. Reduce the damage of all Battlefield Support Strikes by half, rounding down." },
-    { roll: "7", name: "Freezing Blizzard", text: "Your employer considers the blizzard of the century to be the best time to attack, ordering you into the field early. Increased heat dissipation applies to both sides; the range modification applies only to the player who rolled this complication. If both sides roll this complication, both sides receive the heat dissipation (not doubled) and both sides receive the range modification. BattleTech: units dissipate an extra 4 points of heat each turn. For your attacks only, double ranges when determining range modifiers—for example, a target 4 hexes away is treated as though it were 8 hexes away for range modifiers only. Damage and any other modifiers still use the unmodified range. Alpha Strike: units dissipate 1 heat from the heat scale each turn. For your attacks only, double ranges when determining range modifiers—for example, a target at range 4 inches is treated as if it were 8 inches away for a +2 target number modifier from medium range. Damage values use the actual range, so a unit with only 2/-/- attacking a target 4 inches away receives the medium-range modifier but may still attack with its short-range damage of 2." },
+    { roll: "4", name: "Heavy Snowfall", effectScope: "player-specific", text: "Affected force only. BattleTech: reduce running speed by 1 MP and halve the MP of Battlefield Support units. Alpha Strike: reduce movement by 2 inches and TMM by 1; preserve the source’s applicable Battlefield Support movement instruction." },
+    { roll: "5", name: "Geothermal Activity", effectScope: "player-specific", text: "Affected force only. Apply a +1 target number modifier to pulse and direct-fire energy weapons. In Alpha Strike, units with the ENE special ability receive the +1 target number modifier. The opponent is unaffected unless it independently receives this complication." },
+    { roll: "6", name: "Equipment Malfunctions", effectScope: "shared-battlefield", effectId: "xhosa-equipment-malfunctions", text: "Shared battlefield effect: reduce the damage of all Battlefield Support Strikes by half, rounding down. Do not apply this reduction to other attacks or other Battlefield Support assets." },
+    { roll: "7", name: "Freezing Blizzard", text: "Shared heat effect plus an affected-force range penalty. BattleTech: all units dissipate 4 additional heat each turn; for the affected force’s attacks, double range only when determining range modifiers. Alpha Strike: all units dissipate 1 heat from the heat scale each turn; for the affected force’s attacks, double range only when determining range modifiers. Damage and other modifiers use actual range. The shared heat benefit never doubles.", effects: [
+      { name: "Freezing Blizzard · Heat Dissipation", effectScope: "shared-battlefield", effectId: "xhosa-blizzard-heat", text: "Shared heat effect for both forces; never doubled. BattleTech: all units dissipate 4 additional heat each turn. Alpha Strike: all units dissipate 1 heat from the heat scale each turn." },
+      { name: "Freezing Blizzard · Range Penalty", effectScope: "player-specific", text: "Affected force only. Double range solely when determining attack range modifiers. Damage and every other modifier use actual range. In Alpha Strike, a target 4 inches away is treated as 8 inches away for the medium-range modifier, while damage still uses the actual short range." }
+    ] },
     { roll: "8+", name: "Roll Twice", text: "Roll twice and apply both effects. Do not reroll No Complication, but reroll any other duplicate effects." }
   ]
 };
 
-const xhosaMapsheetTable = [
-  "Official mapsheet table for every Operation Cold Relief track: roll 1D6. Results 1–2: Woodland (MP: Grasslands); for Alpha Strike, Woods.",
-  "Result 3–4: Scattered Woods (MP: Grasslands); for Alpha Strike, Woods. Result 5: Desert #3 (AGOAC); for Alpha Strike, Woods. Result 6: Badlands #1 (MP: Deserts); for Alpha Strike, Hills, Frozen Solid Ice."
+export const XHOSA_MAPSHEET_TABLE = Object.freeze({
+  title: "Xhosa VII Mapsheets · 1D6 · Reference only",
+  headers: ["Roll", "BattleTech mapsheet", "Alpha Strike terrain"],
+  rows: [
+    ["1–2", "Woodland (MP: Grasslands)", "Woods"],
+    ["3–4", "Scattered Woods (Mercenaries)", "Woods"],
+    ["5", "Desert #3 (AGOAC)", "Woods"],
+    ["6", "Badlands #1 (MP: Deserts)", "Hills · Frozen Solid Ice"]
+  ]
+});
+
+const xhosaBattlefieldRules = [
+  { text: "BattleTech mapsheets: roll 1D6 once for every mapsheet required. Scale 1 normally uses one mapsheet; Scales 2–3 normally use two. Any more-specific standard-track battlefield footprint takes precedence." },
+  { text: "Alpha Strike Woods results: at least half of the selected terrain pieces must be woods. Follow the general terrain-placement procedure on pp. 154–155." },
+  { text: "Alpha Strike result 6: at least half of the selected terrain pieces must be hills, and apply the Frozen Solid Ice environmental condition using the current Alpha Strike rules. The browser does not invent or automate that condition." }
 ];
+
+export const XHOSA_LOGISTICS_SUPPORT = Object.freeze([{
+  id: "xhosa-logistics-trucks",
+  title: "Four MASH Vehicles · Logistics Trucks",
+  association: "Track 2 · mandatory Federated Suns attacking-force support",
+  details: [
+    "These four additional scenario-provided vehicles represent relief-supply trucks and do not have the MASH special ability.",
+    "They enter through the Attacker’s home edge during the Movement Phase of Turn 1 under standard Breakthrough deployment.",
+    "Provisional delivery edge: the Draconis Combine home edge—the Defender’s home edge.",
+    "Score 50 VP per delivered truck for the Federated Suns or per destroyed, crippled, or otherwise prevented truck for the Draconis Combine. At least two delivered trucks wins Track 2 for the Federated Suns."
+  ],
+  source: "Draconis Reach pp. 122, 168–169 · approved provisional exit-edge interpretation"
+}]);
+
+export const XHOSA_TEMPORARY_HIRES = Object.freeze([
+  { id: "avery", name: "Avery", identity: "The Twins · one paired Temporary Hire", unit: "Wasp WSP-5A", bv: "517", pv: "17", gunnery: "4", piloting: "5", alphaStrikeSkill: "4", edge: "2", abilities: "No additional Special Pilot Ability is listed.", restriction: "Must be hired and fielded with Morgan. The pair costs 50 SP per participating track. If either Twin is killed, apply the printed paired-hire aftermath.", source: "Draconis Reach p. 123" },
+  { id: "morgan", name: "Morgan", identity: "The Twins · one paired Temporary Hire", unit: "Stinger STG-6G", bv: "503", pv: "18", gunnery: "4", piloting: "5", alphaStrikeSkill: "4", edge: "2", abilities: "No additional Special Pilot Ability is listed.", restriction: "Must be hired and fielded with Avery. The pair costs 50 SP per participating track. If both survive to contract end, both join the hiring force permanently at no additional cost.", source: "Draconis Reach p. 123" }
+]);
+
+const xhosaTemporaryHireNote = "The Twins are one paired hire, never independent choices. They first offer service when a mercenary force cannot field at least two-thirds of the next track’s maximum permissible BV/PV. General Temporary Hire eligibility, force limits, repairs, and replacement responsibilities on p. 29 still apply. If one Twin is killed, the survivor causes 200 SP of downtime damage before being brought down; if both survive contract end, both join permanently for free. Hiring, casualties, payments, damage, and roster changes remain outside the browser.";
 
 const xhosaCommonSpecialRules = [
   "Victory — official source rule: the winner of the final track is the victor of Operation Cold Relief.",
@@ -2620,11 +2676,18 @@ function xhosaVariant(trackId, extra = {}) {
     page: extra.page || 122,
     displayName: extra.displayName,
     summary: extra.summary,
-    setupDetails: [...xhosaMapsheetTable, ...(extra.setupDetails || [])],
+    setupDetails: [...(extra.setupDetails || [])],
     objectives,
     special: [...(base?.special || []), ...xhosaCommonSpecialRules, ...(extra.special || [])],
-    commandComplications: xhosaCommandComplications,
-    sourceRefs: ["Draconis Reach pp. 122–123", "Command complications procedure p. 30", "Current Draconis Reach master errata"]
+    commandComplications: XHOSA_COMMAND_COMPLICATIONS,
+    referenceTables: [XHOSA_MAPSHEET_TABLE],
+    battlefieldRules: xhosaBattlefieldRules,
+    battlefieldProvisional: [XHOSA_PROVISIONAL_RULES[0]],
+    tacticalSupport: extra.tacticalSupport,
+    temporaryHires: XHOSA_TEMPORARY_HIRES,
+    temporaryHireNote: xhosaTemporaryHireNote,
+    provisionalRules: XHOSA_PROVISIONAL_RULES,
+    sourceRefs: extra.sourceRefs || ["Draconis Reach pp. 120–123", base?.name + " " + (base?.pageRef || "p. " + base?.page), "Successful tracks and Temporary Hires p. 29", "Command Complications and terrain procedure p. 30", "Terrain pp. 150–156", "Current Draconis Reach master errata"]
   };
 
 }
@@ -2638,7 +2701,10 @@ const xhosaTrack2Objectives = [
     side: A,
     vp: 50,
     repeatable: true,
-    text: "Each of the four MASH vehicles representing the logistics trucks that successfully exits its home edge."
+    maxCount: 4,
+    combinedMax: 4,
+    combinedGroup: "xhosa-logistics-trucks",
+    text: "Each of the four logistics trucks that successfully exits through the Draconis Combine home edge—the Defender’s home edge."
   },
   {
     id: "stop-supply-trucks",
@@ -2646,7 +2712,10 @@ const xhosaTrack2Objectives = [
     side: D,
     vp: 50,
     repeatable: true,
-    text: "Each of the four MASH vehicles destroyed, crippled, or otherwise prevented from exiting its home edge."
+    maxCount: 4,
+    combinedMax: 4,
+    combinedGroup: "xhosa-logistics-trucks",
+    text: "Each of the four logistics trucks destroyed, crippled, or otherwise prevented from exiting through the Draconis Combine home edge—the Defender’s home edge."
   }
 ];
 
@@ -2662,11 +2731,12 @@ const xhosaTrack2Variant = xhosaVariant("breakthrough", {
   displayName: "Operation Cold Relief · Supply Breakthrough",
   summary: "Track 2 is a standard Breakthrough mission with four logistics trucks carrying relief supplies for the Federated Suns force.",
   objectives: xhosaTrack2Objectives,
+  tacticalSupport: XHOSA_LOGISTICS_SUPPORT,
   setupDetails: [
     "Official mission sequence: in the second month, supplies must be delivered. Play this as a Breakthrough with the Federated Suns as Attacker and the Draconis Combine as Defender.",
     "The Federated Suns receives four MASH vehicles to represent logistics trucks. These vehicles lack the MASH special ability.",
-    "The Federated Suns receives 50 VP for each logistics truck that successfully exits its home edge. The Draconis Combine receives 50 VP for each logistics truck destroyed, crippled, or otherwise prevented from exiting its home edge.",
-    "Track 2 result: if at least two of the four supply trucks pass through the Breakthrough, select Federated Suns as the Track 2 winner for Track 3; otherwise select Draconis Combine. The browser records this source-defined result through the Track 3 winner selector rather than inferring it automatically."
+    "Approved provisional exit edge: a logistics truck is delivered only by exiting through the Draconis Combine home edge—the Defender’s home edge. The Federated Suns receives 50 VP per delivered truck; the Draconis Combine receives 50 VP per truck destroyed, crippled, or otherwise prevented from delivery.",
+    "Track 2 result: after all four truck outcomes are resolved, at least two delivered trucks makes the Federated Suns the special tactical winner; zero or one makes the Draconis Combine the special tactical winner. Ordinary objective VP remains unchanged and is still used separately for successful-track completion and combat-pay adjudication."
   ]
 });
 
@@ -3537,16 +3607,40 @@ export const HOT_SPOTS = [
     id: "xhosa-vii",
     name: "Xhosa VII",
     region: "Federated Suns",
-    terrain: "Cold / Hills",
-    source: "Draconis Reach pp. 122–123",
+    terrain: "Woods",
+    source: "Draconis Reach pp. 120–123",
     note: "Operation Cold Relief is a three-track opposing contract. Track 1 is Recon, Track 2 is Breakthrough with four scored logistics trucks, and Track 3 resolves to Assault or Strike based on whether at least 50 percent of the trucks passed through Track 2.",
+    contractReference: {
+      summary: [
+        "Operation Cold Relief · Contract 200818A · Armed Forces of the Federated Suns—Department of Mercenary Relations · representative Captain Reginald Browne · Relief Duty · 3 months · Base Pay 100% (7) · Straight Support 100% (8) · Transportation 50% (7) · Exchange Salvage (3) · House Command (7).",
+        "Reforged Honor · Contract 200818B · Draconis Combine Mustered Soldiery—Professional Soldiery Liaison · supports the Forty-Fifth Benjamin Regulars under Sho-sa Yoshida · Invasion · 3 months · Base Pay 120% (9) · Straight Support 40% (3) · Transportation 0% (5) · Salvage 70% (10) · Integrated Command (3).",
+        "Xhosa VII · Federated Suns territory contested by the Draconis Combine · primary terrain Woods · Intensity 3. Either side may be represented by a player-controlled House force or Mercenary force.",
+        "Source: Hot Spots: Draconis Reach, First Printing, pp. 120–123; current official master errata."
+      ],
+      progression: [
+        "Month 1: Recon. Month 2: Breakthrough. Month 3: Assault when at least two trucks were delivered, otherwise Strike.",
+        "After the final track the fighting returns to stalemate. Mercenaries have fulfilled their contracts and may depart or renegotiate under the Random Contracts rules; a renegotiated contract is automatically a Retainer contract."
+      ],
+      tables: [{ title: "Bug ’Mech Options", headers: ["Unit", "BV", "PV"], rows: [["Stinger STG-4G", "541", "22"], ["Stinger STG-5G", "614", "17"], ["Stinger STG-6G", "503", "18"], ["Stinger STG-6R", "454", "18"], ["Wasp WSP-1S", "423", "15"], ["Wasp WSP-3M", "394", "12"], ["Wasp WSP-4W", "551", "14"], ["Wasp WSP-5A", "517", "17"]] }],
+      victory: ["The winner of the final track is the victor. The browser presents this rule as reference and does not administer contract victory."],
+      purchaseOptions: ["At the end of each track, roll 2D6. On 9+, one Wasp or Stinger variant is available, chosen by the player. On 11+, one ’Mech is available from the appropriate Federated Suns or Draconis Combine list based on the employer. The source does not expressly resolve whether overlapping thresholds create an additional purchase.", "If at least one ’Mech is available, the player may purchase vehicles or infantry from the corresponding House Tanker and Battle Armor Options Tables, up to two purchases of each per month. Purchases remain outside the browser. References: pp. 19, 22–23, 123."],
+      provisional: [XHOSA_PROVISIONAL_RULES[0]]
+    },
     sides: [factionSide("federated-suns", "Federated Suns", "Federated Suns"), factionSide("draconis-combine", "Draconis Combine", "Draconis Combine")],
     tracks: [
-      fixedHotSpotTrack(1, "recon", "federated-suns", "draconis-combine", { variant: xhosaTrack1Variant }),
-      fixedHotSpotTrack(2, "breakthrough", "federated-suns", "draconis-combine", { variant: xhosaTrack2Variant }),
+      fixedHotSpotTrack(1, "recon", "federated-suns", "draconis-combine", { label: "Track 1 · Recon", variant: xhosaTrack1Variant }),
+      fixedHotSpotTrack(2, "breakthrough", "federated-suns", "draconis-combine", { label: "Track 2 · Breakthrough", variant: xhosaTrack2Variant }),
       winnerDependentTrack(3, [2], {
-        "federated-suns": { trackId: "assault", attacker: "federated-suns", defender: "draconis-combine", variant: xhosaTrack3AssaultVariant },
-        "draconis-combine": { trackId: "strike", attacker: "draconis-combine", defender: "federated-suns", variant: xhosaTrack3StrikeVariant }
+        "0": { trackId: "strike", attacker: "draconis-combine", defender: "federated-suns", variant: xhosaTrack3StrikeVariant },
+        "1": { trackId: "strike", attacker: "draconis-combine", defender: "federated-suns", variant: xhosaTrack3StrikeVariant },
+        "2": { trackId: "assault", attacker: "federated-suns", defender: "draconis-combine", variant: xhosaTrack3AssaultVariant },
+        "3": { trackId: "assault", attacker: "federated-suns", defender: "draconis-combine", variant: xhosaTrack3AssaultVariant },
+        "4": { trackId: "assault", attacker: "federated-suns", defender: "draconis-combine", variant: xhosaTrack3AssaultVariant }
+      }, {
+        label: "Track 3 · Assault or Strike",
+        previousOutcomeLabel: "Resolved logistics trucks delivered in Track 2",
+        previousOutcomeHint: "Record the final delivered-truck count. Zero or one resolves Strike with the Draconis Combine as Attacker; two through four resolves Assault with the Federated Suns as Attacker.",
+        previousOutcomeOptions: [0, 1, 2, 3, 4].map(value => ({ value: String(value), label: value + " delivered truck" + (value === 1 ? "" : "s") }))
       })
     ]
   },
@@ -3619,6 +3713,6 @@ export const HOT_SPOTS = [
   }
 ];
 
-export const PLAYER_VISIBLE_HOT_SPOT_IDS = Object.freeze(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress"]);
+export const PLAYER_VISIBLE_HOT_SPOT_IDS = Object.freeze(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress", "xhosa-vii"]);
 
 

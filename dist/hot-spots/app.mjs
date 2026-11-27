@@ -1,4 +1,4 @@
-import { adjustDaharEarnedVp, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_PROVISIONAL_RULES, evaluateAltaVistaCampaign, evaluateProtectionPursuit, FACTION_COLORS, GENERAL_RULES, groupComplicationEffectEntries, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_PROVISIONAL_RULES, MISSION_OPFOR_OVERRIDES, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PASCAGOULA_PROVISIONAL_RULES, PLAYER_VISIBLE_HOT_SPOT_IDS, protectionPartisanSupport, RECON_DENY_ATTACKER_OBJECTIVE_IDS, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=sun-prairie";
+import { adjustDaharEarnedVp, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_PROVISIONAL_RULES, evaluateAltaVistaCampaign, evaluateProtectionPursuit, evaluateXhosaTruckOutcome, FACTION_COLORS, GENERAL_RULES, groupComplicationEffectEntries, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_PROVISIONAL_RULES, MISSION_OPFOR_OVERRIDES, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PASCAGOULA_PROVISIONAL_RULES, PLAYER_VISIBLE_HOT_SPOT_IDS, protectionPartisanSupport, RECON_DENY_ATTACKER_OBJECTIVE_IDS, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=xhosa-vii";
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -124,7 +124,7 @@ function currentHotSpot() {
 
 const approvedHotSpotIds = new Set(PLAYER_VISIBLE_HOT_SPOT_IDS);
 const VISIBLE_HOT_SPOTS = HOT_SPOTS.filter(hotSpot => approvedHotSpotIds.has(hotSpot.id));
-const interactiveComplicationContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress"]);
+const interactiveComplicationContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress", "xhosa-vii"]);
 
 function complicationRowKey(row, index) {
   return "effect-" + index + "-" + row.roll;
@@ -221,7 +221,7 @@ function sideById(sideId) {
   return side;
 }
 
-const simplifiedContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress"]);
+const simplifiedContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress", "xhosa-vii"]);
 
 function generatedOpForConfiguration() {
   const hotSpot = currentHotSpot();
@@ -230,7 +230,7 @@ function generatedOpForConfiguration() {
   const opposing = hotSpot.sides.find(side => side.id !== selected?.id) || null;
   let choices = [];
   let faction = opposing?.faction;
-  if (hotSpot.id === "le-blanc") {
+  if (["le-blanc", "xhosa-vii"].includes(hotSpot.id)) {
     choices = [{ value: "house", label: "House Military" }, { value: "mercenary", label: "Mercenary" }];
     const type = state.opforForceTypes[hotSpot.id + "::" + opposing?.id] || "house";
     faction = type === "mercenary" ? "Mercenary" : opposing?.faction;
@@ -794,8 +794,31 @@ function getProgress(objective, side) {
   return state.progress[key];
 }
 
+function currentObjectives() {
+  const track = currentTrack();
+  const variant = resolvedHotSpotStep()?.variant;
+  return variant?.objectives || track?.objectives || [];
+}
+
+function combinedObjectiveProgress(objective) {
+  if (!objective.combinedGroup) return 0;
+  return currentObjectives()
+    .filter(item => item.combinedGroup === objective.combinedGroup)
+    .reduce((total, item) => total + Number(getProgress(item, item.side)), 0);
+}
+
 function setProgress(objective, side, value) {
-  state.progress[progressKey(state.trackId, objective.id, side)] = objective.repeatable ? Math.min(objective.maxCount ?? Infinity, Math.max(0, Number(value) || 0)) : Boolean(value);
+  if (!objective.repeatable) {
+    state.progress[progressKey(state.trackId, objective.id, side)] = Boolean(value);
+    return;
+  }
+  let maximum = objective.maxCount ?? Infinity;
+  if (objective.combinedGroup && Number.isFinite(objective.combinedMax)) {
+    const current = Number(getProgress(objective, side));
+    const otherTotal = combinedObjectiveProgress(objective) - current;
+    maximum = Math.min(maximum, Math.max(0, objective.combinedMax - otherTotal));
+  }
+  state.progress[progressKey(state.trackId, objective.id, side)] = Math.min(maximum, Math.max(0, Number(value) || 0));
 }
 
 function getVp(objective, side) {
@@ -1027,7 +1050,7 @@ function renderHotSpotSetup() {
     const previousStep = hotSpot.tracks.find(item => item.sequence === sequence);
     const options = step.previousOutcomeOptions || hotSpot.sides.map(side => ({ value: side.id, label: side.name }));
     const label = step.previousOutcomeLabel || "Winner of Track " + sequence;
-    const placeholder = step.previousOutcomeOptions ? "Choose Yes or No" : "Choose the previous winner";
+    const placeholder = step.previousOutcomePlaceholder || (step.previousOutcomeOptions ? "Choose the resolved result" : "Choose the previous winner");
     const hint = step.previousOutcomeHint || (previousStep?.label || "Previous track") + " determines this mission.";
     winnerControls.push('<div class="control-group"><label for="winner-' + sequence + '">' + esc(label) + '</label><select id="winner-' + sequence + '" data-winner-sequence="' + sequence + '"><option value="">' + esc(placeholder) + '</option>' + options.map(option => '<option value="' + esc(option.value) + '"' + (selectedWinner(sequence) === option.value ? " selected" : "") + '>' + esc(option.label) + "</option>").join("") + '</select><span class="control-hint">' + esc(hint) + "</span></div>");
   }
@@ -1298,6 +1321,10 @@ function activeComplicationExtras(profile) {
   return "";
 }
 
+function complicationEffectRows(row) {
+  return row.effects?.length ? row.effects.map(effect => ({ ...row, ...effect, effects: undefined })) : [row];
+}
+
 function renderActiveComplications(profile, selection) {
   const sharedNames = new Set(["Sandstorm", "Heatwave", "Unexpected Sandstorm", "Heavy Rainfall"]);
   const effectEntries = [];
@@ -1310,12 +1337,14 @@ function renderActiveComplications(profile, selection) {
     if (isNoComplicationRow(row)) continue;
     for (const selector of selectors) {
       const side = row.fixedRecipientId ? profile.participants.find(item => item.id === row.fixedRecipientId) || selector : selector;
-      const sharedEffectId = row.effectScope === "shared-battlefield"
-        ? row.effectId
-        : sharedNames.has(row.name) || (profile.hotSpot.id === "achernar" && row.name === "Republic Spider" && selectors.length > 1)
-          ? profile.hotSpot.id + "::" + row.name
-          : null;
-      effectEntries.push({ row, side, sharedEffectId });
+      for (const effectRow of complicationEffectRows(row)) {
+        const sharedEffectId = effectRow.effectScope === "shared-battlefield"
+          ? effectRow.effectId
+          : sharedNames.has(effectRow.name) || (profile.hotSpot.id === "achernar" && effectRow.name === "Republic Spider" && selectors.length > 1)
+            ? profile.hotSpot.id + "::" + effectRow.name
+            : null;
+        effectEntries.push({ row: effectRow, side, sharedEffectId });
+      }
     }
   }
   const effects = groupComplicationEffectEntries(effectEntries);
@@ -1348,7 +1377,13 @@ function renderInteractiveComplications(profile) {
           : null;
       for (const selector of selectors) {
         const side = row.fixedRecipientId ? profile.participants.find(item => item.id === row.fixedRecipientId) || selector : selector;
-        entries.push({ row, side, sharedEffectId });
+        for (const effectRow of complicationEffectRows(row)) {
+          entries.push({
+            row: effectRow,
+            side,
+            sharedEffectId: effectRow.effectScope === "shared-battlefield" ? effectRow.effectId : sharedEffectId
+          });
+        }
       }
       return entries;
     }, []);
@@ -1517,6 +1552,15 @@ function renderNewIvaarsenTacticalReference() {
 function renderCurrentTrackInputs() {
   const hotSpot = currentHotSpot();
   const step = currentHotSpotStep();
+  if (hotSpot.id === "xhosa-vii" && Number(step?.sequence) === 2) {
+    const deliveredObjective = currentObjectives().find(item => item.id === "supply-trucks-exit");
+    const stoppedObjective = currentObjectives().find(item => item.id === "stop-supply-trucks");
+    const outcome = evaluateXhosaTruckOutcome(getProgress(deliveredObjective, "attacker"), getProgress(stoppedObjective, "defender"));
+    const status = outcome.unresolved
+      ? outcome.unresolved + " truck outcome" + (outcome.unresolved === 1 ? " remains" : "s remain") + " unresolved. Current counts are provisional during play."
+      : (outcome.tacticalWinner === "federated-suns" ? "Federated Suns" : "Draconis Combine") + " is the special Track 2 tactical winner; Track 3 resolves to " + (outcome.trackThreeBranch === "assault" ? "Assault" : "Strike") + ".";
+    return '<div class="reference-section current-track-inputs"><div class="panel-kicker">LOGISTICS TRUCK OUTCOME · CURRENT TRACK</div><p class="reference-copy"><strong>Delivered: ' + outcome.delivered + ' · Prevented: ' + outcome.stopped + ' · Unresolved: ' + outcome.unresolved + '</strong></p><p class="reference-copy">' + esc(status) + ' Ordinary objective VP remains unchanged and separately governs general successful-track completion and combat-pay adjudication.</p>' + renderProvisionalRules([resolvedHotSpotStep()?.variant?.provisionalRules?.[0]].filter(Boolean)) + '</div>';
+  }
   if (hotSpot.id === "tigress" && Number(step?.sequence) === 1) {
     const training = state.tigressPhase === "training";
     return '<div class="reference-section current-track-inputs tigress-phase-control"><div class="panel-kicker">TRACK 1 · CURRENT PHASE</div><label><span>Tabletop phase</span><select data-tigress-phase="true"><option value="training"' + (training ? ' selected' : '') + '>Training — Meeting Engagement</option><option value="recon"' + (!training ? ' selected' : '') + '>Actual Roughriders arrived — Recon Turn 1</option></select></label><p class="reference-copy">' + esc(training ? "Record the transition only when the actual Roughriders arrive. Training objective progress is preserved and Meeting Engagement’s normal ending conditions do not end Track 1 before the scheduled arrival." : "Start a new Recon clock at Recon Turn 1. Legion Trainers’ retained training VP and completed training objectives are preserved separately; the phase can be corrected without duplicating score.") + '</p>' + renderProvisionalRules(hotSpot.contractReference.provisional.slice(1)) + '</div>';
@@ -1675,8 +1719,10 @@ function objectiveControl(objective, side, display = objective) {
       ? '<span class="adjusted-vp">Automatically credited by final-turn Mobile HQ capture; manual progress remains recorded below.</span>'
       : "";
   if (objective.repeatable) {
-    return '<div class="counter-control"><button type="button" class="counter-button" data-action="decrement" data-objective="' + esc(objective.id) + '" data-side="' + side + '" aria-label="Decrease ' + esc(display.name) + '">−</button>' +
-      '<output>' + progress + '</output><button type="button" class="counter-button" data-action="increment" data-objective="' + esc(objective.id) + '" data-side="' + side + '" aria-label="Increase ' + esc(display.name) + '">+</button>' +
+    const atIndividualMaximum = Number(progress) >= (objective.maxCount ?? Infinity);
+    const atCombinedMaximum = objective.combinedGroup && Number.isFinite(objective.combinedMax) && combinedObjectiveProgress(objective) >= objective.combinedMax;
+    return '<div class="counter-control"><button type="button" class="counter-button" data-action="decrement" data-objective="' + esc(objective.id) + '" data-side="' + side + '" aria-label="Decrease ' + esc(display.name) + '"' + (Number(progress) <= 0 ? " disabled" : "") + '>−</button>' +
+      '<output>' + progress + '</output><button type="button" class="counter-button" data-action="increment" data-objective="' + esc(objective.id) + '" data-side="' + side + '" aria-label="Increase ' + esc(display.name) + '"' + (atIndividualMaximum || atCombinedMaximum ? " disabled" : "") + '>+</button>' +
       '<span class="counter-label">completed</span></div>' + vpControl + adjusted;
   }
   return '<label class="check-control"><input type="checkbox" data-action="toggle" data-objective="' + esc(objective.id) + '" data-side="' + side + '"' + (progress ? " checked" : "") + '><span class="checkmark"></span><span class="control-copy">' + (progress ? "Complete" : "Open") + "</span></label>" + vpControl + adjusted;
@@ -2155,13 +2201,14 @@ $("#reset-button").addEventListener("click", () => {
 $("#objective-body").addEventListener("click", event => {
   const button = event.target.closest("[data-action]");
   if (!button || button.dataset.action === "toggle") return;
-  const objective = currentTrack()?.objectives.find(item => item.id === button.dataset.objective);
+  const objective = currentObjectives().find(item => item.id === button.dataset.objective);
   if (!objective) return;
   const side = button.dataset.side;
   const current = Number(getProgress(objective, side));
   setProgress(objective, side, current + (button.dataset.action === "increment" ? 1 : -1));
   if (currentHotSpot().id === "dahar-iv") daharMissionState().finalized = false;
   renderTracker();
+  if (currentHotSpot().id === "xhosa-vii") renderReference();
   if (["dahar-iv", "le-blanc", "lucerne"].includes(currentHotSpot().id)) renderCampaignState();
 });
 
@@ -2178,7 +2225,7 @@ $("#objective-body").addEventListener("change", event => {
     renderTracker();
     return;
   }
-  const objective = currentTrack()?.objectives.find(item => item.id === input.dataset.objective);
+  const objective = currentObjectives().find(item => item.id === input.dataset.objective);
   if (!objective) return;
   const side = input.dataset.side || input.dataset.vpSide;
   if (input.dataset.action === "toggle") setProgress(objective, side, input.checked);
