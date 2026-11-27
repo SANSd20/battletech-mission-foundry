@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { adjustDaharEarnedVp, achernarInitialDefectors, ALTA_VISTA_COMMAND_COMPLICATIONS, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_MAPSHEET_TABLE, DAHAR_PROVISIONAL_RULES, DAHAR_TRACK_RESULTS, evaluateAltaVistaCampaign, evaluateProtectionPursuit, FACTION_COLORS, GENERAL_RULES, groupComplicationEffectEntries, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_MAPSHEET_TABLE, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LE_BLANC_TEMPORARY_HIRES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_MAPSHEET_TABLE, LUCERNE_PROVISIONAL_RULES, LUCERNE_TEMPORARY_HIRES, LUCERNE_TRACK_RESULTS, MELCHER_BLACK_MARKET, MELCHER_COMMAND_COMPLICATIONS, MELCHER_GRASSLANDS_MAPSHEETS, MELCHER_TEMPORARY_HIRES, MISSION_OPFOR_OVERRIDES, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_COMMAND_COMPLICATIONS, NEW_IVAARSEN_LIGHT_URBAN_MAPSHEETS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PASCAGOULA_COMMAND_COMPLICATIONS, PASCAGOULA_MOUNTAINS_MAPSHEETS, PASCAGOULA_PROVISIONAL_RULES, PLAYER_VISIBLE_HOT_SPOT_IDS, PROTECTION_ATLANTIS_MAPSHEETS, PROTECTION_COMMAND_COMPLICATIONS, PROTECTION_PROVISIONAL_RULES, PROTECTION_STANDARD_MAPSHEETS, PROTECTION_TEMPORARY_HIRES, protectionPartisanSupport, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
+import { SUN_PRAIRIE_COMMAND_COMPLICATIONS, SUN_PRAIRIE_MAPSHEET_TABLE, SUN_PRAIRIE_TACTICAL_SUPPORT, SUN_PRAIRIE_TEMPORARY_HIRES } from "../dist/hot-spots/data.mjs";
 
 const expected = ["Assault", "Breakthrough", "Defend", "Flank", "Meeting Engagement", "Objective Raid", "Pursuit", "Pushback", "Recon", "Retreat", "Strike"];
 assert.deepEqual(TRACKS.map(track => track.name), expected, "all eleven Draconis Reach standard tracks are present");
@@ -544,48 +545,47 @@ assert.match(protectionTrack4.sourceRefs.join(" "), /Draconis Reach pp\. 108–1
 for (const term of ["protectionCaptureOverride", "data-protection-mobile-hq-captured", "Automatically credited by final-turn Mobile HQ capture", "Platinum Sands successfully completes the track", "protectionPartisanSupport", "Same-player Local Partisans \+ Monsoon interaction", '"protection"']) {
   assert.ok(app.includes(term), term + " Protection interaction is wired into the browser");
 }
-assert.ok(app.includes('interactiveComplicationContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection"])'));
-assert.ok(app.includes('simplifiedContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection"])'));
+assert.ok(app.includes('interactiveComplicationContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie"])'));
+assert.ok(app.includes('simplifiedContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie"])'));
 assert.doesNotMatch(TRACKS.find(track => track.id === "recon").special.join(" "), /Level 0 ground as Level 0 water/);
 assert.doesNotMatch(TRACKS.find(track => track.id === "pursuit").special.join(" "), /Mobile HQ/);
 const sunPrairie = HOT_SPOTS.find(item => item.id === "sun-prairie");
 assert.equal(sunPrairie.source, "Draconis Reach pp. 113–115");
-assert.match(sunPrairie.note, /two 1D6 results/);
+assert.match(sunPrairie.note, /Select the current tactical track directly/);
 assert.equal(sunPrairie.tracks.length, 5);
+assert.deepEqual(sunPrairie.tracks.map(track => [track.label, track.trackId, track.attacker, track.defender]), [["Breakthrough", "breakthrough", "raid", "garrison"], ["Objective Raid", "objective-raid", "raid", "garrison"], ["Strike", "strike", "raid", "garrison"], ["Recon", "recon", "garrison", "raid"], ["Meeting Engagement", "meeting-engagement", "garrison", "raid"]], "Sun Prairie exposes exactly five direct playable tracks with fixed roles");
+assert.equal(sunPrairie.tracks.every(track => !track.results), true, "Sun Prairie has no artificial numbered slots or nested result selectors");
+assert.deepEqual(sunPrairie.sides.map(side => [side.id, side.faction, side.employerAlignment]), [["garrison", "Mercenary", "Federated Suns"], ["raid", "Mercenary", "Draconis Combine"]], "employer alignment remains separate from both Mercenary force classifications");
+assert.match(sunPrairie.contractReference.summary.join(" "), /105070A.*Baron Elias Navarro.*three months.*100 percent \(7\).*Battle Support \/ 30 percent \(11\).*Liaison Command \(8\)/);
+assert.match(sunPrairie.contractReference.summary.join(" "), /105070B.*Tai-sa Roland Samuels.*Independent Command \(11\).*combat pay is doubled/i);
+assert.match(sunPrairie.contractReference.progression.join(" "), /two independent 1D6.*duplicate produces no track.*result of 6 produces no track/i);
+assert.deepEqual(sunPrairie.contractReference.tables[0].rows.map(row => row[1]), ["Breakthrough", "Objective Raid", "Strike", "Recon", "Meeting Engagement", "No Track"]);
+assert.match(sunPrairie.contractReference.victory.join(" "), /two played tracks in a row.*final totals are tied.*both are victorious.*neither is victorious/i);
+assert.match(sunPrairie.contractReference.purchaseOptions.join(" "), /7\+.*11\+.*Federated Suns Purchase Options Table.*two vehicles and two battle armor/i);
+assert.match(sunPrairie.contractReference.provisional.join(" "), /same or different months.*Duplicate and No Track rolls do not interrupt.*without successful completion interrupts/i);
 for (const sunPrairieTrack of sunPrairie.tracks) {
-  assert.equal(sunPrairieTrack.results.length, 6, "Sun Prairie exposes six source results for each displayed track sequence");
-  const variantResults = sunPrairieTrack.results.filter(result => result.trackId);
-  assert.equal(variantResults.length, 5);
-  for (const result of variantResults) {
-    assert.equal(result.variant.commandComplications.rows.length, 6, "Sun Prairie mission results include the complete Command Complications table");
-    assert.deepEqual(result.variant.sourceRefs, ["Draconis Reach pp. 113–115", "Current Draconis Reach master errata"]);
-  }
+  assert.equal(sunPrairieTrack.variant.commandComplications, SUN_PRAIRIE_COMMAND_COMPLICATIONS);
+  assert.equal(sunPrairieTrack.variant.referenceTables[0], SUN_PRAIRIE_MAPSHEET_TABLE);
+  assert.equal(sunPrairieTrack.variant.temporaryHires, SUN_PRAIRIE_TEMPORARY_HIRES);
+  assert.equal(sunPrairieTrack.variant.tacticalSupport, SUN_PRAIRIE_TACTICAL_SUPPORT);
+  assert.match(sunPrairieTrack.variant.sourceRefs.join(" "), new RegExp(TRACKS.find(track => track.id === sunPrairieTrack.trackId).name + " (?:p\\.|pp\\.)"));
+  assert.match(sunPrairieTrack.variant.setupDetails.join(" "), /Scale 1 normally uses one mapsheet.*Scales 2–3 normally use two.*specific selected-track battlefield footprint takes precedence/i);
+  assert.match(sunPrairieTrack.variant.setupDetails.join(" "), /Alpha Strike terrain.*48 inches across.*36 inches at Scale 1.*48 inches at Scales 2–3.*allowance to four/i);
 }
-const sunPrairieVariant = sunPrairie.tracks[0].results[0].variant;
-assert.match(sunPrairieVariant.setupDetails.join(" "), /first 1D6 determines the first track/);
-assert.match(sunPrairieVariant.setupDetails.join(" "), /duplicate track result produces no track/);
-assert.match(sunPrairieVariant.setupDetails.join(" "), /all six rolls.*1s/);
-assert.match(sunPrairieVariant.setupDetails.join(" "), /Open Terrain #2/);
-assert.match(sunPrairieVariant.setupDetails.join(" "), /Rolling Hills #3/);
-assert.match(sunPrairieVariant.setupDetails.join(" "), /Forward Base/);
-assert.match(sunPrairieVariant.special.join(" "), /two tracks in a row/);
-assert.match(sunPrairieVariant.special.join(" "), /Temporary Hire/);
-assert.match(sunPrairieVariant.special.join(" "), /Prairie Rangers offer four Veteran motorized platoons/);
-assert.match(sunPrairieVariant.special.join(" "), /Phillips Watson pilots a Dragon Fire DGR-6FC/);
-assert.doesNotMatch(sunPrairieVariant.special.join(" "), /Philips Wilson/);
-assert.match(sunPrairieVariant.special.join(" "), /Federated Suns Purchase Options Table/);
-assert.match(sunPrairieVariant.commandComplications.note, /each player rolls 1D6/);
-assert.deepEqual(sunPrairieVariant.commandComplications.rows.map(row => row.roll), ["1", "2–3", "4–5", "6", "7", "8+"]);
-assert.deepEqual(sunPrairieVariant.commandComplications.rows.map(row => row.name), ["Lostech cache found!", "No Complication", "Opportunism and rumors of treasure", "Uneven footing / ghost town rubble", "Tinderbox conditions", "Roll twice and apply both effects"]);
-assert.match(sunPrairieVariant.commandComplications.rows[0].text, /additional 100 SP/);
-assert.match(sunPrairieVariant.commandComplications.rows[2].text, /first two turns/);
-assert.match(sunPrairieVariant.commandComplications.rows[3].text, /6 rubble hexes/);
-assert.match(sunPrairieVariant.commandComplications.rows[4].text, /5 heat/);
-assert.match(sunPrairieVariant.commandComplications.rows[4].text, /light smoke/);
-assert.match(sunPrairieVariant.commandComplications.rows[5].text, /Ignore and do not reroll duplicate effects/);
-const sunPrairieNone = sunPrairie.tracks[0].results.find(result => result.id === "none");
-assert.equal(sunPrairieNone.trackId, null, "Sun Prairie result 6 remains a no-track result");
-assert.equal(sunPrairieNone.variant, undefined, "Sun Prairie no-track result does not apply mission rules automatically");
+assert.deepEqual(SUN_PRAIRIE_MAPSHEET_TABLE.rows.map(row => row[1]), ["Open Terrain #2", "Open Terrain #3", "Rolling Hills #3", "Rolling Hills #3", "Lakes", "Forward Base"]);
+assert.deepEqual(SUN_PRAIRIE_COMMAND_COMPLICATIONS.rows.map(row => row.name), ["Lostech Cache", "No Complication", "Battlefield Confusion", "Rubble", "Fire and Smoke", "Roll Twice"]);
+assert.match(SUN_PRAIRIE_COMMAND_COMPLICATIONS.rows[0].text, /successfully completes.*additional 100 SP/i);
+assert.match(SUN_PRAIRIE_COMMAND_COMPLICATIONS.rows[2].text, /−2 Initiative.*first two turns/i);
+assert.deepEqual([SUN_PRAIRIE_COMMAND_COMPLICATIONS.rows[3].effectScope, SUN_PRAIRIE_COMMAND_COMPLICATIONS.rows[3].supportOnly], ["opposing-placement", true]);
+assert.deepEqual([SUN_PRAIRIE_COMMAND_COMPLICATIONS.rows[4].effectScope, SUN_PRAIRIE_COMMAND_COMPLICATIONS.rows[4].effectId], ["shared-battlefield", "sun-prairie-fire-smoke"]);
+assert.match(SUN_PRAIRIE_COMMAND_COMPLICATIONS.rows[4].text, /light smoke.*5 heat.*2 heat.*1 heat.*\+1 target number/is);
+assert.match(SUN_PRAIRIE_COMMAND_COMPLICATIONS.provisional.join(" "), /exactly two secondary.*ignore secondary Roll Twice.*without rerolling or recursing/i);
+assert.deepEqual(SUN_PRAIRIE_TEMPORARY_HIRES.map(hire => [hire.name, hire.unit, hire.bv, hire.pv, hire.gunnery, hire.piloting, hire.alphaStrikeSkill, hire.edge]), [["Phillips Watson", "Dragon Fire DGR-6FC", "1,858", "43", "3", "3", "3", "4"]]);
+assert.match(SUN_PRAIRIE_TEMPORARY_HIRES[0].restriction, /Raid only.*100 SP.*50 SP.*more than one location.*more than 1 structure damage/i);
+assert.match(SUN_PRAIRIE_TACTICAL_SUPPORT[0].details.join(" "), /four Veteran motorized platoons.*496 BV \/ 48 PV.*four Veteran motorized conventional Infantry.*50 SP per participating track/i);
+assert.doesNotMatch(JSON.stringify(sunPrairie), /Philips Wilson|Steve requests/);
+for (const term of ["places rubble", "places fire", "Shared fire and smoke rules are displayed once above", "renderTacticalSupport(referenceTrack.tacticalSupport)"]) assert.ok(app.includes(term), term + " is wired into Sun Prairie gameplay reference");
+assert.match(app, /profile\.hotSpot\.id === "sun-prairie"[\s\S]*firePlacements[\s\S]*displayedCount \+= firePlacements/, "Sun Prairie collapsed complication summaries count the shared fire condition and independent placement entitlements");
 const tigress = HOT_SPOTS.find(item => item.id === "tigress");
 assert.equal(tigress.source, "Draconis Reach pp. 118–119");
 assert.match(tigress.note, /Meeting Engagement training mission/);
@@ -783,7 +783,7 @@ const malloryPlayableTracks = mallory.tracks.filter(track => track.trackId);
 assert.equal(malloryPlayableTracks.length, 13, "Mallory’s World exposes all 13 playable strategic hex types");
 assert.deepEqual([
   protection.tracks[0].trackId,
-  sunPrairie.tracks[0].results.find(result => result.id === "recon").trackId,
+  sunPrairie.tracks.find(track => track.trackId === "recon").trackId,
   tigress.tracks[0].trackId,
   xhosa.tracks[0].trackId,
   mallory.tracks[0].trackId
@@ -1155,7 +1155,7 @@ assert.match(app, /Eclipse Expeditions Special Operations.*Guildmaster Phil News
 assert.match(app, /both participating forces are Mercenary.*Mercenary\/Pirate OpFor table/i);
 assert.match(app, /same completed-objective|Current score: Attacker|currently successfully completes the track/);
 assert.match(app, /renderTemporaryHires\(referenceTrack\.temporaryHires, referenceTrack\.temporaryHireNote\)/, "Temporary Hire cards accept contract-aware hiring guidance");
-assert.match(html, /app\.mjs\?v=protection/, "Hot Spots uses the Protection asset cache key");
+assert.match(html, /app\.mjs\?v=sun-prairie/, "Hot Spots uses the Sun Prairie asset cache key");
 assert.ok(css.includes("campaign-field input") && css.includes("hire-card-grid") && css.includes("@media"), "Lucerne controls and reused Temporary Hire cards retain responsive styling");
 
 assert.match(html, /<details[^>]+id="hotspot-setup"[^>]+open>/, "Hot Spot Setup starts expanded");
@@ -1200,7 +1200,7 @@ assert.match(app, /\$\("#hotspot-setup"\)\.addEventListener\("change"/, "complic
 assert.doesNotMatch(renderOpForBody, /data-complication-choice/, "generated OpFor rendering remains separate from complication selection");
 assert.ok(css.includes("setup-configuration-card") && css.includes("complication-selection-status"), "battlefield and complication setup remain responsive and visibly grouped");
 
-assert.deepEqual(PLAYER_VISIBLE_HOT_SPOT_IDS, ["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection"], "only completed and verified contracts are player-visible in source order");
+assert.deepEqual(PLAYER_VISIBLE_HOT_SPOT_IDS, ["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie"], "only completed and verified contracts are player-visible in source order");
 assert.equal(PLAYER_VISIBLE_HOT_SPOT_IDS.every(id => HOT_SPOTS.some(hotSpot => hotSpot.id === id)), true, "every visible contract retains its source data");
 assert.equal(HOT_SPOTS.some(hotSpot => hotSpot.id === "new-ivaarsen"), true, "New Ivaarsen contract data is available to the verified-location filter");
 assert.match(app, /const VISIBLE_HOT_SPOTS = HOT_SPOTS\.filter/, "the browser uses one centralized approved-location filter");
@@ -1221,7 +1221,7 @@ assert.deepEqual(MELCHER_GRASSLANDS_MAPSHEETS.map(row => row[2]), ["BB", "AGOAC"
 assert.equal(MELCHER_BLACK_MARKET.length, 11, "Melcher includes all Black Market AgroMech results");
 assert.equal(MELCHER_COMMAND_COMPLICATIONS.rows.length, 5, "Melcher includes the full resolved Command Complications bracket");
 assert.equal(MELCHER_TEMPORARY_HIRES.length, 2, "Melcher includes both named temporary hires");
-assert.match(app, /"melcher", "new-ivaarsen", "pascagoula", "protection"\]\);/, "Melcher, New Ivaarsen, Pascagoula, and Protection use the shared interactive complication and simplified OpFor workflows");
+assert.match(app, /"melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie"\]\);/, "Melcher through Sun Prairie use the shared interactive complication and simplified OpFor workflows");
 assert.match(app, /Math\.min\(objective\.maxCount \?\? Infinity/, "repeatable objectives honor source-defined maximum counts");
 const hotSpotsHeader = html.match(/<header class="topbar">[\s\S]*?<\/header>/)?.[0] || "";
 const coreHeader = coreHtml.match(/<header class="topbar">[\s\S]*?<\/header>/)?.[0] || "";

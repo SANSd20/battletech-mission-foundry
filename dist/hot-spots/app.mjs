@@ -1,4 +1,4 @@
-import { adjustDaharEarnedVp, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_PROVISIONAL_RULES, evaluateAltaVistaCampaign, evaluateProtectionPursuit, FACTION_COLORS, GENERAL_RULES, groupComplicationEffectEntries, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_PROVISIONAL_RULES, MISSION_OPFOR_OVERRIDES, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PASCAGOULA_PROVISIONAL_RULES, PLAYER_VISIBLE_HOT_SPOT_IDS, protectionPartisanSupport, RECON_DENY_ATTACKER_OBJECTIVE_IDS, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=protection";
+import { adjustDaharEarnedVp, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_PROVISIONAL_RULES, evaluateAltaVistaCampaign, evaluateProtectionPursuit, FACTION_COLORS, GENERAL_RULES, groupComplicationEffectEntries, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_PROVISIONAL_RULES, MISSION_OPFOR_OVERRIDES, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PASCAGOULA_PROVISIONAL_RULES, PLAYER_VISIBLE_HOT_SPOT_IDS, protectionPartisanSupport, RECON_DENY_ATTACKER_OBJECTIVE_IDS, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=sun-prairie";
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -123,7 +123,7 @@ function currentHotSpot() {
 
 const approvedHotSpotIds = new Set(PLAYER_VISIBLE_HOT_SPOT_IDS);
 const VISIBLE_HOT_SPOTS = HOT_SPOTS.filter(hotSpot => approvedHotSpotIds.has(hotSpot.id));
-const interactiveComplicationContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection"]);
+const interactiveComplicationContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie"]);
 
 function complicationRowKey(row, index) {
   return "effect-" + index + "-" + row.roll;
@@ -219,7 +219,7 @@ function sideById(sideId) {
   return side;
 }
 
-const simplifiedContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection"]);
+const simplifiedContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie"]);
 
 function generatedOpForConfiguration() {
   const hotSpot = currentHotSpot();
@@ -1187,6 +1187,19 @@ function renderStaticCommandComplications(table) {
 
 function activeComplicationExtras(profile) {
   const hotSpotId = profile.hotSpot.id;
+  if (hotSpotId === "sun-prairie") {
+    return profile.participants.map(selectingSide => {
+      const recipient = profile.participants.find(item => item.id !== selectingSide.id);
+      const extras = [];
+      if (appliedComplicationNamed(selectingSide.id, "Rubble", profile.table)) {
+        extras.push('<div class="active-complication-extra"><strong>' + esc(recipient?.name || "Opposing force") + ' places rubble</strong><span>Six rubble hexes · Alpha Strike: six 2-inch AOE terrain templates · not multiplied by Scale.</span><span>Independent opponent-directed entitlement caused by ' + esc(selectingSide.name) + ' resolving Rubble.</span></div>');
+      }
+      if (appliedComplicationNamed(selectingSide.id, "Fire and Smoke", profile.table)) {
+        extras.push('<div class="active-complication-extra"><strong>' + esc(recipient?.name || "Opposing force") + ' places fire</strong><span>Six markers, each marking its selected hex and adjacent hexes on fire · Alpha Strike: six 6-inch AOE fire templates.</span><span>Independent opponent-directed entitlement caused by ' + esc(selectingSide.name) + ' resolving Fire and Smoke. Shared fire and smoke rules are displayed once above.</span></div>');
+      }
+      return extras.join("");
+    }).join("");
+  }
   if (hotSpotId === "protection") {
     const variant = resolvedHotSpotStep()?.variant;
     const sequence = Number(currentHotSpotStep()?.sequence || 1);
@@ -1295,7 +1308,11 @@ function renderInteractiveComplications(profile) {
       for (const side of affected) entries.push({ row, side, sharedEffectId });
       return entries;
     }, []);
-    const displayedCount = groupComplicationEffectEntries(activeCount).length;
+    let displayedCount = groupComplicationEffectEntries(activeCount).length;
+    if (profile.hotSpot.id === "sun-prairie") {
+      const firePlacements = profile.participants.filter(side => appliedComplicationNamed(side.id, "Fire and Smoke", profile.table)).length;
+      displayedCount += firePlacements;
+    }
     return '<div class="complication-selection-status"><div><strong>' + (displayedCount ? displayedCount + ' applied complication' + (displayedCount === 1 ? '' : 's') : 'No active complications') + '</strong><span>Selections are applied to the current track. Reopen the table to revise them.</span></div><button type="button" class="complication-edit-button" data-edit-complications="true">Edit</button></div>';
   }
   if (profile.table.separateBySide) {
@@ -1372,6 +1389,12 @@ function renderTemporaryHires(hires, note = "Use these cards after the players r
   if (!hires?.length) return "";
   const cards = hires.map(hire => '<article class="hire-reference-card"><div class="hire-card-head"><span>NAMED TEMPORARY HIRE</span><h4>' + esc(hire.name) + '</h4><p>' + esc(hire.identity) + '</p></div><div class="hire-card-unit">' + esc(hire.unit) + '</div><div class="hire-card-divider"></div><dl><div><dt>Battle Value</dt><dd>' + esc(hire.bv) + '</dd></div><div><dt>Point Value</dt><dd>' + esc(hire.pv) + '</dd></div></dl><div class="hire-card-divider"></div><dl><div><dt>Gunnery</dt><dd>' + esc(hire.gunnery) + '</dd></div><div><dt>Piloting</dt><dd>' + esc(hire.piloting) + '</dd></div><div><dt>Alpha Strike Skill</dt><dd>' + esc(hire.alphaStrikeSkill) + '</dd></div><div><dt>Edge tokens</dt><dd>' + esc(hire.edge) + '</dd></div></dl><div class="hire-card-divider"></div><div class="hire-card-note"><strong>Special abilities</strong><span>' + esc(hire.abilities) + '</span></div><div class="hire-card-note"><strong>Tactical restriction</strong><span>' + esc(hire.restriction) + '</span></div><div class="hire-card-source">' + esc(hire.source) + '</div></article>').join("");
   return '<div class="reference-section temporary-hire-section"><div class="panel-kicker">NAMED TEMPORARY HIRES · TACTICAL REFERENCE ONLY</div><p class="reference-copy">' + esc(note) + '</p><div class="hire-card-grid">' + cards + '</div></div>';
+}
+
+function renderTacticalSupport(entries) {
+  if (!entries?.length) return "";
+  const cards = entries.map(entry => '<article class="active-complication-extra"><strong>' + esc(entry.title) + '</strong><span>' + esc(entry.association) + '</span><ul class="rule-list">' + entry.details.map(detail => '<li>' + esc(detail) + '</li>').join("") + '</ul><span class="reference-citation">Source: ' + esc(entry.source) + '</span></article>').join("");
+  return '<div class="reference-section tactical-support-section"><div class="panel-kicker">TACTICAL SUPPORT · REFERENCE ONLY</div><div class="active-complication-grid">' + cards + '</div></div>';
 }
 
 function tacticalInputKey(name) {
@@ -1510,7 +1533,8 @@ function renderContractReference() {
   const reference = currentHotSpot().contractReference;
   if (!reference) return "";
   const section = (title, items) => items?.length ? '<div><strong>' + esc(title) + '</strong><ul class="rule-list">' + items.map(item => '<li>' + esc(item) + '</li>').join("") + '</ul></div>' : "";
-  return '<details class="reference-section contract-reference"><summary>Contract Reference<span>Campaign progression and victory</span></summary>' + section("Contracts", reference.summary) + section("Progression", reference.progression) + section("Victory", reference.victory) + (reference.provisional?.length ? '<div><strong>Provisional interpretations</strong>' + renderProvisionalRules(reference.provisional) + '</div>' : "") + '</details>';
+  const tables = (reference.tables || []).map(table => '<div><strong>' + esc(table.title) + '</strong>' + renderGeneratorTable("", table) + '</div>').join("");
+  return '<details class="reference-section contract-reference"><summary>Contract Reference<span>Campaign progression and victory</span></summary>' + section("Contracts", reference.summary) + section("Progression", reference.progression) + tables + section("Victory", reference.victory) + section("Purchase Options", reference.purchaseOptions) + (reference.provisional?.length ? '<div><strong>Provisional interpretations</strong>' + renderProvisionalRules(reference.provisional) + '</div>' : "") + '</details>';
 }
 
 function renderReference() {
@@ -1545,6 +1569,7 @@ function renderReference() {
   const commandComplications = renderAppliedComplications(referenceTrack.commandComplications);
   const currentTrackInputs = renderCurrentTrackInputs();
   const contractReference = renderContractReference();
+  const tacticalSupport = renderTacticalSupport(referenceTrack.tacticalSupport);
   const temporaryHires = renderTemporaryHires(referenceTrack.temporaryHires, referenceTrack.temporaryHireNote);
   const newIvaarsenTacticalReference = renderNewIvaarsenTacticalReference();
   const referenceTables = (referenceTrack.referenceTables || []).filter(table => !isBattlefieldConfigurationTable(table)).map(table => '<div class="reference-section"><div class="panel-kicker">' + esc(table.title) + '</div>' + renderGeneratorTable("", table) + '</div>').join("");
@@ -1571,6 +1596,7 @@ function renderReference() {
       '<div class="reference-section"><div class="panel-kicker">SPECIAL RULES, TRACK END & SALVAGE</div><ul class="rule-list">' + special + "</ul></div>" +
       referenceTables +
       commandComplications +
+      tacticalSupport +
       temporaryHires +
       '<div class="reference-citation">Sources: ' + esc(sourceReferenceText) + '</div>' +
     "</article>" +
