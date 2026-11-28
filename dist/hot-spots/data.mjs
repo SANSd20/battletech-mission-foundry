@@ -1,12 +1,33 @@
 export const SOURCES = {
   primary: "Hot Spots: Draconis Reach, First Printing, pp. 167–175",
-  errata: "Hot Spots: Draconis Reach official master errata thread (revision reviewed 11 November 2026; forum rechecked 27 November 2026)",
+  errata: "Hot Spots: Draconis Reach official master errata thread (master revision 27 November 2026, 16:33:26; source verified 27 November 2026; applicable reconciliation remains incomplete)",
   supersession: "Draconis Reach supersedes the supplied Hinterlands track text; Hinterlands track corrections are not applied to these records.",
   pascagoula: "Hot Spots: Draconis Reach, First Printing, pp. 103–107; Objective Raid p. 171; Pursuit p. 172; campaign withdrawal and exit rules p. 31; Mountains Terrain Table p. 150; Alpha Strike terrain p. 154; current Draconis Reach master errata",
   mallory: "Hot Spots: Draconis Reach, First Printing, pp. 132–142; official Loneliness Island Poster Map (2026); current Draconis Reach master errata",
   militaryPalette: "BattleTech Faction Colors, palettes/military-ui.yaml, verified main e3cd8c9c9899b04aebd314a2a921ad3edd4092f1",
   opposingForces: "Hot Spots: Draconis Reach, First Printing, Opposing Force Tables pp. 186–201"
 };
+
+export const ERRATA_PROVENANCE = Object.freeze({
+  masterRevision: Object.freeze({ date: "27 November 2026", time: "16:33:26", editor: "MetalEd", entriesReviewed: 90 }),
+  sourceVerified: "27 November 2026",
+  implementationStatus: Object.freeze({ reviewed: true, complete: false, outstanding: "Xhosa VII p. 122 exit-edge and victory reconciliation" }),
+  posts: Object.freeze({
+    36: Object.freeze({
+      author: "SANSd20",
+      posted: "24 November 2026",
+      edited: "27 November 2026, 01:35:40",
+      daharContractIdentifier: "individual report; not incorporated into the established master revision",
+      xhosaExitAndVictory: "incorporated into the established master revision; Mission Foundry reconciliation outstanding"
+    }),
+    37: Object.freeze({ author: "Xotl", posted: "27 November 2026, 02:44:58", status: "administrative instruction; not a rules correction" }),
+    38: Object.freeze({ author: "nckestrel", posted: "27 November 2026, 11:23:21", status: "individual correction; not incorporated into the established master revision; affected tables are not rendered" }),
+    39: Object.freeze({ author: "nckestrel", posted: "27 November 2026, 13:48:15", edited: "27 November 2026, 13:50:12", status: "Track Force and Changing Scale corrections incorporated into the master revision and Mission Foundry" }),
+    40: Object.freeze({ author: "SANSd20", posted: "27 November 2026, 21:19:25", status: "forum report citing a Discord clarification; not published master errata; implementation deferred" }),
+    41: Object.freeze({ author: "SANSd20", posted: "27 November 2026, 21:43:53", status: "forum report citing a MetalEd Discord clarification; not published master errata; Mallory LINGO correction implemented" })
+  }),
+  malloryDiscordClarification: Object.freeze({ displayedTime: "8:38 PM", calendarDate: null })
+});
 
 export function groupComplicationEffectEntries(entries = []) {
   const effects = [];
@@ -621,6 +642,11 @@ export const GENERAL_RULES = [
     title: "Voluntary Withdrawal",
     text: "A track’s objectives may include a unit exiting the map area. In addition, any unit may voluntarily withdraw from play by spending MP to reach and exit through its home edge; remove that unit from play. A unit exiting outside of earning an objective is considered destroyed only for the opponent’s objective adjudication. It otherwise remains in its actual damage state for repairs. An exit that earns an objective retains that objective’s stated treatment.",
     ref: "Draconis Reach p. 31 · official errata"
+  },
+  {
+    title: "Temporary Hires and permanent recruitment",
+    text: "Temporary participation follows the applicable contract’s availability, eligibility, quantity, per-track cost, and force-limit rules. While a Temporary Hire works for a player, that player is responsible for repairs, healing wounds, and replacing battle losses with the same unit type; a player Named Pilot may not be assigned to the hire. After contract completion, a Temporary Hire may be hired permanently only if at least one track was successfully completed with that hire in the track force. If no permanent-hiring cost is listed, the purchase price is the pilot-hiring cost in SP—equal to the named pilot’s SP total or 150 SP, whichever is greater—plus the standard purchase cost of the unit. An explicit contract-specific permanent-recruitment procedure or price overrides this general procedure.",
+    ref: "Draconis Reach pp. 29, 32 · official errata"
   },
   {
     title: "Commander",
@@ -3125,7 +3151,7 @@ const malloryContractReference = {
   ],
   purchaseOptions: [
     "BattleMech purchases require a held BPWW hex. Central BPWW facilities impose a 10-percent premium; BPWW Landing Zones use their rolled premium. Purchased units arrive at the Landing Zone under the printed formation rules.",
-    "Official sources: Hot Spots: Draconis Reach, First Printing, pp. 132–142; official Loneliness Island Poster Map (2026); official Draconis Reach master errata revision reviewed 11 November 2026 and rechecked 27 November 2026. Forum posts #38–#39 were verified separately on 27 November 2026 but have not been incorporated into the dated master list."
+    "Official sources: Hot Spots: Draconis Reach, First Printing, pp. 132–142; official Loneliness Island Poster Map (2026); official Draconis Reach master errata revision 27 November 2026 at 16:33:26, verified 27 November 2026. The Irrigation Control LINGO correction is implemented from forum post #41, which reports a MetalEd Discord clarification; it is not published master errata. The screenshot shows 8:38 PM, but its calendar date was not independently established."
   ],
   provisional: MALLORY_PROVISIONAL_RULES
 };
@@ -3623,6 +3649,7 @@ export const HOT_SPOTS = [
       summary: ["Tybalt and Home Guard are player-controlled Mercenary forces.", "Source: Draconis Reach pp. 74–77."],
       progression: ["Track 2 depends on the Track 1 winner. Track 3 depends on the winners of Tracks 1 and 2. Tracks 4 and 5 use surviving defector vehicles from the preceding track."],
       victory: ["Tybalt wins if at least one defector vehicle survives all tracks, or—when Track 3 was Strike—by winning both Strike and Retreat.", "Home Guard wins automatically if Tybalt does not qualify, and also wins if it destroys five or more Battlefield Support units granted to Tybalt by Command Complications."],
+      purchaseOptions: ["No BattleMechs on Achernar are available for ordinary purchase, but burned-out chassis may be recovered. At the end of each track, roll 2D6: on 7+, one ’Mech is available; on 10+, two are available. Determine each available ’Mech on the Achernar BattleMech Recovery Table. Any purchased unit starts in Destroyed condition and must be repaired.", "At the end of any track, either player may purchase an HVR-199M-A Harvester MOD (605 BV / 12 PV). Purchases, repairs, and roster changes remain outside the browser. Source: Draconis Reach p. 76 · official errata."],
       provisional: ["Evaluate the two contracts independently. If both sides meet their conditions, both contracts succeed. Tybalt’s Strike-and-Retreat alternative is available only when Track 3 was Strike."]
     },
     sides: [factionSide("tybalt", "Tybalt", "Mercenary"), factionSide("home-guard", "Home Guard", "Mercenary")],

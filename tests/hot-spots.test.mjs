@@ -1,16 +1,27 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { ACT_OF_PIRACY_COMMAND_COMPLICATIONS, ACT_OF_PIRACY_SYSTEMS, ACT_OF_PIRACY_TERRAIN_TABLES, adjustDaharEarnedVp, achernarInitialDefectors, ALTA_VISTA_COMMAND_COMPLICATIONS, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateGameWorldEventVp, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_MAPSHEET_TABLE, DAHAR_PROVISIONAL_RULES, DAHAR_TRACK_RESULTS, evaluateAltaVistaCampaign, evaluateGameWorldDuelVictory, evaluateProtectionPursuit, FACTION_COLORS, GAME_WORLDS_CARCASSONNE_MAPSHEETS, GAME_WORLDS_DOBLESS_RATS, GAME_WORLDS_PROVISIONAL_RULES, GAME_WORLDS_TEAM_GENERATION_PROVISIONAL_RULE, GAME_WORLDS_TYBALT_HIRES, GAME_WORLDS_TYBALT_MAPSHEETS, GAME_WORLDS_XHOSA_MAPSHEETS, gameWorldTeamLossThresholdMet, GENERAL_RULES, groupComplicationEffectEntries, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_MAPSHEET_TABLE, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LE_BLANC_TEMPORARY_HIRES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_MAPSHEET_TABLE, LUCERNE_PROVISIONAL_RULES, LUCERNE_TEMPORARY_HIRES, LUCERNE_TRACK_RESULTS, MALLORY_PROVISIONAL_RULES, MELCHER_BLACK_MARKET, MELCHER_COMMAND_COMPLICATIONS, MELCHER_GRASSLANDS_MAPSHEETS, MELCHER_TEMPORARY_HIRES, MISSION_OPFOR_OVERRIDES, NAMED_PILOT_HANDICAP_RULE, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_COMMAND_COMPLICATIONS, NEW_IVAARSEN_LIGHT_URBAN_MAPSHEETS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PASCAGOULA_COMMAND_COMPLICATIONS, PASCAGOULA_MOUNTAINS_MAPSHEETS, PASCAGOULA_PROVISIONAL_RULES, PLAYER_VISIBLE_HOT_SPOT_IDS, PROTECTION_ATLANTIS_MAPSHEETS, PROTECTION_COMMAND_COMPLICATIONS, PROTECTION_PROVISIONAL_RULES, PROTECTION_STANDARD_MAPSHEETS, PROTECTION_TEMPORARY_HIRES, protectionPartisanSupport, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, resolveActOfPiracyScenario, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
+import { ACT_OF_PIRACY_COMMAND_COMPLICATIONS, ACT_OF_PIRACY_SYSTEMS, ACT_OF_PIRACY_TERRAIN_TABLES, adjustDaharEarnedVp, achernarInitialDefectors, ALTA_VISTA_COMMAND_COMPLICATIONS, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateGameWorldEventVp, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_MAPSHEET_TABLE, DAHAR_PROVISIONAL_RULES, DAHAR_TRACK_RESULTS, ERRATA_PROVENANCE, evaluateAltaVistaCampaign, evaluateGameWorldDuelVictory, evaluateProtectionPursuit, FACTION_COLORS, GAME_WORLDS_CARCASSONNE_MAPSHEETS, GAME_WORLDS_DOBLESS_RATS, GAME_WORLDS_PROVISIONAL_RULES, GAME_WORLDS_TEAM_GENERATION_PROVISIONAL_RULE, GAME_WORLDS_TYBALT_HIRES, GAME_WORLDS_TYBALT_MAPSHEETS, GAME_WORLDS_XHOSA_MAPSHEETS, gameWorldTeamLossThresholdMet, GENERAL_RULES, groupComplicationEffectEntries, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_MAPSHEET_TABLE, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LE_BLANC_TEMPORARY_HIRES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_MAPSHEET_TABLE, LUCERNE_PROVISIONAL_RULES, LUCERNE_TEMPORARY_HIRES, LUCERNE_TRACK_RESULTS, MALLORY_PROVISIONAL_RULES, MELCHER_BLACK_MARKET, MELCHER_COMMAND_COMPLICATIONS, MELCHER_GRASSLANDS_MAPSHEETS, MELCHER_TEMPORARY_HIRES, MISSION_OPFOR_OVERRIDES, NAMED_PILOT_HANDICAP_RULE, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_COMMAND_COMPLICATIONS, NEW_IVAARSEN_LIGHT_URBAN_MAPSHEETS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PASCAGOULA_COMMAND_COMPLICATIONS, PASCAGOULA_MOUNTAINS_MAPSHEETS, PASCAGOULA_PROVISIONAL_RULES, PLAYER_VISIBLE_HOT_SPOT_IDS, PROTECTION_ATLANTIS_MAPSHEETS, PROTECTION_COMMAND_COMPLICATIONS, PROTECTION_PROVISIONAL_RULES, PROTECTION_STANDARD_MAPSHEETS, PROTECTION_TEMPORARY_HIRES, protectionPartisanSupport, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, resolveActOfPiracyScenario, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
 import { evaluateXhosaTruckOutcome, SUN_PRAIRIE_COMMAND_COMPLICATIONS, SUN_PRAIRIE_MAPSHEET_TABLE, SUN_PRAIRIE_TACTICAL_SUPPORT, SUN_PRAIRIE_TEMPORARY_HIRES, TIGRESS_COMMAND_COMPLICATIONS, TIGRESS_HILLS_MAPSHEETS, TIGRESS_PROVISIONAL_RULES, TIGRESS_SUTERA_SUPPORT, TIGRESS_TEMPORARY_HIRES, TIGRESS_TRAINEE_SUPPORT, TIGRESS_WOODED_MAPSHEETS, XHOSA_COMMAND_COMPLICATIONS, XHOSA_LOGISTICS_SUPPORT, XHOSA_MAPSHEET_TABLE, XHOSA_PROVISIONAL_RULES, XHOSA_TEMPORARY_HIRES } from "../dist/hot-spots/data.mjs";
 
 const expected = ["Assault", "Breakthrough", "Defend", "Flank", "Meeting Engagement", "Objective Raid", "Pursuit", "Pushback", "Recon", "Retreat", "Strike"];
 assert.deepEqual(TRACKS.map(track => track.name), expected, "all eleven Draconis Reach standard tracks are present");
 assert.equal(new Set(TRACKS.map(track => track.id)).size, 11, "track ids are unique");
-assert.equal(GENERAL_RULES.length, 8, "shared reference includes three campaign rules and the five p. 167 sections");
+assert.equal(GENERAL_RULES.length, 9, "shared reference includes four campaign rules and the five p. 167 sections");
 assert.match(SOURCES.supersession, /supersedes/i);
 assert.match(SOURCES.militaryPalette, /military-ui\.yaml/);
 assert.equal(FACTION_COLORS["Federated Suns"], "#7FA52F", "Federated Suns uses the brighter Hot Spots consumer adaptation");
 assert.match(SOURCES.errata, /official master errata/i);
+assert.match(SOURCES.errata, /27 November 2026, 16:33:26.*verified 27 November 2026.*incomplete/i, "central source metadata identifies the reviewed master without claiming complete implementation");
+assert.deepEqual(ERRATA_PROVENANCE.masterRevision, { date: "27 November 2026", time: "16:33:26", editor: "MetalEd", entriesReviewed: 90 });
+assert.equal(ERRATA_PROVENANCE.sourceVerified, "27 November 2026");
+assert.deepEqual(ERRATA_PROVENANCE.implementationStatus, { reviewed: true, complete: false, outstanding: "Xhosa VII p. 122 exit-edge and victory reconciliation" });
+assert.match(ERRATA_PROVENANCE.posts[36].daharContractIdentifier, /individual report.*not incorporated/i);
+assert.match(ERRATA_PROVENANCE.posts[36].xhosaExitAndVictory, /incorporated.*Mission Foundry reconciliation outstanding/i);
+assert.match(ERRATA_PROVENANCE.posts[38].status, /individual correction.*not incorporated.*not rendered/i);
+assert.match(ERRATA_PROVENANCE.posts[39].status, /incorporated.*Mission Foundry/i);
+assert.match(ERRATA_PROVENANCE.posts[40].status, /Discord clarification.*not published master errata.*deferred/i);
+assert.match(ERRATA_PROVENANCE.posts[41].status, /Discord clarification.*not published master errata.*LINGO correction implemented/i);
+assert.deepEqual(ERRATA_PROVENANCE.malloryDiscordClarification, { displayedTime: "8:38 PM", calendarDate: null }, "Discord evidence records only the displayed time and does not invent a calendar date");
 assert.match(SOURCES.pascagoula, /pp\. 103–107.*Pursuit p\. 172.*Mountains Terrain Table p\. 150.*Alpha Strike terrain p\. 154/);
 const trackForceRule = GENERAL_RULES.find(rule => rule.title === "Track Force");
 assert.match(trackForceRule.text, /lowest Contract Scale.*Both players use the same Track Scale.*two-thirds.*Temporary Hires.*not Battlefield Support.*escape clause.*break contract/is, "Track Force uses the November 27 official wording");
@@ -22,6 +33,13 @@ const voluntaryWithdrawalRule = GENERAL_RULES.find(rule => rule.title === "Volun
 assert.match(voluntaryWithdrawalRule.text, /objectives may include.*exiting.*voluntarily withdraw.*home edge.*remove.*from play/is, "shared withdrawal reference preserves objective-authorized exits and voluntary withdrawal");
 assert.match(voluntaryWithdrawalRule.text, /outside of earning an objective.*destroyed only for the opponent’s objective adjudication.*actual damage state for repairs/is, "shared withdrawal reference separates objective adjudication from repair condition");
 assert.doesNotMatch(voluntaryWithdrawalRule.text, /award.*VP|mark.*destroyed|automatic/i, "shared withdrawal remains reference-only and does not invent automated state changes");
+const temporaryHireRule = GENERAL_RULES.find(rule => rule.title === "Temporary Hires and permanent recruitment");
+assert.match(temporaryHireRule.text, /Temporary participation.*availability.*eligibility.*quantity.*per-track cost.*force-limit/is, "shared Temporary Hire reference preserves contract-specific participation rules");
+assert.match(temporaryHireRule.text, /responsible for repairs.*healing wounds.*replacing battle losses.*same unit type.*Named Pilot may not be assigned/is, "shared Temporary Hire reference preserves p. 29 responsibilities and restrictions");
+assert.match(temporaryHireRule.text, /After contract completion.*only if at least one track was successfully completed.*hire in the track force/is, "permanent recruitment uses the corrected timing and successful-track prerequisite");
+assert.match(temporaryHireRule.text, /pilot-hiring cost in SP.*named pilot’s SP total or 150 SP, whichever is greater.*standard purchase cost of the unit/is, "permanent recruitment uses the corrected pilot and unit purchase formula");
+assert.match(temporaryHireRule.text, /contract-specific permanent-recruitment procedure or price overrides/i, "explicit scenario exceptions override the shared default");
+assert.match(temporaryHireRule.ref, /pp\. 29, 32.*official errata/i);
 const cripplingDamage = GENERAL_RULES.find(rule => rule.title === "Crippling Damage").text;
 assert.match(cripplingDamage, /torso internal structure damage does not count while that location still has front armor/);
 assert.match(cripplingDamage, /half starting structure, rounded up/);
@@ -404,7 +422,7 @@ assert.ok(app.includes('"Mercenary": "mercenary-pirate"'), "Le Blanc mercenary p
 assert.ok(css.includes("hire-reference-card") && css.includes("hire-card-grid") && css.includes("hire-card-divider"), "Temporary Hire cards use the focused nutrition-label-inspired layout");
 assert.match(css, /@media[\s\S]*hire-card-grid \{ grid-template-columns: 1fr;/, "Temporary Hire cards stack at the mobile breakpoint");
 assert.ok(html.includes("master errata") && html.includes("topic,90893.0.html"), "current Draconis Reach master errata is identified in the source verification panel");
-assert.match(html, /RULES SOURCES[\s\S]*First Printing[\s\S]*11 November 2026[\s\S]*27 November 2026[\s\S]*Amber text indicates a provisional rules interpretation pending official clarification/);
+assert.match(html, /RULES SOURCES[\s\S]*First Printing[\s\S]*27 November 2026[\s\S]*16:33:26[\s\S]*Amber text indicates a provisional rules interpretation pending official clarification/);
 assert.ok(css.includes(".provisional-rule") && css.includes(".sr-only"), "provisional rules have visible and assistive semantics");
 assert.ok(css.includes("@media") && css.includes("flex-wrap: wrap"), "responsive layout rules remain present");
 assert.ok(HOT_SPOTS.length >= 10, "the location selector includes the Draconis Reach mission briefs currently mapped");
@@ -464,6 +482,10 @@ for (const outcome of [achernar.tracks[3], achernar.tracks[4]]) {
 }
 assert.equal(achernar.campaignState, undefined, "Achernar no longer exposes a historical campaign record");
 assert.ok(achernar.contractReference, "Achernar contract conditions remain available as reference");
+assert.match(achernar.contractReference.purchaseOptions.join(" "), /No BattleMechs.*burned-out chassis.*end of each track.*7\+.*one.*10\+.*two.*Achernar BattleMech Recovery Table/is, "Achernar Contract Reference preserves the printed purchase availability and procedure");
+assert.match(achernar.contractReference.purchaseOptions.join(" "), /purchased unit starts in Destroyed condition and must be repaired/i, "Achernar incorporates the official Destroyed-condition purchase correction");
+assert.match(achernar.contractReference.purchaseOptions.join(" "), /end of any track.*either player.*HVR-199M-A Harvester MOD.*605 BV.*12 PV/is, "Achernar preserves its Harvester purchase option");
+assert.match(achernar.contractReference.purchaseOptions.join(" "), /Purchases, repairs, and roster changes remain outside the browser/i, "Achernar purchase reference does not introduce campaign administration");
 assert.deepEqual([1, 2, 3].map(achernarInitialDefectors), [2, 4, 6], "Achernar allocates two J. Edgar tanks per Scale");
 assert.deepEqual(normalizeAchernarCampaignState({ survivorsAfterTrack3: 7, survivorsAfterTrack4: 5, finalSurvivors: 4 }, 2), {
   initialDefectors: 4,
@@ -1186,7 +1208,7 @@ assert.match(MALLORY_PROVISIONAL_RULES[3], /individual formation engagements.*pp
 assert.match(mallory.contractReference.progression.join(" "), /Irrigation Control clarification.*LINGO Landing Zone.*offsets the penalty directly.*MetalEd Discord clarification.*not published master errata/i);
 assert.match(mallory.contractReference.progression.join(" "), /BPWW at 0601\/0614 permits purchases.*premium/i, "genuine BPWW Landing Zone rules remain unchanged");
 assert.match(mallory.contractReference.purchaseOptions.join(" "), /BattleMech purchases require a held BPWW hex.*10-percent premium/i, "genuine BPWW purchase rules remain unchanged");
-assert.match(mallory.contractReference.purchaseOptions.join(" "), /Forum posts #38–#39.*27 November 2026.*not been incorporated.*master list/i);
+assert.match(mallory.contractReference.purchaseOptions.join(" "), /master errata revision 27 November 2026 at 16:33:26.*forum post #41.*Discord clarification.*not published master errata.*8:38 PM.*calendar date was not independently established/i, "Mallory records the current master and the narrower Discord-derived LINGO provenance without inventing a date");
 assert.match(malloryPlayableTracks[0].variant.special.join(" "), /Forced Withdrawal is not in effect.*shared voluntary-withdrawal rule on p\. 31.*no different objective-adjudication, damage, or repair consequence/i, "Mallory preserves its Forced Withdrawal exception without duplicating the shared withdrawal rule");
 assert.doesNotMatch(malloryPlayableTracks[0].variant.special.join(" "), /counts as destroyed only for opposing objective adjudication.*actual damage state/i, "Mallory does not duplicate the shared voluntary-withdrawal consequences");
 
@@ -1222,8 +1244,12 @@ assert.match(app, /No island-wide tactical benefits configured/, "collapsed Setu
 const resetTrackMalloryBody = app.match(/function resetTrack\(\) \{([\s\S]*?)\n\}/)?.[1] || "";
 assert.doesNotMatch(resetTrackMalloryBody, /mallory-/, "Reset Objectives preserves Mallory Setup inputs");
 assert.match(app, /tacticalInputKey\("mallory-battlefield-mode"\)/, "Mallory battlefield configuration is stored with current-track tactical inputs");
-assert.match(html, /Posts #38–#41.*not been represented as incorporated.*dated master list/, "Rules Sources distinguishes later forum posts from the November 11 master revision");
-assert.match(html, /Irrigation\/LINGO correction.*MetalEd Discord clarification.*not published master errata/, "Rules Sources distinguishes the resolved Discord clarification from official errata");
+assert.match(html, /Official master errata reviewed:[\s\S]*27 November 2026 at 16:33:26[\s\S]*verified on 27 November 2026/, "Rules Sources identifies the current authoritative master revision and verification date");
+assert.match(html, /review of the current master does not mean every correction is implemented[\s\S]*Xhosa VII p\. 122.*remains outstanding/, "Rules Sources distinguishes master review from implementation completion");
+assert.match(html, /post #36.*unincorporated Dahar IV.*master-incorporated Xhosa VII.*outstanding[\s\S]*Post #38.*individual, unincorporated[\s\S]*Post #39.*in the master and implemented/is, "Rules Sources preserves the split forum-post authority classifications");
+assert.match(html, /Posts #40–#41 report Discord clarifications and are not published master errata.*Game Worlds.*deferred.*Mallory LINGO.*implemented/is, "Rules Sources distinguishes Discord clarification reports from published errata and implementation status");
+assert.match(html, /screenshot shows 8:38 PM.*calendar date was not independently established/i, "Rules Sources does not invent a Discord calendar date");
+assert.match(html, /Amber text indicates a provisional rules interpretation pending official clarification/, "the centralized provisional legend remains present");
 assert.ok(html.includes('id="hot-spot-track-label"'), "the sequence selector has a location-specific label target");
 assert.ok(app.includes('hotSpot.trackSelectorLabel || "Track"'), "the shared selector uses player-facing Track terminology while preserving location-specific labels");
 assert.ok(app.includes("if (hotSpot.fixedScale) state.scale = hotSpot.fixedScale"), "Mallory’s World applies its fixed Scale before each render");
@@ -1521,7 +1547,7 @@ assert.match(html, /id="complication-configuration"/, "Hot Spot Setup contains t
 assert.match(html, /<h2 id="derived-track-title" class="derived-track-title">/, "the resolved track has one prominent gameplay heading");
 assert.doesNotMatch(html, />Tracking view</i, "the redundant visible Tracking View label is removed");
 assert.doesNotMatch(html, /class="source-strip"|PRIMARY SOURCE|ERRATA INCORPORATED/, "the redundant top source banner is removed");
-assert.match(html, /RULES SOURCES[\s\S]*First Printing[\s\S]*11 November 2026[\s\S]*27 November 2026[\s\S]*topic,90893\.0\.html/, "the centralized Rules Sources section retains the complete source and errata record");
+assert.match(html, /RULES SOURCES[\s\S]*First Printing[\s\S]*27 November 2026[\s\S]*16:33:26[\s\S]*topic,90893\.0\.html/, "the centralized Rules Sources section retains the complete current source and errata record");
 assert.match(html, /aria-label="Score display"/, "the score-side controls retain an accessible group name");
 assert.match(app, /mission-card-head.*<h2>Mission Brief<\/h2>/, "Mission Brief replaces the duplicate track heading in the reference card");
 assert.doesNotMatch(app, /mission-card-head.*<h2>Track pending<\/h2>/, "unresolved conditional tracks also use Mission Brief instead of a duplicate status heading");
