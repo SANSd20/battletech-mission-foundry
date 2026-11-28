@@ -2060,7 +2060,7 @@ function renderReference() {
       temporaryHires +
       '<div class="reference-citation">Sources: ' + esc(sourceReferenceText) + '</div>' +
     "</article>" +
-    '<article class="panel general-card"><div class="panel-heading"><div><span class="panel-kicker">SHARED RULES</span><h3>Track reference p. 167</h3></div></div>' +
+    '<article class="panel general-card"><div class="panel-heading"><div><span class="panel-kicker">SHARED RULES</span><h3>Campaign and track reference</h3></div></div>' +
       GENERAL_RULES.map(renderSharedRule).join("") +
     "</article>";
 }

@@ -608,6 +608,21 @@ export function evaluateAltaVistaCampaign(record = {}) {
 
 export const GENERAL_RULES = [
   {
+    title: "Track Force",
+    text: "Unless a scenario supplies a more specific force composition or Scale, set the Track Scale to the lowest Contract Scale among the participating players. Both players use the same Track Scale, which limits the number of units and BV/PV they may bring. A player unable to field at least two-thirds of that Track limit—including Temporary Hires but not Battlefield Support—must exercise the escape clause and break contract. Supported Track limits are Scale 1: 3,000 BV / 100 PV; Scale 2: 6,000 BV / 200 PV; Scale 3: 9,000 BV / 300 PV.",
+    ref: "Draconis Reach p. 29 · official errata"
+  },
+  {
+    title: "Changing Contract Scale",
+    text: "Changing Contract Scale can only be done when negotiating a new contract, and the player must be able to field a force at least equal to the Track BV or PV limit for the new Scale. The Scale selector configures only the current tactical mission; it does not change campaign Contract Scale, validate a roster, or maintain contract history.",
+    ref: "Draconis Reach p. 36 · official errata"
+  },
+  {
+    title: "Voluntary Withdrawal",
+    text: "A track’s objectives may include a unit exiting the map area. In addition, any unit may voluntarily withdraw from play by spending MP to reach and exit through its home edge; remove that unit from play. A unit exiting outside of earning an objective is considered destroyed only for the opponent’s objective adjudication. It otherwise remains in its actual damage state for repairs. An exit that earns an objective retains that objective’s stated treatment.",
+    ref: "Draconis Reach p. 31 · official errata"
+  },
+  {
     title: "Commander",
     text: "Each force designates one unit as commander. If the commander is destroyed, that force takes a −2 penalty to Initiative rolls.",
     ref: "Draconis Reach p. 167"
@@ -818,7 +833,7 @@ export const TRACKS = [
       { id: "never-here", name: "We Were Never Here", side: D, vp: 100, text: "At least 75 percent of the Defender’s starting force by BV/PV, excluding assets, has qualifying maximum movement and exits through its home edge by the end of Turn 10." }
     ],
     special: [
-      "Track End: after the end of any turn when at least one side has no non-crippled units in play, or after the End Phase of Turn 10.",
+      "Track End: after the end of any turn when the Defender has no non-crippled units in play, or after the End Phase of Turn 10.",
       "Salvage: the Defender may not claim salvage. The Attacker claims salvage if it successfully completes the track; otherwise all salvage returns to their owners."
     ],
     errataNote: "The supplied v2.41 errata changes the older Hinterlands Pursuit roles and turn limits. Those role assignments are not applied because Draconis Reach p. 172 provides the superseding track."
@@ -3111,7 +3126,7 @@ const malloryContractReference = {
 
 const malloryCampaignTacticalRules = [
   "Preserve the Island: no more than 21 BSP (Alpha Strike: 5 BSP) may be spent on Battlefield Support: Strikes choices in this combat track.",
-  "Forced Withdrawal is not in effect. A unit may voluntarily retreat through its own home edge; remove it from combat and from the track’s unit totals. It counts as destroyed only for opposing objective adjudication, remains otherwise in its actual damage state, and still requires ordinary applicable repairs.",
+  "Forced Withdrawal is not in effect. The shared voluntary-withdrawal rule on p. 31 still applies; Mallory adds no different objective-adjudication, damage, or repair consequence.",
   "Command Complications: none are used during the Loneliness Island campaign.",
   "Combat Pay: players do not receive the standard Combat Pay for successfully completing these tactical tracks. The employers instead pay for claimed strategic hexes; this browser shows relevant payments as reference information only.",
   "Campaign bookkeeping boundary: hex ownership, payments, purchases, repairs, strategic movement, and campaign victory remain source-reference information. This tactical browser does not determine eligibility or award those benefits automatically."

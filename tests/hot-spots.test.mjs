@@ -6,12 +6,22 @@ import { evaluateXhosaTruckOutcome, SUN_PRAIRIE_COMMAND_COMPLICATIONS, SUN_PRAIR
 const expected = ["Assault", "Breakthrough", "Defend", "Flank", "Meeting Engagement", "Objective Raid", "Pursuit", "Pushback", "Recon", "Retreat", "Strike"];
 assert.deepEqual(TRACKS.map(track => track.name), expected, "all eleven Draconis Reach standard tracks are present");
 assert.equal(new Set(TRACKS.map(track => track.id)).size, 11, "track ids are unique");
-assert.equal(GENERAL_RULES.length, 5, "shared p. 167 reference includes the five browser sections");
+assert.equal(GENERAL_RULES.length, 8, "shared reference includes three campaign rules and the five p. 167 sections");
 assert.match(SOURCES.supersession, /supersedes/i);
 assert.match(SOURCES.militaryPalette, /military-ui\.yaml/);
 assert.equal(FACTION_COLORS["Federated Suns"], "#7FA52F", "Federated Suns uses the brighter Hot Spots consumer adaptation");
 assert.match(SOURCES.errata, /official master errata/i);
 assert.match(SOURCES.pascagoula, /pp\. 103–107.*Pursuit p\. 172.*Mountains Terrain Table p\. 150.*Alpha Strike terrain p\. 154/);
+const trackForceRule = GENERAL_RULES.find(rule => rule.title === "Track Force");
+assert.match(trackForceRule.text, /lowest Contract Scale.*Both players use the same Track Scale.*two-thirds.*Temporary Hires.*not Battlefield Support.*escape clause.*break contract/is, "Track Force uses the November 27 official wording");
+assert.match(trackForceRule.text, /Scale 1: 3,000 BV \/ 100 PV.*Scale 2: 6,000 BV \/ 200 PV.*Scale 3: 9,000 BV \/ 300 PV/is, "Track Force reports the supported published limits without inventing rounding");
+const changingScaleRule = GENERAL_RULES.find(rule => rule.title === "Changing Contract Scale");
+assert.match(changingScaleRule.text, /only.*negotiating a new contract.*at least equal to the Track BV or PV limit.*new Scale/is, "Changing Scale uses the November 27 official wording");
+assert.match(changingScaleRule.text, /selector configures only the current tactical mission.*does not change campaign Contract Scale.*validate a roster.*contract history/is, "Changing Scale remains a reference and does not create campaign administration");
+const voluntaryWithdrawalRule = GENERAL_RULES.find(rule => rule.title === "Voluntary Withdrawal");
+assert.match(voluntaryWithdrawalRule.text, /objectives may include.*exiting.*voluntarily withdraw.*home edge.*remove.*from play/is, "shared withdrawal reference preserves objective-authorized exits and voluntary withdrawal");
+assert.match(voluntaryWithdrawalRule.text, /outside of earning an objective.*destroyed only for the opponent’s objective adjudication.*actual damage state for repairs/is, "shared withdrawal reference separates objective adjudication from repair condition");
+assert.doesNotMatch(voluntaryWithdrawalRule.text, /award.*VP|mark.*destroyed|automatic/i, "shared withdrawal remains reference-only and does not invent automated state changes");
 const cripplingDamage = GENERAL_RULES.find(rule => rule.title === "Crippling Damage").text;
 assert.match(cripplingDamage, /torso internal structure damage does not count while that location still has front armor/);
 assert.match(cripplingDamage, /half starting structure, rounded up/);
@@ -45,6 +55,9 @@ for (const trackId of ["recon", "retreat", "strike"]) {
 const strikeScanning = TRACKS.find(track => track.id === "strike").special.join(" ");
 assert.match(strikeScanning, /Buildings may be scanned.*Defender reveals whether it is the headquarters/i, "Strike retains its building scanning and reveal procedure");
 assert.match(strikeScanning, /Battle armor and infantry may scan only when adjacent to or inside the building.*may not have attacked/i, "Strike retains its battle armor and infantry scanning restrictions");
+const pursuitTrackEnd = TRACKS.find(track => track.id === "pursuit").special.find(rule => rule.startsWith("Track End:"));
+assert.match(pursuitTrackEnd, /the Defender has no non-crippled units in play.*End Phase of Turn 10/i, "Pursuit uses the errata-corrected Defender-specific Track End and preserves Turn 10");
+assert.doesNotMatch(pursuitTrackEnd, /at least one side/i, "the Attacker having no non-crippled units does not independently end Pursuit");
 assert.deepEqual(Object.keys(OPPOSING_FORCE_TABLES).sort(), ["capellan", "draconis-combine", "federated-suns", "mercenary-pirate", "raven-alliance"], "all five Draconis Reach OpFor tables are present");
 for (const table of Object.values(OPPOSING_FORCE_TABLES)) {
   assert.equal(Object.keys(table.scales).length, 3, table.label + " includes all three scales");
@@ -1132,7 +1145,8 @@ assert.match(mallory.contractReference.progression.join(" "), /Irrigation Contro
 assert.match(mallory.contractReference.progression.join(" "), /BPWW at 0601\/0614 permits purchases.*premium/i, "genuine BPWW Landing Zone rules remain unchanged");
 assert.match(mallory.contractReference.purchaseOptions.join(" "), /BattleMech purchases require a held BPWW hex.*10-percent premium/i, "genuine BPWW purchase rules remain unchanged");
 assert.match(mallory.contractReference.purchaseOptions.join(" "), /Forum posts #38–#39.*27 November 2026.*not been incorporated.*master list/i);
-assert.match(malloryPlayableTracks[0].variant.special.join(" "), /counts as destroyed only for opposing objective adjudication.*actual damage state.*repairs/i);
+assert.match(malloryPlayableTracks[0].variant.special.join(" "), /Forced Withdrawal is not in effect.*shared voluntary-withdrawal rule on p\. 31.*no different objective-adjudication, damage, or repair consequence/i, "Mallory preserves its Forced Withdrawal exception without duplicating the shared withdrawal rule");
+assert.doesNotMatch(malloryPlayableTracks[0].variant.special.join(" "), /counts as destroyed only for opposing objective adjudication.*actual damage state/i, "Mallory does not duplicate the shared voluntary-withdrawal consequences");
 
 const malloryFinalBattle = mallory.tracks.find(track => track.finalBattle);
 assert.ok(malloryFinalBattle, "Mallory exposes the manually selected Final Battle branch");
@@ -1537,6 +1551,34 @@ assert.doesNotMatch(melcher.tracks[0].variant.setupDetails.join(" "), /duplicate
 assert.match(app, /function renderBattlefieldTable\(table\) \{\s+return renderGeneratorTable\("", table\);/s, "battlefield configuration renders reference-only tables");
 assert.doesNotMatch(app, /selectable-battlefield-row|Selected mapsheet|No mapsheet selected/, "battlefield tables expose no selected row or selected summary");
 assert.doesNotMatch(data, /presentation: "battlefield-table"/, "contract data stores no battlefield-table selection configuration");
+
+const pursuitConsumerVariants = [
+  ["Achernar", achernar.tracks[1].outcomes.tybalt.variant],
+  ["Pascagoula · Jewel Thieves defend", pascagoula.tracks[1].outcomes["jewel-thieves"].variant],
+  ["Pascagoula · Ranger Raiders defend", pascagoula.tracks[1].outcomes["ranger-raiders"].variant],
+  ["Protection", protection.tracks.find(track => track.trackId === "pursuit").variant],
+  ["Lucerne", lucerne.tracks.find(track => track.trackId === "pursuit").variant],
+  ["Mallory City Pursuit", malloryCity.variant]
+];
+for (const [label, variant] of pursuitConsumerVariants) {
+  const trackEnd = variant.special.find(rule => rule.startsWith("Track End:"));
+  assert.match(trackEnd, /the Defender has no non-crippled units in play.*End Phase of Turn 10/i, label + " inherits the corrected Pursuit Track End");
+  assert.doesNotMatch(trackEnd, /at least one side/i, label + " does not retain the obsolete Track End");
+}
+assert.match(malloryCity.variant.setupDetails.join(" "), /formation initiated the strategic engagement uses the Pursuit Defender role.*formation held the city uses the Pursuit Attacker role/i, "Mallory City Pursuit applies Defender-specific Track End to the tactical Defender");
+assert.equal(malloryCity.roleChoiceRequired, true, "Mallory City Pursuit permits either strategic side to be selected as the tactical Defender");
+
+assert.equal(melcher.fixedScale, 1, "Melcher's explicit simultaneous-track Scale 1 override remains intact");
+assert.match(melcher.contractReference.summary.join(" "), /contract Scale 2.*two tactical tracks are each Scale 1/i, "Melcher distinguishes Contract Scale 2 from its two Scale 1 tracks");
+const gameWorldModeDetails = carcassonne.modeDetails;
+assert.match(gameWorldModeDetails.solo.setupDetails.join(" "), /one BattleMech versus one BattleMech.*Do not use normal Scale BV\/PV limits or Battlefield Support/i, "Game Worlds solo duels retain their explicit Track Force exception");
+assert.match(gameWorldModeDetails.team.setupDetails.join(" "), /use standard Scale and BV\/PV limits per team/i, "Game Worlds team duels retain ordinary Track Force applicability");
+assert.equal(mallory.fixedScale, 3, "Mallory remains fixed to Scale 3");
+assert.match(MALLORY_PROVISIONAL_RULES[3], /individual formation engagements.*Final Battle.*do not impose.*two-thirds minimum.*entire mercenary command.*unresolved/i, "Mallory AMB-005 remains the bounded Track Force exception");
+assert.match(dahar.tracks[0].variant.setupDetails.join(" "), /Temporary Hire: Dahar’s contract-specific eligibility threshold controls.*below two-thirds.*General p\. 29.*below the Scale limit/i, "Dahar retains its contract-specific Temporary Hire threshold alongside the general rule");
+assert.match(LE_BLANC_PROVISIONAL_RULES.join(" "), /Temporary Hire eligibility remains unresolved.*pp\. 29 and 89/i, "Le Blanc Temporary Hire eligibility remains deferred rather than overwritten");
+assert.match(app, /Campaign and track reference/, "shared campaign rules use an accurate heading instead of a p. 167-only label");
+assert.doesNotMatch(app, /data-contract-scale|contractScaleHistory|validateRoster|exerciseEscapeClause/i, "the shared references add no Contract Scale history, roster validation, or escape-clause automation");
 
 for (const hotSpot of HOT_SPOTS) {
   assert.ok(hotSpot.sides.length >= 2, hotSpot.name + " has opposing sides");
