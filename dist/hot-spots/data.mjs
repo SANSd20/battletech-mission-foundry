@@ -199,6 +199,7 @@ export const LE_BLANC_TEMPORARY_HIRES = Object.freeze([
 export const LE_BLANC_COMMAND_COMPLICATIONS = Object.freeze({
   ref: "Draconis Reach pp. 30, 89",
   note: "Before either Le Blanc track, resolve each force independently and select every resulting effect below. Command Rights modifiers are Independent +0, Liaison +1, House +2, and Integrated +3.",
+  provenance: "NCKestrel confirmed in a Discord clarification on 25 November 2026 that Command Complications apply to both Month 3 tracks. The clarification was accepted in the originating Chat and is not published master errata.",
   rows: [
     { roll: "1–3", name: "No Complication", text: "No additional effect." },
     { roll: "4", name: "Unprepared for a Sandstorm", text: "The affected player pays 25 SP per unit deployed in this track, or each such unit reduces its Run/Flank speed by 1 MP (Alpha Strike: MV −2 inches). Battlefield Support assets lose 1 MP. The browser presents this tactical alternative but does not administer Support Points." },
@@ -1908,8 +1909,6 @@ export const GAME_WORLDS_PROVISIONAL_RULES = Object.freeze([
   "Team per-turn limits: Beat Them and Humiliating Shot are each limited to one award per side per turn. They are independent, so a team may earn both in the same turn, but multiple qualifying units do not multiply either award."
 ]);
 
-export const GAME_WORLDS_TEAM_GENERATION_PROVISIONAL_RULE = "Generated opposing team: provisionally retain the Gladiator Faction result, manually construct the team within the selected Scale and BV/PV limit, and select or roll units using that faction’s Dobless Information Services RATs. Do not reroll or substitute Republic results. This manual Dobless method is an approved alternative to the printed standard Opposing Force Table procedure where a corresponding composition table exists.";
-
 export const GAME_WORLDS_DOBLESS_RATS = Object.freeze({
   "Draconis Combine": Object.freeze({ battleMechs: "p. 182", vehicles: "p. 184", standardComposition: "Draconis Combine standard Opposing Force Table available from p. 186 onward" }),
   "Federated Suns": Object.freeze({ battleMechs: "p. 182", vehicles: "p. 184", standardComposition: "Federated Suns standard Opposing Force Table available from p. 186 onward" }),
@@ -3418,7 +3417,7 @@ export const ALTA_VISTA_PROVISIONAL_RULES = [
   "Escobar’s required completions use the Meeting Engagements actually played: 1 of 1, 1 of 2, or 2 of 3."
 ];
 
-export const ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION = "When both players leave under Withdrawal Order, the contract continues normally with the next Meeting Engagement if one remains.";
+export const ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION = "When both players leave under Withdrawal Order, the contract continues normally with the next Meeting Engagement if one remains. This behavior follows a previously accepted forum clarification; its exact author, calendar date, and direct URL are unavailable in the current evidence, and it is not published master errata.";
 
 export const ALTA_VISTA_COMMAND_COMPLICATIONS = {
   note: "Resolve complications for Escobar only, then select every resulting effect below. Escobar rolls once for Liaison Command, twice for House Command, or three times for Integrated Command; reroll duplicate results of 4, 5, or 6.",
