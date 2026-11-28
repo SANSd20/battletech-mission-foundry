@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { ACT_OF_PIRACY_COMMAND_COMPLICATIONS, ACT_OF_PIRACY_SYSTEMS, ACT_OF_PIRACY_TERRAIN_TABLES, adjustDaharEarnedVp, achernarInitialDefectors, ALTA_VISTA_COMMAND_COMPLICATIONS, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateGameWorldEventVp, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_MAPSHEET_TABLE, DAHAR_PROVISIONAL_RULES, DAHAR_TRACK_RESULTS, ERRATA_PROVENANCE, evaluateAltaVistaCampaign, evaluateGameWorldDuelVictory, evaluateProtectionPursuit, FACTION_COLORS, GAME_WORLDS_CARCASSONNE_MAPSHEETS, GAME_WORLDS_DOBLESS_RATS, GAME_WORLDS_PROVISIONAL_RULES, GAME_WORLDS_TYBALT_HIRES, GAME_WORLDS_TYBALT_MAPSHEETS, GAME_WORLDS_XHOSA_MAPSHEETS, gameWorldTeamLossThresholdMet, GENERAL_RULES, groupComplicationEffectEntries, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_MAPSHEET_TABLE, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LE_BLANC_TEMPORARY_HIRES, LE_BLANC_TEMPORARY_HIRE_REFERENCE, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_MAPSHEET_TABLE, LUCERNE_PROVISIONAL_RULES, LUCERNE_TEMPORARY_HIRES, LUCERNE_TRACK_RESULTS, MALLORY_CONFIRMED_TRACK_FORCE_EXCEPTION, MALLORY_PROVISIONAL_RULES, MELCHER_BLACK_MARKET, MELCHER_COMMAND_COMPLICATIONS, MELCHER_GRASSLANDS_MAPSHEETS, MELCHER_TEMPORARY_HIRES, MISSION_OPFOR_OVERRIDES, NAMED_PILOT_HANDICAP_RULE, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_COMMAND_COMPLICATIONS, NEW_IVAARSEN_LIGHT_URBAN_MAPSHEETS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OBJECTIVE_RAID_PROVISIONAL_RULES, OPPOSING_FORCE_TABLES, PASCAGOULA_COMMAND_COMPLICATIONS, PASCAGOULA_MOUNTAINS_MAPSHEETS, PASCAGOULA_PROVISIONAL_RULES, PLAYER_VISIBLE_HOT_SPOT_IDS, PROTECTION_ATLANTIS_MAPSHEETS, PROTECTION_COMMAND_COMPLICATIONS, PROTECTION_PROVISIONAL_RULES, PROTECTION_STANDARD_MAPSHEETS, PROTECTION_TEMPORARY_HIRES, protectionPartisanSupport, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, resolveActOfPiracyScenario, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
+import { ALTA_VISTA_CONFIRMED_RULES, PASCAGOULA_SPECIAL_VICTORY_RULE, PROTECTION_CONFIRMED_MOBILE_HQ_RULE, PROTECTION_CONFIRMED_PATROL_BOAT_RULE } from "../dist/hot-spots/data.mjs";
 import { evaluateXhosaTruckOutcome, SUN_PRAIRIE_COMMAND_COMPLICATIONS, SUN_PRAIRIE_MAPSHEET_TABLE, SUN_PRAIRIE_TACTICAL_SUPPORT, SUN_PRAIRIE_TEMPORARY_HIRES, TIGRESS_COMMAND_COMPLICATIONS, TIGRESS_HILLS_MAPSHEETS, TIGRESS_PROVISIONAL_RULES, TIGRESS_SUTERA_SUPPORT, TIGRESS_TEMPORARY_HIRES, TIGRESS_TRAINEE_SUPPORT, TIGRESS_WOODED_MAPSHEETS, XHOSA_COMMAND_COMPLICATIONS, XHOSA_LOGISTICS_SUPPORT, XHOSA_MAPSHEET_TABLE, XHOSA_PROVISIONAL_RULES, XHOSA_TEMPORARY_HIRES } from "../dist/hot-spots/data.mjs";
 
 const expected = ["Assault", "Breakthrough", "Defend", "Flank", "Meeting Engagement", "Objective Raid", "Pursuit", "Pushback", "Recon", "Retreat", "Strike"];
@@ -216,7 +217,8 @@ assert.doesNotMatch(pascagoulaVariant.special.join(" "), /agreed table interpret
 assert.match(pascagoulaVariant.special.join(" "), /one component per functioning hand actuator per turn/);
 assert.match(pascagoulaVariant.special.join(" "), /transfer one carried component/);
 assert.match(pascagoulaVariant.special.join(" "), /removed from play and cannot return/);
-assert.match(pascagoulaVariant.special.join(" "), /Special tactical victory.*all surviving Ryus.*at least one Ryu.*every opposing unit has fled or been destroyed/i);
+assert.match(PASCAGOULA_SPECIAL_VICTORY_RULE, /scenario-specific Track 1 victory conditions.*tactical winner.*instead of.*Objective Raid VP comparison.*do not infer successful-track completion.*combat pay.*contract victory/i);
+assert.match(pascagoulaVariant.special.join(" "), /Provisional convoy-extraction interpretation.*all surviving Ryus.*at least one Ryu.*every opposing unit.*flee or be destroyed/i);
 assert.match(pascagoulaVariant.special.join(" "), /damage and ammunition expenditure carry over/);
 assert.match(pascagoulaVariant.objectiveOverrides["orders-defender"].text, /mobile Ryu/);
 assert.equal(pascagoulaVariant.objectiveOverrides["grab-stuff"].name, "Grab the Stuff");
@@ -276,8 +278,9 @@ assert.equal(MISSION_OPFOR_OVERRIDES.pascagoula["jewel-thieves"].scales["1"].pri
 assert.match(MISSION_OPFOR_OVERRIDES.pascagoula["jewel-thieves"].scales["2"].primary, /Daimyo DMO-5K.*Dragon DRG-5Nr/);
 assert.match(MISSION_OPFOR_OVERRIDES.pascagoula["jewel-thieves"].scales["3"].primary, /Nova Cat T/);
 assert.deepEqual(PASCAGOULA_MOUNTAINS_MAPSHEETS.map(row => row[1]), ["Foothills #1", "Foothills #2", "Washout #1", "Washout #2", "Mines #1", "Mines #2"]);
-assert.equal(PASCAGOULA_PROVISIONAL_RULES.length, 3);
-assert.match(PASCAGOULA_PROVISIONAL_RULES.join(" "), /manual.*tactical winner.*all surviving Ryus.*at least one Ryu.*remains unresolved/i);
+assert.equal(PASCAGOULA_PROVISIONAL_RULES.length, 2);
+assert.match(PASCAGOULA_PROVISIONAL_RULES.join(" "), /all surviving Ryus.*at least one Ryu.*relationship.*tactical victory.*successful-track completion.*remains unresolved/i);
+assert.doesNotMatch(PASCAGOULA_PROVISIONAL_RULES.join(" "), /tactical victory.*determined.*not by.*VP total/i, "Pascagoula tactical-victory precedence is no longer amber");
 
 const jewelDefender = pascagoula.tracks[1].outcomes["jewel-thieves"];
 const rangerDefender = pascagoula.tracks[1].outcomes["ranger-raiders"];
@@ -417,7 +420,7 @@ assert.ok(app.includes("renderReferenceObjectives") && css.includes("objective-r
 assert.ok(app.includes('state.mode = button.dataset.mode') && app.includes('document.body.dataset.mode = state.mode'), "attacker/defender/both tracking views are wired");
 assert.ok(app.includes('$("#attacker-bar").style.width') && app.includes('$("#defender-bar").style.width'), "live score comparison bars update from current totals");
 assert.ok(app.includes('data-action=\"increment\"') && app.includes('data-action=\"decrement\"'), "repeatable component/VP objectives expose counters");
-for (const term of ["referenceTrack", "scaleNotesFor", "scaleNotesByScale", "sourceReferenceText", "displayObjective", "renderCommandComplications", "commandComplications", "objectiveOverrides", "Gem Convoy Raid", "Modified Objective Raid", "one component per functioning hand actuator per turn", "removed from play and cannot return", "Special tactical victory"]) {
+for (const term of ["referenceTrack", "scaleNotesFor", "scaleNotesByScale", "sourceReferenceText", "displayObjective", "renderCommandComplications", "commandComplications", "objectiveOverrides", "Gem Convoy Raid", "Modified Objective Raid", "one component per functioning hand actuator per turn", "removed from play and cannot return", "PASCAGOULA_SPECIAL_VICTORY_RULE"]) {
   assert.ok((app + data).includes(term), term + " Pascagoula variant behavior is present");
 }
 for (const term of ["pascagoulaExtractionKey", "pascagoulaObjectiveSuppressed", "data-pascagoula-ryu-extracted", "Defender scoring prerequisite", "selectedWinner(1) || \"unresolved\""]) assert.ok(app.includes(term), term + " Pascagoula branch scoring behavior is present");
@@ -554,6 +557,11 @@ assert.deepEqual([incompleteWithSupportVictory.tybalt, incompleteWithSupportVict
 for (const term of ["renderAchernarCampaignState", "survivorsAfterTrack3", "survivorsAfterTrack4", "finalSurvivors", "qualifyingSupportDestroyed", "strikeWinner", "retreatWinner", "data-achernar-field", "Both contracts successful", "campaign-ruling", "Defector J. Edgar vehicles do not count"]) {
   assert.ok(app.includes(term), term + " Achernar campaign behavior is wired into the browser");
 }
+const achernarContract = HOT_SPOTS.find(item => item.id === "achernar");
+assert.equal(achernarContract.contractReference.provisional, undefined, "Achernar’s two resolved victory interpretations are no longer amber");
+assert.match(achernarContract.contractReference.progression.join(" "), /Track 3 is Strike only when Tybalt won both prior tracks.*no other branch substitutes for Strike/i);
+assert.match(achernarContract.contractReference.victory.join(" "), /only when Track 3 was actually Strike.*five or more Battlefield Support units granted to Tybalt.*Defector J\. Edgar vehicles do not count.*both contracts may succeed/is);
+assert.doesNotMatch(app, /renderProvisionalRules\(\["Evaluate the two contracts independently/, "Achernar resolved victory rules no longer use provisional styling");
 assert.match(html, /Source-specific cross-track records are included only where a tactical force or contract-victory rule requires them/);
 const protection = HOT_SPOTS.find(item => item.id === "protection");
 assert.equal(protection.tracks[2].outcomes["platinum-sands|kanagawa-group"].roleChoice, true, "Protection mixed results expose the source roll-off choice");
@@ -565,7 +573,11 @@ assert.match(protection.contractReference.summary.join(" "), /Base Pay 110 perce
 assert.match(protection.contractReference.progression.join(" "), /Month 1 has no track.*Month 6 has no track/);
 assert.match(protection.contractReference.progression.join(" "), /Sea Fox Purchase Options Table/);
 assert.match(protection.contractReference.victory.join(" "), /most track victories.*tie ends in a draw/i);
-assert.equal(PROTECTION_PROVISIONAL_RULES.length, 4);
+assert.equal(PROTECTION_PROVISIONAL_RULES.length, 2, "Protection retains only AS water and the separately deferred Roll Twice interpretation");
+assert.match(PROTECTION_PROVISIONAL_RULES[0], /Alpha Strike.*not translated into invented.*dimensions or quantities/i);
+assert.match(PROTECTION_CONFIRMED_PATROL_BOAT_RULE, /Atlantis City.*same player.*Local Partisans and Monsoon.*Another player.*does not convert.*standard maps.*regardless of Monsoon/is);
+assert.match(PROTECTION_CONFIRMED_MOBILE_HQ_RULE, /end of the final turn.*450 effective VP.*even if Kanagawa Group also has 450 VP.*retains legitimately earned objective VP/is);
+assert.doesNotMatch(PROTECTION_PROVISIONAL_RULES.join(" "), /same player resolved both|450 effective VP/i, "Protection patrol-boat and Mobile HQ resolutions are no longer amber");
 const protectionTrack1 = protection.tracks[0].variant;
 assert.equal(protectionTrack1.displayName, "Protection Recon");
 assert.deepEqual(RECON_DENY_ATTACKER_OBJECTIVE_IDS, ["orders-attacker", "identify-opposition", "preemptive-strike", "observe-report"]);
@@ -612,6 +624,14 @@ assert.deepEqual(protectionPartisanSupport("standard", true, true), { quantity: 
 assert.deepEqual(protectionPartisanSupport("atlantis", true, false), { quantity: 2, naval: false });
 assert.deepEqual(protectionPartisanSupport("atlantis", true, true), { quantity: 2, naval: true });
 assert.equal(protectionPartisanSupport("atlantis", false, true), null);
+assert.deepEqual([
+  protectionPartisanSupport("atlantis", true, false)?.naval,
+  protectionPartisanSupport("atlantis", true, true)?.naval,
+  protectionPartisanSupport("atlantis", true, false)?.naval,
+  protectionPartisanSupport("atlantis", true, false)?.naval,
+  protectionPartisanSupport("atlantis", true, true)?.naval,
+  [protectionPartisanSupport("atlantis", true, true)?.naval, protectionPartisanSupport("atlantis", true, true)?.naval]
+], [false, true, false, false, true, [true, true]], "all six accepted Atlantis City same-player/split-player patrol-boat cases remain represented");
 const protectionTrack2 = protection.tracks[1].outcomes["platinum-sands"].variant;
 assert.match(protectionTrack2.setupDetails.join(" "), /winner of Track 1 is the Attacker/);
 assert.equal(protection.tracks[1].outcomes["kanagawa-group"].attacker, "kanagawa-group");
@@ -1323,19 +1343,26 @@ assert.match(ALTA_VISTA_COMMAND_COMPLICATIONS.rows[1].text, /20 BSP.*per Scale.*
 assert.match(ALTA_VISTA_COMMAND_COMPLICATIONS.rows[2].text, /Half.*rounded up.*home edge.*Turn 2/i);
 assert.match(ALTA_VISTA_COMMAND_COMPLICATIONS.rows[3].text, /\+1 Target Number.*1 hex.*2 inches/i);
 assert.match(ALTA_VISTA_COMMAND_COMPLICATIONS.rows[4].text, /BattleTech Turn 3.*Alpha Strike Turn 2.*2D6.*4 or less.*increasing.*Retreat is prohibited/i);
-assert.equal(ALTA_VISTA_PROVISIONAL_RULES.length, 4);
+assert.equal(ALTA_VISTA_PROVISIONAL_RULES.length, 1);
+assert.match(ALTA_VISTA_PROVISIONAL_RULES[0], /evaluated independently.*simultaneous contract victory remains unresolved/i);
+assert.equal(ALTA_VISTA_CONFIRMED_RULES.length, 3);
+assert.match(ALTA_VISTA_CONFIRMED_RULES.join(" "), /captured cargo.*does not grant Raven contract victory.*must win.*Extraction.*Withdrawal Order.*cannot trigger Extraction.*1 of 1.*1 of 2.*2 of 3.*Extraction is excluded/is);
+assert.doesNotMatch(ALTA_VISTA_PROVISIONAL_RULES.join(" "), /cargo|Withdrawal Order|required successful completions/i, "Alta Vista’s three source-resolved rules are no longer amber");
 assert.match(ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, /both players leave.*continues normally.*next Meeting Engagement/i);
 assert.match(ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, /previously accepted forum clarification.*exact author.*calendar date.*direct URL.*unavailable.*not published master errata/i);
 assert.match(html, /Alta Vista clarification:[\s\S]*previously accepted forum clarification[\s\S]*exact author[\s\S]*direct URL[\s\S]*not published master errata/i);
 
 const altaRetreat = altaVista.tracks[3].variant;
+assert.equal(altaVista.tracks[3].label, "Extraction · Retreat mechanics");
+assert.equal(altaRetreat.displayName, "Extraction · Retreat mechanics");
+assert.match(altaRetreat.type, /Extraction scenario using Retreat rules/i);
 assert.match(altaRetreat.setup.join(" "), /Retain.*mapsheets.*Light Urban terrain.*battlefield alignment.*carryover/i);
 assert.match(altaRetreat.setup.join(" "), /Only the Raven force surviving.*Turn 2/i);
 assert.match(altaRetreat.setup.join(" "), /Escobar.*surviving.*center.*add other available units.*Scale limit.*Turn 1/i);
 assert.match(altaRetreat.setupDetails.join(" "), /Only a temporary hire that survived.*No fresh temporary hire/i);
 assert.equal(altaRetreat.commandComplications, null);
 assert.deepEqual(altaRetreat.objectives, TRACKS.find(track => track.id === "retreat").objectives);
-assert.match(altaRetreat.special.join(" "), /No Alta Vista Command Complications.*contract ends/i);
+assert.match(altaRetreat.special.join(" "), /No Alta Vista Command Complications.*Extraction.*contract ends/i);
 
 const altaTrial = overrides => ({ played: true, tacticalWinner: "escobar", escobarCompletion: "successful", ravensCompletion: "unsuccessful", ...overrides });
 assert.deepEqual(evaluateAltaVistaCampaign({}).availableSequences, [1], "only Trial 1 is initially available");

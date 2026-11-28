@@ -2223,10 +2223,11 @@ export const PASCAGOULA_COMMAND_COMPLICATIONS = {
 };
 
 export const PASCAGOULA_PROVISIONAL_RULES = Object.freeze([
-  "Tactical victory in Track 1 is determined by Pascagoula’s special victory condition, not by the displayed VP total. Use the manually recorded tactical winner to choose the Track 2 branch.",
   "For convoy extraction, all surviving Ryus must exit and at least one Ryu must exit. Destroyed Ryus do not prevent convoy victory, but destroying all four Ryus does not satisfy convoy extraction. Causing every opposing unit to flee or be destroyed remains an alternative victory condition.",
   "The relationship between this special tactical victory, general successful-track completion, combat pay, and overall contract victory remains unresolved. Adjudicate those campaign questions at the table."
 ]);
+
+export const PASCAGOULA_SPECIAL_VICTORY_RULE = "Pascagoula’s scenario-specific Track 1 victory conditions determine the tactical winner instead of the ordinary Objective Raid VP comparison. Record that winner manually for the Track 2 branch; do not infer successful-track completion, combat pay, or contract victory from it.";
 
 const pascagoulaTrack1Battlefield = {
   title: "Pascagoula Track 1 Mapsheets",
@@ -2278,7 +2279,8 @@ const pascagoulaTrack1Variant = {
     "Mobile objectives: use the standard Objective Raid component-collection and loading rules with the four Ryus as the objective locations. Each Ryu has components available as needed; practical limits are available Raider units, functioning hand actuators, carrying capacity, and time before the convoy exits.",
     "Loading and carrying: load one component per functioning hand actuator per turn. Carrying capacity is Light 1, Medium 2, Heavy 3, or Assault 4. A hand-actuator ’Mech can transfer one carried component to an adjacent unit at the end of a subsequent Movement Phase. Infantry can load one component onto an adjacent ’Mech or vehicle per turn, but cannot carry components; mechanized infantry must dismount. An asset vehicle can carry one component if assisted with loading and loses 1 MP while carrying it. Apply the p. 171 movement and jumping restrictions; carrying components does not prevent attacks.",
     "Extraction: components score when carried off the Attacker’s home edge. A unit that exits the battlefield is removed from play and cannot return for another load.",
-    "Special tactical victory: a player wins when all surviving Ryus exit the edge opposite their home edge, with at least one Ryu successfully exiting, or when every opposing unit has fled or been destroyed. Destroyed Ryus do not prevent convoy victory, but destruction of all four Ryus does not satisfy convoy extraction. This provisional interpretation is separate from the Objective Raid VP tracker.",
+    PASCAGOULA_SPECIAL_VICTORY_RULE,
+    "Provisional convoy-extraction interpretation: all surviving Ryus must exit the edge opposite their home edge, and at least one Ryu must successfully exit. Destroyed Ryus do not prevent convoy victory, but destruction of all four Ryus does not satisfy convoy extraction. Causing every opposing unit to flee or be destroyed remains the separate printed alternative.",
     "Salvage: use the standard Objective Raid salvage rule. The Attacker may not claim salvage; the Defender claims salvage if they successfully complete the track, otherwise all salvage returns to its owners.",
     "Track 2 carryover reminder: damage and ammunition expenditure carry over; there are no repairs, ammunition reloading, or purchases between tracks."
   ],
@@ -2465,10 +2467,11 @@ export const LUCERNE_TRACK_RESULTS = Object.freeze([
 
 export const PROTECTION_PROVISIONAL_RULES = Object.freeze([
   "Alpha Strike uses the general terrain-placement procedure on pp. 154–155. Protection’s BattleTech-only Level 0 flooding and water-token conversion are not translated into invented Alpha Strike dimensions or quantities.",
-  "For Roll Twice, apply the selecting force’s Command Rights modifier to the initial and secondary rolls, resolve exactly two secondary results, reroll secondary Roll Twice results and duplicate effects other than No Complication, and do not recurse.",
-  "In Atlantis City, Local Partisans become naval patrol boats only when the same player resolved both Local Partisans and Monsoon through Roll Twice; another player’s Monsoon does not convert that support award.",
-  "If Platinum Sands holds the Mobile HQ at the end of the final turn, Platinum Sands alone successfully completes the track even when both sides have 450 effective VP."
+  "For Roll Twice, apply the selecting force’s Command Rights modifier to the initial and secondary rolls, resolve exactly two secondary results, reroll secondary Roll Twice results and duplicate effects other than No Complication, and do not recurse."
 ]);
+
+export const PROTECTION_CONFIRMED_PATROL_BOAT_RULE = "On Atlantis City maps, Local Partisans become naval patrol boats only when the same player resolves both Local Partisans and Monsoon through Roll Twice. Another player’s separately selected Monsoon does not convert that support award. On standard maps, Local Partisans are naval patrol boats regardless of Monsoon.";
+export const PROTECTION_CONFIRMED_MOBILE_HQ_RULE = "If Platinum Sands holds the Mobile HQ captured at the end of the final turn, it completes all applicable objectives, represented by 450 effective VP, and wins the track even if Kanagawa Group also has 450 VP. Kanagawa Group retains legitimately earned objective VP.";
 
 export const PROTECTION_STANDARD_MAPSHEETS = Object.freeze({
   title: "Standard Protection Mapsheet Table",
@@ -2538,7 +2541,7 @@ export function evaluateProtectionPursuit({ captureHeld = false, attackerVp = 0,
 export const PROTECTION_COMMAND_COMPLICATIONS = {
   ref: "Draconis Reach pp. 30, 111",
   note: "Select each player’s already-resolved result. Protection uses House Command (+2) for Platinum Sands and Liaison Command (+1) for Kanagawa Group; Independent is +0 and Integrated is +3. The browser does not roll dice or select Command Rights.",
-  provisional: PROTECTION_PROVISIONAL_RULES.slice(1, 3),
+  provisional: PROTECTION_PROVISIONAL_RULES.slice(1),
   rows: [
     { roll: "1–3", name: "No Complication", text: "No complication applies." },
     { roll: "4", name: "R&R", effectScope: "player-specific", text: "Your employer provided good rest and relaxation at a local resort, but the enemy arrived during it. Take a −2 penalty to Initiative rolls for the first 2 turns." },
@@ -3427,11 +3430,14 @@ const malloryRestrictedFacility = {
 };
 
 export const ALTA_VISTA_PROVISIONAL_RULES = [
-  "Leaving with cargo ends progression but is not Raven contract victory; Ravens must win Retreat.",
-  "Escobar and Ravens contract victories are evaluated independently, except where the source imposes no victor.",
-  "A successful Withdrawal Order is a successful track completion, distinct from tactical victory; prohibited Retreat is not declined Retreat.",
-  "Escobar’s required completions use the Meeting Engagements actually played: 1 of 1, 1 of 2, or 2 of 3."
+  "Escobar and Ravens contract victories are evaluated independently, except where the source imposes no victor. The possibility of simultaneous contract victory remains unresolved."
 ];
+
+export const ALTA_VISTA_CONFIRMED_RULES = Object.freeze([
+  "Leaving with captured cargo or declining further tracks ends progression but does not grant Raven contract victory. Ravens must win the sourcebook’s Extraction scenario, implemented here with the standard Retreat track mechanics.",
+  "A successful Withdrawal Order grants successful-track combat pay regardless of objective completion and counts as Raven tactical victory, but it cannot trigger Extraction. Mutual compliance may continue to the next applicable Meeting Engagement under the previously accepted clarification.",
+  "Escobar’s required successful completions use only the Meeting Engagements actually played: 1 of 1, 1 of 2, or 2 of 3. Extraction is excluded."
+]);
 
 export const ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION = "When both players leave under Withdrawal Order, the contract continues normally with the next Meeting Engagement if one remains. This behavior follows a previously accepted forum clarification; its exact author, calendar date, and direct URL are unavailable in the current evidence, and it is not published master errata.";
 
@@ -3467,7 +3473,7 @@ export const altaVistaMeetingVariant = sequence => ({
   ],
   special: [
     ...altaMeetingBase.special,
-    "Campaign progression: a normal Raven tactical victory presents the choices to depart with cargo, stop, or seek revenge. Revenge immediately triggers Retreat; the other choices end progression without Raven contract victory. A non-Raven result continues to the next warehouse trial if one remains.",
+    "Campaign progression: a normal Raven tactical victory presents the choices to depart with cargo, stop, or seek revenge. Revenge immediately triggers the Extraction scenario using Retreat track mechanics; the other choices end progression without Raven contract victory. A non-Raven result continues to the next warehouse trial if one remains.",
     "Command Complication 6 separates successful completion from tactical victory. Mutual compliance awards both sides successful completion and Raven tactical victory, prohibits Retreat, and continues to the next warehouse trial when one remains.",
     "Players record building preservation, temporary hires, survivors, and battlefield carryover with their campaign records."
   ],
@@ -3478,8 +3484,8 @@ export const altaVistaMeetingVariant = sequence => ({
 export const altaVistaRetreatVariant = () => ({
   page: 174,
   pageRef: "pp. 174–175",
-  displayName: "Immediate Revenge · Retreat",
-  type: "Alta Vista Conditional Retreat",
+  displayName: "Extraction · Retreat mechanics",
+  type: "Alta Vista Extraction scenario using Retreat rules",
   summary: "After a normal Raven warehouse victory, the Ravens pursue Escobar immediately using the surviving forces and battlefield.",
   setup: [
     "Retain the immediately preceding Meeting Engagement’s mapsheets, Light Urban terrain, battlefield alignment, and applicable battlefield carryover.",
@@ -3489,14 +3495,14 @@ export const altaVistaRetreatVariant = () => ({
   ],
   setupDetails: [
     "Alta Vista’s surviving-force and center-placement instructions override conflicting standard Retreat deployment instructions.",
-    "Only a temporary hire that survived the immediately preceding warehouse trial can carry into Retreat. No fresh temporary hire is available for Retreat.",
+    "Only a temporary hire that survived the immediately preceding warehouse trial can carry into Extraction. No fresh temporary hire is available for Extraction.",
     "Use the surviving forces, mapsheets, alignment, terrain, damage, and ammunition state from the immediately preceding warehouse trial."
   ],
   objectives: altaRetreatBase.objectives,
   special: [
     ...altaRetreatBase.special,
-    "No Alta Vista Command Complications are rolled during Retreat.",
-    "When Retreat concludes, the Alta Vista contract ends."
+    "No Alta Vista Command Complications are rolled during Extraction.",
+    "When Extraction concludes, the Alta Vista contract ends."
   ],
   commandComplications: null,
   sourceRefs: ["Draconis Reach pp. 78–81", "Retreat pp. 174–175", "Shared rules pp. 167–168"]
@@ -3662,10 +3668,9 @@ export const HOT_SPOTS = [
     note: "Tybalt and Home Guard contest five linked tactical tracks on Achernar.",
     contractReference: {
       summary: ["Tybalt and Home Guard are player-controlled Mercenary forces.", "Source: Draconis Reach pp. 74–77."],
-      progression: ["Track 2 depends on the Track 1 winner. Track 3 depends on the winners of Tracks 1 and 2. Tracks 4 and 5 use surviving defector vehicles from the preceding track."],
-      victory: ["Tybalt wins if at least one defector vehicle survives all tracks, or—when Track 3 was Strike—by winning both Strike and Retreat.", "Home Guard wins automatically if Tybalt does not qualify, and also wins if it destroys five or more Battlefield Support units granted to Tybalt by Command Complications."],
+      progression: ["Track 2 depends on the Track 1 winner. Track 3 depends on the winners of Tracks 1 and 2. Tracks 4 and 5 use surviving defector vehicles from the preceding track. Track 3 is Strike only when Tybalt won both prior tracks; no other branch substitutes for Strike."],
+      victory: ["Tybalt wins if at least one defector vehicle survives all tracks, or—only when Track 3 was actually Strike—by winning both Strike and Retreat.", "Home Guard wins automatically if Tybalt does not qualify, and also wins independently if it destroys five or more Battlefield Support units granted to Tybalt by Command Complications. Defector J. Edgar vehicles do not count merely because they are additional units; both contracts may succeed."],
       purchaseOptions: ["No BattleMechs on Achernar are available for ordinary purchase, but burned-out chassis may be recovered. At the end of each track, roll 2D6: on 7+, one ’Mech is available; on 10+, two are available. Determine each available ’Mech on the Achernar BattleMech Recovery Table. Any purchased unit starts in Destroyed condition and must be repaired.", "At the end of any track, either player may purchase an HVR-199M-A Harvester MOD (605 BV / 12 PV). Purchases, repairs, and roster changes remain outside the browser. Source: Draconis Reach p. 76 · official errata."],
-      provisional: ["Evaluate the two contracts independently. If both sides meet their conditions, both contracts succeed. Tybalt’s Strike-and-Retreat alternative is available only when Track 3 was Strike."]
     },
     sides: [factionSide("tybalt", "Tybalt", "Mercenary"), factionSide("home-guard", "Home Guard", "Mercenary")],
     tracks: [
@@ -3690,11 +3695,11 @@ export const HOT_SPOTS = [
     region: "Clan Sea Fox",
     terrain: "Light Urban",
     source: "Draconis Reach pp. 78–81",
-    note: "Select the current warehouse trial or the conditional immediate Retreat.",
+    note: "Select the current warehouse trial or the conditional Extraction scenario, which uses Retreat track mechanics.",
     contractReference: {
       summary: ["Escobar defends Alta Vista’s warehouse complexes against the Ravens.", "Source: Draconis Reach pp. 78–81."],
-      progression: ["Play up to three warehouse Meeting Engagements. A normal Raven victory may lead to immediate Retreat only if the Ravens choose revenge. Withdrawal Order outcomes prohibit Retreat."],
-      victory: ["Raven contract victory requires winning the conditional Retreat. Escobar’s required successful completions depend on the number of Meeting Engagements actually played."],
+      progression: ["Play up to three warehouse Meeting Engagements. A normal Raven victory may lead to the immediate Extraction scenario, using Retreat track mechanics, only if the Ravens choose revenge. Withdrawal Order outcomes prohibit Extraction."],
+      victory: ["Raven contract victory requires winning Extraction; captured cargo alone is not enough. Escobar’s required successful completions are 1 of 1, 1 of 2, or 2 of 3 Meeting Engagements actually played; Extraction is excluded."],
       provisional: ALTA_VISTA_PROVISIONAL_RULES
     },
     sides: [factionSide("escobar", "Escobar", "Mercenary"), factionSide("ravens", "Ravens", "Mercenary")],
@@ -3702,7 +3707,7 @@ export const HOT_SPOTS = [
       fixedHotSpotTrack(1, "meeting-engagement", "ravens", "escobar", { label: "Warehouse Trial 1", variant: altaVistaMeetingVariant(1) }),
       fixedHotSpotTrack(2, "meeting-engagement", "ravens", "escobar", { label: "Warehouse Trial 2", variant: altaVistaMeetingVariant(2) }),
       fixedHotSpotTrack(3, "meeting-engagement", "ravens", "escobar", { label: "Warehouse Trial 3", variant: altaVistaMeetingVariant(3) }),
-      fixedHotSpotTrack(4, "retreat", "ravens", "escobar", { label: "Immediate Retreat", variant: altaVistaRetreatVariant() })
+      fixedHotSpotTrack(4, "retreat", "ravens", "escobar", { label: "Extraction · Retreat mechanics", variant: altaVistaRetreatVariant() })
     ]
   },
   {
