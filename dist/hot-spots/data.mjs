@@ -1732,7 +1732,7 @@ function daharVariant(trackId) {
 }
 
 const gladiatorGenerator = {
-  note: "For a non-player opponent, roll 2D6 for Experience Rating, apply the duel-class adjustment, use the resulting Experience Level, then roll for Piloting/Gunnery skills, Edge abilities, faction, and ’Mech assignment.",
+  note: "For a non-player opponent, roll 2D6 for Experience Rating, apply the duel-class adjustment, use the resulting Experience Level, then roll for Piloting/Gunnery skills, the number of Edge abilities, each Edge ability, faction, and ’Mech assignment.",
   classAdjustments: [
     ["Light (Class 2)", "−2 to Experience Rating"],
     ["Medium (Class 3)", "No adjustment"],
@@ -1747,6 +1747,7 @@ const gladiatorGenerator = {
     ["13–15", "Heroic"],
     ["16–18", "Legendary"]
   ],
+  experienceFootnote: "Class Two—Light applies −2 to the Experience Rating roll.",
   skillLevels: {
     headers: ["1D6", "Regular", "Veteran", "Elite", "Heroic", "Legendary"],
     rows: [
@@ -1770,7 +1771,7 @@ const gladiatorGenerator = {
       ["2–4", "Republic of the Sphere"],
       ["5–6", "Draconis Combine"],
       ["7–8", "Mercenary"],
-      ["9–11", "Federated Suns"]
+      ["9–12", "Federated Suns"]
     ]
   },
   edgeAbilities: {
@@ -1788,21 +1789,38 @@ const gladiatorGenerator = {
       ["11", "Nimble"],
       ["12", "Bulwark"]
     ]
-  }
+  },
+  edgeProcedure: "First roll once on the Number of Edge Abilities table. Then make that many separate rolls on the Edge Ability table. Reroll an inappropriate ability, such as Jumping Jack for a BattleMech without jump jets."
 };
 
 const gameWorldDuelObjectives = [
   { id: "duel-orders", name: "Orders", side: BOTH, vp: 50, text: "Survive at least two turns of attacks: your own, your opponent’s, or a mix." },
-  { id: "duel-victory", name: "Victory!", side: BOTH, vp: 100, text: "Destroy the opponent or cause them to surrender. Double the reward if the opponent is a larger weight class." },
-  { id: "duel-nice-showing", name: "Nice showing", side: BOTH, vp: 50, text: "Cripple the opponent. Double the reward if the opponent is a larger weight class." },
+  { id: "duel-victory", name: "Victory!", side: BOTH, vp: 100, vpOptions: [100, 200], text: "Destroy the opponent or cause them to surrender. Select 200 VP only when the printed larger-weight-class bonus applies; in a team duel, players adjudicate that bonus manually." },
+  { id: "duel-nice-showing", name: "Nice showing", side: BOTH, vp: 50, vpOptions: [50, 100], text: "Cripple the opponent. Select 100 VP only when the printed larger-weight-class bonus applies; in a team duel, players adjudicate that bonus manually." },
   { id: "duel-shoot-them", name: "Shoot Them", side: BOTH, vp: 10, repeatable: true, text: "For each 20 damage dealt to the opponent (2 damage in Alpha Strike)." },
   { id: "duel-beat-them", name: "Beat Them", side: BOTH, vp: 10, repeatable: true, text: "For each successful physical attack, maximum once per turn." },
-  { id: "duel-head-shot", name: "Head Shot", side: BOTH, vp: 10, repeatable: true, text: "For each shot that hits the opponent’s head, or 20 VP for each natural 12 critical on the opponent." },
-  { id: "duel-crushing-blow", name: "Crushing Blow", side: BOTH, vp: 10, repeatable: true, text: "For dealing critical damage to the opponent. Award 20 VP in Alpha Strike." },
+  { id: "duel-head-shot", name: "Head Shot", side: BOTH, vp: 10, repeatable: true, eventValues: [{ id: "head-hit", label: "BT head hits", vp: 10 }, { id: "natural-12-critical", label: "AS natural-12 criticals", vp: 20 }], text: "BattleTech: 10 VP for each shot that hits the opponent’s head. Alpha Strike: 20 VP for each natural 12 critical on the opponent. Do not combine game systems within one duel." },
+  { id: "duel-crushing-blow", name: "Crushing Blow", side: BOTH, vp: 10, vpOptions: [10, 20], repeatable: true, text: "For dealing critical damage to the opponent: 10 VP in BattleTech or 20 VP in Alpha Strike." },
   { id: "duel-turning-it-around", name: "Turning It Around", side: BOTH, vp: 10, repeatable: true, text: "After losing Initiative for two or more turns, win Initiative. Award 10 VP each time." },
   { id: "duel-humiliating-shot", name: "Humiliating Shot", side: BOTH, vp: 10, repeatable: true, text: "Successfully attack the opponent in the rear, maximum once per turn." },
-  { id: "duel-boom", name: "Boom!", side: BOTH, vp: 10, repeatable: true, text: "For each ammunition explosion dealt to the opponent. Award 20 VP in Alpha Strike." }
+  { id: "duel-boom", name: "Boom!", side: BOTH, vp: 10, vpOptions: [10, 20], repeatable: true, text: "For each ammunition explosion dealt to the opponent: 10 VP in BattleTech or 20 VP in Alpha Strike." }
 ];
+
+export function calculateGameWorldEventVp(eventValues, counts = {}) {
+  return eventValues.reduce((total, eventValue) => total + Math.max(0, Number(counts[eventValue.id]) || 0) * Number(eventValue.vp), 0);
+}
+
+export function evaluateGameWorldDuelVictory(attackerVictory, defenderVictory) {
+  if (attackerVictory && defenderVictory) return { winner: null, manual: true, text: "Manual adjudication required · both sides marked Victory!" };
+  if (attackerVictory) return { winner: "attacker", manual: false, text: "Attacker wins the duel via Victory!" };
+  if (defenderVictory) return { winner: "defender", manual: false, text: "Defender wins the duel via Victory!" };
+  return { winner: null, manual: false, text: "No duel winner · Victory! not completed" };
+}
+
+export function gameWorldTeamLossThresholdMet(lostBvPv, startingBvPv) {
+  const starting = Number(startingBvPv);
+  return starting > 0 && Number(lostBvPv) / starting > 0.5;
+}
 
 const gameWorldDuelSetup = [
   "Contract #: N/A. Employer: None. There is no contract for Game Worlds beyond the payment received for taking part.",
@@ -1816,17 +1834,71 @@ const gameWorldDuelSetupDetails = [
   "Game Worlds intensity is one to three tracks. Multiple players may choose this Hot Spot, on the same game world or different game worlds; use the Taking One for the Team option when an opposing duelist is needed.",
   "The source schedules a single duel per month so contestants can repair, recover, and train between duels.",
   "Choose the duel class in the setup controls. Class One—exoskeleton—is not supported by the Gladiator Generator. Otherwise, the duel is treated as Scale 1 only for costs and payments.",
-  "Open class permits any weight class and generally uses better pilots. The source recommends using the Assault-class Random Assignment Table when randomly generating an open-class ’Mech.",
-  "Team Option: a duel may be fought between teams using standard Scale levels and BV/PV limits per team. If more than half of a team by BV/PV is destroyed or crippled, the duel ends in the End Phase."
+  "Open class permits any weight class and generally uses better pilots. The source recommends using the Assault-class Random Assignment Table when randomly generating an open-class ’Mech."
 ];
 
 const gameWorldDuelSpecial = [
-  "Combat Pay: the VP value of each objective is also its combat pay at 1 VP = 1 SP. A first-turn head-shot victory awards 100 SP for Victory!, 50 SP for Nice showing, and 10 SP for Head Shot.",
+  "Combat Pay: the VP value of each objective is also its combat pay at 1 VP = 1 SP. Incorporating official errata, a first-turn head-shot victory awards 100 SP for Victory!, 50 SP for Nice showing, 10 SP for Head Shot, and any other qualifying shooting or objective awards.",
   "Reputation: each point of reputation increases total combat pay by 10 percent, up to the maximum set by the selected game world.",
   "Victory is Victory: unlike general tracks, a player may earn more objectives and still lose the duel. The player who destroys or causes the opponent to surrender through Victory! successfully completes the track and wins.",
   "Track End: after the end of any turn when at least one side has no units in play, or after the end of Turn 12 (Turn 10 in Alpha Strike).",
-  "Game World campaign victory: earning two duel victories within a three-month period earns victory in the contract and Reputation. A victorious player also earns additional combat pay equal to standard combat pay multiplied by the competition class: light ×2, medium ×3, heavy ×4, assault ×5, open ×6."
+  "Game World campaign victory: earning two duel victories within a three-month period earns victory in the contract and +1 Reputation. A victorious player also earns additional combat pay equal to standard combat pay multiplied by the competition class: light ×2, medium ×3, heavy ×4, assault ×5, open ×6."
 ];
+
+const gameWorldSoloDetails = [
+  "Solo Duel: one BattleMech versus one BattleMech matched by competition weight class, unless Open class is selected. Do not use normal Scale BV/PV limits or Battlefield Support. Treat the duel as Scale 1 only for costs and payments."
+];
+
+const gameWorldTeamDetails = [
+  "Team Duel: use standard Scale and BV/PV limits per team. Scale 1 uses one BattleTech mapsheet per side; Scales 2–3 use two mapsheets per side. Alpha Strike uses a 36-inch-wide battlefield at Scale 1 and a 48-inch-wide battlefield at Scales 2–3.",
+  "Team Track End: in addition to the ordinary Duel Track End, the duel ends in the End Phase when more than half of a team by BV/PV is destroyed or crippled. Exactly 50 percent does not satisfy this threshold."
+];
+
+export const GAME_WORLDS_PROVISIONAL_RULES = Object.freeze([
+  "Team larger-weight-class bonus: players manually adjudicate whether Victory! or Nice showing receives the doubled award; the browser does not calculate a team weight class.",
+  "Team victory: if only one team exceeds 50 percent losses, or one team surrenders, the opposing team qualifies for Victory!; if both teams exceed 50 percent simultaneously, neither team automatically qualifies and Victory! remains manually awarded.",
+  "Team per-turn limits: Beat Them and Humiliating Shot are each limited to one award per side per turn. They are independent, so a team may earn both in the same turn, but multiple qualifying units do not multiply either award."
+]);
+
+export const GAME_WORLDS_TEAM_GENERATION_PROVISIONAL_RULE = "Generated opposing team: provisionally retain the Gladiator Faction result, manually construct the team within the selected Scale and BV/PV limit, and select or roll units using that faction’s Dobless Information Services RATs. Do not reroll or substitute Republic results. This manual Dobless method is an approved alternative to the printed standard Opposing Force Table procedure where a corresponding composition table exists.";
+
+export const GAME_WORLDS_DOBLESS_RATS = Object.freeze({
+  "Draconis Combine": Object.freeze({ battleMechs: "p. 182", vehicles: "p. 184", standardComposition: "Draconis Combine standard Opposing Force Table available from p. 186 onward" }),
+  "Federated Suns": Object.freeze({ battleMechs: "p. 182", vehicles: "p. 184", standardComposition: "Federated Suns standard Opposing Force Table available from p. 186 onward" }),
+  "Republic of the Sphere": Object.freeze({ battleMechs: "p. 183", vehicles: "p. 185", standardComposition: "No corresponding Republic standard Opposing Force composition table is printed; its unit RATs are available" }),
+  Mercenary: Object.freeze({ battleMechs: "p. 183", vehicles: "p. 185", standardComposition: "Mercenary standard Opposing Force Table available from p. 186 onward" })
+});
+
+export const GAME_WORLDS_CARCASSONNE_MAPSHEETS = Object.freeze([
+  ["1–3", "Fungal Crevasse, Left Half", "MapPack: Alien Worlds", "Fungal Crevasse"],
+  ["4–6", "Fungal Crevasse, Right Half", "MapPack: Alien Worlds", "Fungal Crevasse"]
+]);
+
+export const GAME_WORLDS_XHOSA_MAPSHEETS = Object.freeze([
+  ["1–2", "Woodland", "MapPack: Grasslands", "Woods"],
+  ["3–4", "Scattered Woods", "MapPack: Grasslands", "Woods"],
+  ["5", "Desert #3", "A Game of Armored Combat", "Woods"],
+  ["6", "Badlands #1", "MapPack: Deserts", "Hills, Frozen Solid Ice"]
+]);
+
+export const GAME_WORLDS_TYBALT_MAPSHEETS = Object.freeze([
+  ["1–3", "City Central Park", "MapPack: City", "Urban"],
+  ["4", "City Observatory Hill", "MapPack: City", "Urban"],
+  ["5–6", "City Park District", "MapPack: City", "Urban"]
+]);
+
+export const GAME_WORLDS_TYBALT_HIRES = Object.freeze([
+  { id: "david-peretz", name: "David Peretz", identity: "Tybalt Hiring Hall Mercenary Board", unit: "Lament LMT-2R", bv: "1,999", pv: "43", gunnery: "2", piloting: "3", alphaStrikeSkill: "2", edge: "5", abilities: "No additional Special Pilot Ability is listed.", restriction: "150 SP per participating track. Peretz refuses to work for a player who has joined the Roughriders.", source: "Draconis Reach p. 69" },
+  { id: "frankie-amir", name: "\"Frankie\" Amir", identity: "Tybalt Hiring Hall Mercenary Board", unit: "Nova Cat T", bv: "2,855", pv: "47", gunnery: "2", piloting: "4", alphaStrikeSkill: "3", edge: "3", abilities: "No Special Pilot Ability is listed after applying the official errata that deletes Lucky (2).", restriction: "Roll 2D6 when recruiting: 11+ costs 100 SP per track; 5 or less costs 300 SP per track; otherwise costs 200 SP per track.", source: "Draconis Reach pp. 69–70 · official errata" }
+]);
+
+const gameWorldModeSelection = {
+  id: "duel-mode",
+  label: "Duel mode",
+  default: "solo",
+  options: [{ value: "solo", label: "Solo Duel" }, { value: "team", label: "Team Duel" }],
+  note: "Solo uses one BattleMech per side. Team uses standard Scale and BV/PV limits."
+};
 
 const gameWorldDuelBaseVariant = {
   page: 130,
@@ -1836,7 +1908,7 @@ const gameWorldDuelBaseVariant = {
   setupDetails: gameWorldDuelSetupDetails,
   objectives: gameWorldDuelObjectives,
   special: gameWorldDuelSpecial,
-  sourceRefs: ["Draconis Reach pp. 128–131", "Purchase Options pp. 22, 69"]
+  sourceRefs: ["Draconis Reach pp. 128–131, 155, 182–186 onward", "General campaign rules pp. 25–30, 39", "Purchase Options pp. 22, 69–70, 176", "Battlefield and terrain procedures pp. 150–156", "MapPack: Alien Worlds official 2021 rules booklet, Fungal Crevasse", "Alpha Strike: Commander’s Edition Seventh Printing v7.01 pp. 50, 58, 62; official v7.02 errata reviewed November 27, 2026 and contains no applicable changes to these entries", "Tactical Operations: Advanced Rules Corrected Sixth Printing pp. 52, 54, 56; official v7.0 errata incorporated", "Current official Draconis Reach master errata (verified November 27, 2026)"]
 };
 
 const gameWorldClassOptions = [
@@ -1862,7 +1934,11 @@ const gameWorldVariant = (name, summary, setup, setupDetails, special, selection
   setup: [...gameWorldDuelSetup, ...setup],
   setupDetails: [...gameWorldDuelSetupDetails, ...setupDetails],
   special: [...gameWorldDuelSpecial, ...special],
-  selectionControls: [selection],
+  selectionControls: [gameWorldModeSelection, selection],
+  modeDetails: {
+    solo: { setupDetails: gameWorldSoloDetails, provisionalRules: [] },
+    team: { setupDetails: gameWorldTeamDetails, provisionalRules: GAME_WORLDS_PROVISIONAL_RULES }
+  },
   gladiatorGenerator,
   sourceRefs
 });
@@ -1871,29 +1947,46 @@ const carcassonneGameWorldVariant = gameWorldVariant(
   "Carcassonne",
   "A fungal-field arena duel on Carcassonne, where the abandoned colony has become a specialized MechWarrior circuit.",
   ["Game world: Carcassonne. Maximum Reputation: 5."],
-  ["Mapsheets: roll 1D6. Results 1–3 use Fungal Crevasse, Left Half; results 4–6 use Fungal Crevasse, Right Half. Use the Map Pack: Alien Worlds map or the Alpha Strike Fungal Crevasse map.", "No Class Six—Open—duels."],
-  ["Fungal Crevasse: apply the special rules for Fungal Crevasse from Map Pack: Alien Worlds or its Alpha Strike equivalent.", "Purchase Options: once a month, roll 2D6; on a 5+ one ’Mech is for sale, and on an 11+ two are for sale. Use the Federated Suns Purchase Options Table."],
+  ["BattleTech mapsheets: use the Carcassonne Mapsheet Table below. Alpha Strike terrain: use Fungal Crevasse. Individual results remain reference-only.", "No Class Six—Open—duels."],
+  [
+    "BattleTech — Poisonous—Tainted atmosphere: conventional infantry must be XCT troops and take double combat damage. After 30 turns outside a Fortress building hex, a Castles Brian building hex, or a vehicle with Environmental Sealing, they suffer 1D6 damage each round as damage from another infantry unit. An unsealed vehicle suffers Crew Killed after 90 turns. These reference thresholds are not tracked automatically. This is not the Alpha Strike Caustic/Crew Stunned rule and does not import Toxic-atmosphere prohibitions.",
+    "BattleTech — Hull breaches in the Tainted atmosphere: use the referenced Hull Integrity procedure—roll 2D6 after qualifying damage and breach on 10+, with an automatic breach when all armor in the location is gone. Per the incorporated atmosphere correction, only cockpit breaches affect ’Mechs and aerospace units in Tainted or Toxic atmospheres. Determine breach and atmosphere-specific effects separately; do not import unrelated Vacuum consequences.",
+    "BattleTech — permanent Dusk: weapon attacks receive +1 TN. Against a heat-tracking target, apply −1 per full 25 heat; conventional infantry ignore this heat modifier. Searchlights do not cancel ordinary Dusk/Dawn. Fungal Crevasse’s bioluminescence removes the +1 Dusk TN when the target is at Level 1 or higher. Dusk establishes no additional physical-attack penalty.",
+    "BattleTech — Ultra Sublevel: any unit entering an Ultra Sublevel hex along the ground is immediately destroyed and removed. The published rule does not add a jumping or airborne restriction.",
+    "BattleTech — fungal attachment and spread: every time a unit enters a Light or Heavy Woods hex along the ground, including repeated entries, roll 1D6; on 6 spores attach and impose a cumulative +1 to subsequent Piloting Skill Rolls, maximum +3. In every End Phase while spores remain attached, roll 1D6; on 6 increase that cumulative penalty by 1, maximum +3.",
+    "BattleTech — fungal removal: declare during the preceding End Phase. During the next turn the unit must stand still or use only Walking/Cruising MP, and cannot make weapon attacks, TAG attacks, or spot for indirect LRM fire; other electronics such as C³ and Guardian ECM work normally. At the end of the Weapon Attack Phase make a Piloting Skill Roll with all modifiers, including the fungal penalty. Success removes all spores; failure deals 1D6 damage to a random location, excluding a ’Mech’s head.",
+    "Alpha Strike — Tainted Atmosphere (Caustic): conventional infantry must have Environmental Sealing (SEAL) and take +1 damage from weapon attacks. A vehicle that loses all armor suffers Crew Stunned: it cannot move or attack during the next turn and is treated as an immobile target while stunned. The trigger does not automatically recur each later turn.",
+    "Alpha Strike — permanent Dusk: attacks receive +1 TN. A BattleMech attacker, an attacker with SRCH, or an attack against an illuminated target ignores the darkness modifier. Aerospace units ignore darkness and cannot be illuminated. Eligible lights may be turned on or off in the End Phase and illuminate terrain and units within 2 inches, including the light-bearing unit. Fungal Crevasse’s BattleTech Level 1 exception does not apply in Alpha Strike.",
+    "Alpha Strike — Fungal Spores: woods are replaced by fungal spores and otherwise use normal woods rules. Roll 1D6 for each 2 inches a unit moves through spores; on a 6, one spore attaches, to a maximum of three. One, two, or three spores impose −2, −4, or −6 inches MV respectively; two or three spores also impose one total −1 TMM penalty. Do not use the BattleTech End Phase spread rule.",
+    "Alpha Strike — removing spores: use Standstill or Ground movement only for the turn and replace the unit’s attack with a Skill +1 roll. Success removes all spores; failure deals 0* damage as if from a physical attack.",
+    "Purchase Options: once a month, roll 2D6; on a 5+ one ’Mech is for sale, and on an 11+ two are for sale. Use the Federated Suns Purchase Options Table."
+  ],
   gameWorldSelection(gameWorldClassOptions.filter(option => option.value !== "open"), "Carcassonne does not hold open-class duels.")
 );
+carcassonneGameWorldVariant.referenceTables = [{ title: "Carcassonne Mapsheet Table (1D6) · Reference only", headers: ["Roll", "Mapsheet", "Source", "Alpha Strike"], rows: GAME_WORLDS_CARCASSONNE_MAPSHEETS }];
 
 const xhosaGameWorldVariant = gameWorldVariant(
   "Xhosa VII",
   "An Easter Ice Fight on the frozen plains of Xhosa VII, where duelists must control their ’Mechs on treacherous ice.",
   ["Game world: Xhosa VII. Maximum Reputation: 10."],
-  ["The Easter Ice Fights are held once a year for one week during the Easter event. A player may play only one duel during the event.", "Mapsheets: roll 1D6. Results 1–2 use Woodland; 3–4 use Scattered Woods; 5 uses Desert #3; 6 uses Badlands #1. Use the listed Alpha Strike equivalents where applicable."],
-  ["Xhosa VII adds 50 percent to combat pay from the duel.", "Freezing Blizzard: in BattleTech, units dissipate an extra 4 heat each turn and each player’s attack ranges are doubled for range modifiers only. In Alpha Strike, units dissipate 1 heat from the Heat Scale each turn and attacks receive a +2 target number modifier from the doubled range used for range modifiers. Damage remains based on actual range.", "Purchase Options: once a month, roll 2D6; on a 5+ one ’Mech is for sale, and on an 11+ two are for sale. Use the Federated Suns Purchase Options Table."],
+  ["The Easter Ice Fights are held once a year during the week leading to Easter weekend. A player may play only one duel during the event.", "BattleTech mapsheets and Alpha Strike terrain: use the Xhosa VII Mapsheet Table below. Individual results remain reference-only."],
+  ["Xhosa VII adds 50 percent to combat pay from the duel.", "Freezing Blizzard—BattleTech: units dissipate 4 additional heat points each turn. For attacks only, double actual distance solely when determining range modifiers; damage and other modifiers use actual distance.", "Freezing Blizzard—Alpha Strike: units dissipate 1 heat from the Heat Scale each turn. For attacks only, double actual distance solely when determining range modifiers; damage uses actual range. A target 4 inches away is treated as 8 inches away for the range modifier, so a unit with only short-range damage may still attack using its actual short-range damage while applying the resulting medium-range modifier.", "Purchase Options: once a month, roll 2D6; on a 5+ one ’Mech is for sale, and on an 11+ two are for sale. Use the Federated Suns Purchase Options Table."],
   gameWorldSelection(gameWorldClassOptions, "Xhosa VII permits all listed duel classes.")
 );
+xhosaGameWorldVariant.referenceTables = [{ title: "Xhosa VII Mapsheet Table (1D6) · Reference only", headers: ["Roll", "Mapsheet", "Source", "Alpha Strike"], rows: GAME_WORLDS_XHOSA_MAPSHEETS }];
 
 const tybaltGameWorldVariant = gameWorldVariant(
   "Tybalt",
   "A grudge-match duel at the Tybalt Festival Grounds, where Roughrider-backed games turn old ruins into an arena.",
   ["Game world: Tybalt. Maximum Reputation: 3."],
-  ["Mapsheets: roll 1D6. Results 1–3 use City Central Park; 4 uses City Observatory Hill; 5–6 use City Park District. Use the listed Alpha Strike Urban equivalents.", "No Class Five—Assault—duels. All buildings are ruins: collapsed, with CF 0."],
-  ["Purchase Options: use the Tybalt Hiring Hall rules on p. 69. For each ’Mech offered for sale, roll on the Clan Sea Fox Purchase Options Tables on p. 176."],
+  ["BattleTech mapsheets and Alpha Strike terrain: use the Tybalt Festival Grounds Mapsheet Table below. Individual results remain reference-only.", "No Class Five—Assault—duels. All buildings are ruins: collapsed, with CF 0."],
+  ["Tybalt Hiring Hall Support Rating C: repairs, OmniMech reconfiguration, and rearming cost 75 percent when performed at the hiring hall. While at the hiring hall and not under contract, maintenance costs 100 SP per month for up to six months; the period resets after three consecutive months of standard maintenance.", "Tybalt Purchase Options: once per month roll 2D6. On 2+, one ’Mech is for sale; on 7+, two are for sale; on 10+, three are for sale. Roll once on the Clan Sea Fox Purchase Options Table for each ’Mech offered.", "Tybalt Mercenary Board: once per month roll on the reference table. A temporary hire is available for the next contract and requires the printed per-track SP payment. Hiring, purchases, repairs, and roster changes remain reference-only."],
   gameWorldSelection(gameWorldClassOptions.filter(option => option.value !== "assault"), "Tybalt does not hold Class Five—Assault—duels."),
-  ["Draconis Reach pp. 128–131", "Tybalt Hiring Hall p. 69", "Clan Sea Fox Purchase Options Tables p. 176"]
+  ["Draconis Reach pp. 128–131", "Tybalt Hiring Hall pp. 69–70", "Clan Sea Fox Purchase Options Tables p. 176", "General campaign rules pp. 25–30, 39", "Battlefield and terrain procedures pp. 150–156", "Random Assignment and opposing-force tables pp. 182–186", "Current official Draconis Reach master errata (verified November 27, 2026)"]
 );
+tybaltGameWorldVariant.referenceTables = [{ title: "Tybalt Festival Grounds Mapsheet Table (1D6) · Reference only", headers: ["Roll", "Mapsheet", "Source", "Alpha Strike"], rows: GAME_WORLDS_TYBALT_MAPSHEETS }];
+tybaltGameWorldVariant.temporaryHires = GAME_WORLDS_TYBALT_HIRES;
+tybaltGameWorldVariant.temporaryHireNote = "Reference-only Tybalt Hiring Hall options. These hires are available for a later contract under pp. 69–70; they are not mandatory duel support and are not added automatically to a solo or team force.";
 
 const gameWorldDuelTrack = {
   id: "game-world-duel",
@@ -2020,6 +2113,35 @@ const gameWorldTracks = [1, 2, 3].map(sequence => ({
   resultLabel: "Game world",
   results: gameWorldResults
 }));
+
+const gameWorldContractReference = {
+  summary: [
+    "Game Worlds · Contract number N/A (Mission Brief: None) · Employer None · Intensity 1–3 duels. No ordinary Base Pay, Support, Transportation, Salvage Rights, or Command Rights terms apply.",
+    "One duel is normally fought per month. Solo duels use no normal Scale force limits but count as Scale 1 for campaign costs and payments.",
+    "Combat Pay: 1 objective VP equals 1 SP. Each Reputation point increases total combat pay by 10 percent, limited by the chosen world: Carcassonne 5 (+50 percent maximum), Xhosa VII 10 (+100 percent maximum, plus its separate +50 percent Easter-duel provision), and Tybalt 3 (+30 percent maximum). The source does not establish an order of operations for combining payment modifiers."
+  ],
+  progression: [
+    "Multiple players may choose Game Worlds and may fight on the same or different worlds. Use Taking One for the Team when a generated opposing duelist or team is needed.",
+    "Contract victory, payments, Reputation, monthly timing, purchases, hiring, repair, and roster changes remain reference-only; the browser does not administer tournament history."
+  ],
+  tables: [
+    { title: "Tybalt Hiring Hall Support Modifier", headers: ["Support Rating", "Repair / Reconfigure / Rearm Costs"], rows: [["A–B", "50%"], ["C", "75%"], ["D–F", "100%"]] },
+    { title: "Tybalt Hiring Hall Mercenary Board (2D6)", headers: ["Roll", "Result"], rows: [["2–7", "Regular (Piloting 5, Gunnery 4) Dispossessed"], ["8", "Veteran (Piloting 4, Gunnery 3) Dispossessed"], ["9", "David Peretz"], ["10", "\"Frankie\" Amir"], ["11–12", "Le Lion d’Or"]] }
+  ],
+  victory: [
+    "A player who earns two duel victories within three months wins the Game Worlds contract and gains +1 Reputation. Victory! determines each duel winner even when the losing player earned more objective VP.",
+    "A victorious player earns a tournament trophy: additional combat pay equal to standard combat pay multiplied by class—Light ×2, Medium ×3, Heavy ×4, Assault ×5, or Open ×6. No payment calculation is automated.",
+    "Official errata example: a first-turn head-shot victory earns 100 SP for Victory!, 50 SP for Nice showing, 10 SP for Head Shot, and any other qualifying shooting or objective awards."
+  ],
+  purchaseOptions: [
+    "Carcassonne and Xhosa VII: once per month roll 2D6. On 5+, one BattleMech is available; on 11+, two are available. Use the Federated Suns Purchase Options Table on p. 22.",
+    "Tybalt: once per month roll 2D6. On 2+, one BattleMech is available; on 7+, two are available; on 10+, three are available. Roll on the Clan Sea Fox Purchase Options Table on p. 176 once for each offered BattleMech.",
+    "Tybalt Hiring Hall Support Rating C charges 75 percent for repairs, OmniMech reconfiguration, and rearming. While at the hall and not under contract, maintenance costs 100 SP per month for up to six months; the period resets after three consecutive months of standard maintenance.",
+    "Tybalt Mercenary Board: roll once per month. Regular Dispossessed costs the standard MechWarrior purchase cost; Veteran Dispossessed costs 500 SP and begins with 300 SP in Gunnery and 100 SP in Piloting; a Veteran with a BattleMech costs 50 SP per track and earns a 50 SP bonus after a successful track.",
+    "If a named Tybalt mercenary was already hired, treat that result as a Veteran and roll on the Federated Suns RAT. If Le Lion d’Or was already hired, choose David Peretz, Frankie Amir, or a Veteran with a BattleMech and roll on the Federated Suns RAT.",
+    "Le Lion d’Or: the damaged Manatee-class DropShip requires 1,000 SP in repairs and 100 SP per month maintenance, after which it serves as transport and home base. These campaign services remain outside the tactical browser."
+  ]
+};
 
 export const PASCAGOULA_MOUNTAINS_MAPSHEETS = Object.freeze([
   ["1", "Foothills #1", "MapPack: Grasslands"],
@@ -3763,10 +3885,9 @@ export const HOT_SPOTS = [
     terrain: "World selected below",
     source: "Draconis Reach pp. 128–131",
     opforMode: "gladiator",
-    hideSideSelector: true,
-    hideScaleSelector: true,
-    note: "Game Worlds is a one-to-three-track duel hot spot. Choose the game world and duel class for each track. The browser records the duel rules, objectives, and Gladiator Generator procedure without creating a force or resolving campaign payments automatically.",
-    sides: [factionSide("duelist-one", "Duelist One", "Mercenary"), factionSide("duelist-two", "Duelist Two", "Mercenary")],
+    note: "Game Worlds is a one-to-three-track duel hot spot. Choose the game world, solo or team mode, competition class, and player side for each track. Dice, campaign payments, force losses, and tournament history remain tabletop or reference-only procedures.",
+    contractReference: gameWorldContractReference,
+    sides: [factionSide("duelist-one", "Attacker", "Duelist"), factionSide("duelist-two", "Defender", "Duelist")],
     tracks: gameWorldTracks
   },
   {
@@ -3826,6 +3947,6 @@ export const HOT_SPOTS = [
   }
 ];
 
-export const PLAYER_VISIBLE_HOT_SPOT_IDS = Object.freeze(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress", "xhosa-vii", "act-of-piracy"]);
+export const PLAYER_VISIBLE_HOT_SPOT_IDS = Object.freeze(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress", "xhosa-vii", "act-of-piracy", "game-worlds"]);
 
 

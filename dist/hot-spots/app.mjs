@@ -1,4 +1,4 @@
-import { ACT_OF_PIRACY_SYSTEMS, adjustDaharEarnedVp, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_PROVISIONAL_RULES, evaluateAltaVistaCampaign, evaluateProtectionPursuit, evaluateXhosaTruckOutcome, FACTION_COLORS, GENERAL_RULES, groupComplicationEffectEntries, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_PROVISIONAL_RULES, MISSION_OPFOR_OVERRIDES, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PASCAGOULA_PROVISIONAL_RULES, PLAYER_VISIBLE_HOT_SPOT_IDS, protectionPartisanSupport, RECON_DENY_ATTACKER_OBJECTIVE_IDS, resolveActOfPiracyScenario, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=acts-of-piracy-supplemental";
+import { ACT_OF_PIRACY_SYSTEMS, adjustDaharEarnedVp, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_PROVISIONAL_RULES, evaluateAltaVistaCampaign, evaluateGameWorldDuelVictory, evaluateProtectionPursuit, evaluateXhosaTruckOutcome, FACTION_COLORS, GAME_WORLDS_DOBLESS_RATS, GAME_WORLDS_TEAM_GENERATION_PROVISIONAL_RULE, GENERAL_RULES, groupComplicationEffectEntries, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_PROVISIONAL_RULES, MISSION_OPFOR_OVERRIDES, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PASCAGOULA_PROVISIONAL_RULES, PLAYER_VISIBLE_HOT_SPOT_IDS, protectionPartisanSupport, RECON_DENY_ATTACKER_OBJECTIVE_IDS, resolveActOfPiracyScenario, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=game-worlds-supplement";
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -28,6 +28,8 @@ const state = {
   takingOneForTeam: false,
   opforRoll: 1,
   opforForceTypes: {},
+  gameWorldTeamScales: {},
+  gameWorldGeneratedFactions: {},
   progress: {},
   vpSelections: {},
   campaignState: {},
@@ -122,8 +124,7 @@ function currentHotSpot() {
   return VISIBLE_HOT_SPOTS.find(hotSpot => hotSpot.id === state.hotSpotId) || VISIBLE_HOT_SPOTS[0];
 }
 
-const approvedHotSpotIds = new Set(PLAYER_VISIBLE_HOT_SPOT_IDS);
-const VISIBLE_HOT_SPOTS = HOT_SPOTS.filter(hotSpot => approvedHotSpotIds.has(hotSpot.id));
+const VISIBLE_HOT_SPOTS = PLAYER_VISIBLE_HOT_SPOT_IDS.map(id => HOT_SPOTS.find(hotSpot => hotSpot.id === id)).filter(Boolean);
 const interactiveComplicationContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress", "xhosa-vii", "act-of-piracy"]);
 
 function complicationRowKey(row, index) {
@@ -223,7 +224,7 @@ function sideById(sideId) {
   return side;
 }
 
-const simplifiedContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress", "xhosa-vii", "act-of-piracy"]);
+const simplifiedContracts = new Set(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress", "xhosa-vii", "act-of-piracy", "game-worlds"]);
 
 function generatedOpForConfiguration() {
   const hotSpot = currentHotSpot();
@@ -342,6 +343,41 @@ function variantSelectionKey(sequence, selection) {
 function selectedVariantSelection(sequence, selection) {
   const value = state.selectionValues[variantSelectionKey(sequence, selection)] || selection.default || "";
   return selection.options.some(option => option.value === value) ? value : "";
+}
+
+function gameWorldRawSelection(sequence, selectionId, variant = null) {
+  if (state.hotSpotId !== "game-worlds") return "";
+  const sourceVariant = variant || resolvedHotSpotStep()?.variant;
+  const selection = sourceVariant?.selectionControls?.find(item => item.id === selectionId);
+  if (!selection) return "";
+  const value = state.selectionValues[variantSelectionKey(sequence, selection)] || selection.default || "";
+  return selection.options.some(option => option.value === value) ? value : "";
+}
+
+function gameWorldMode(sequence = currentHotSpotStep()?.sequence || 1, variant = null) {
+  return gameWorldRawSelection(sequence, "duel-mode", variant) || "solo";
+}
+
+function gameWorldClass(sequence = currentHotSpotStep()?.sequence || 1, variant = null) {
+  return gameWorldRawSelection(sequence, "duel-class", variant) || "unresolved class";
+}
+
+function gameWorldTeamScaleKey(sequence = currentHotSpotStep()?.sequence || 1) {
+  return "game-worlds::team-scale::" + sequence;
+}
+
+function gameWorldScoringContext() {
+  if (state.hotSpotId !== "game-worlds") return "";
+  const sequence = currentHotSpotStep()?.sequence || 1;
+  const world = state.resultSelections[resultKey(sequence)] || "carcassonne";
+  const mode = gameWorldMode(sequence);
+  const duelClass = gameWorldClass(sequence);
+  const scale = mode === "team" ? state.scale : 1;
+  return "::" + world + "::" + mode + "::" + duelClass + "::scale-" + scale;
+}
+
+function gameWorldGeneratedFactionKey() {
+  return ["game-worlds", currentHotSpotStep()?.sequence || 1, state.resultSelections[resultKey(currentHotSpotStep()?.sequence || 1)] || "carcassonne", gameWorldMode()].join("::");
 }
 
 function variantConditionMatches(sequence, condition) {
@@ -730,6 +766,22 @@ function resolvedHotSpotStep() {
     const selectedResult = state.resultSelections[resultKey(step.sequence)] || step.results[0].id;
     outcome = step.results.find(result => result.id === selectedResult) || step.results[0];
   }
+  if (currentHotSpot().id === "game-worlds" && outcome.variant) {
+    const mode = gameWorldMode(step.sequence, outcome.variant);
+    const modeDetails = outcome.variant.modeDetails?.[mode] || {};
+    outcome = {
+      ...outcome,
+      variant: {
+        ...outcome.variant,
+        summary: mode === "team"
+          ? "A team duel using standard Scale and BV/PV limits under the Game Worlds mission brief from Draconis Reach."
+          : outcome.variant.summary,
+        setupDetails: [...(outcome.variant.setupDetails || []), ...(modeDetails.setupDetails || [])],
+        special: [...(outcome.variant.special || []), ...(modeDetails.special || [])],
+        provisionalRules: modeDetails.provisionalRules || []
+      }
+    };
+  }
   if (outcome.roleChoice) {
     let selectedInitiator = state.roleSelections[roleKey(step.sequence)] || "";
     if (outcome.roleChoiceRequired && !selectedInitiator) {
@@ -756,6 +808,14 @@ function syncHotSpotState() {
   }
   if (step?.results?.length && !state.resultSelections[resultKey(step.sequence)]) {
     state.resultSelections[resultKey(step.sequence)] = step.results[0].id;
+  }
+  if (hotSpot.id === "game-worlds") {
+    const mode = gameWorldMode(step?.sequence || 1);
+    if (mode === "solo") {
+      state.scale = 1;
+    } else {
+      state.scale = state.gameWorldTeamScales[gameWorldTeamScaleKey(step?.sequence || 1)] || state.scale || 1;
+    }
   }
   const resolved = resolvedHotSpotStep();
   if (hotSpot.id === "le-blanc") {
@@ -788,7 +848,7 @@ function applies(objective, side) {
 function progressKey(trackId, objectiveId, side) {
   const branch = state.hotSpotId === "pascagoula" && Number(state.trackSequence[state.hotSpotId]) === 2
     ? "::" + (selectedWinner(1) || "unresolved")
-    : "";
+    : gameWorldScoringContext();
   return state.hotSpotId + "::" + (state.trackSequence[state.hotSpotId] || "") + "::" + trackId + branch + "::" + objectiveId + "::" + side;
 }
 
@@ -824,6 +884,20 @@ function getProgress(objective, side) {
   const key = progressKey(state.trackId, objective.id, side);
   if (state.progress[key] === undefined) state.progress[key] = objective.repeatable ? 0 : false;
   return state.progress[key];
+}
+
+function eventProgressKey(objective, eventValue, side) {
+  return progressKey(state.trackId, objective.id + "::event-" + eventValue.id, side);
+}
+
+function getEventProgress(objective, eventValue, side) {
+  const key = eventProgressKey(objective, eventValue, side);
+  if (state.progress[key] === undefined) state.progress[key] = 0;
+  return Number(state.progress[key]) || 0;
+}
+
+function setEventProgress(objective, eventValue, side, value) {
+  state.progress[eventProgressKey(objective, eventValue, side)] = Math.max(0, Number(value) || 0);
 }
 
 function currentObjectives() {
@@ -898,6 +972,10 @@ function objectiveEarnedVp(objective, side, display = objective) {
   if (protectionCaptureOverride() && side === "attacker") return getVp(display, side);
   const affected = daharGibberishApplies(side);
   if (isReconDeny(objective, side)) return adjustDaharEarnedVp(reconDenyVp(), affected);
+  if (display.eventValues?.length) {
+    const earned = display.eventValues.reduce((total, eventValue) => total + getEventProgress(objective, eventValue, side) * Number(eventValue.vp), 0);
+    return adjustDaharEarnedVp(earned, affected);
+  }
   const completed = getProgress(objective, side);
   const earned = objective.repeatable ? Number(completed) * getVp(display, side) : completed ? getVp(display, side) : 0;
   return adjustDaharEarnedVp(earned, affected);
@@ -936,6 +1014,7 @@ function completedObjectiveCount(side) {
     if (!applies(objective, side)) return false;
     if (pascagoulaObjectiveSuppressed(objective, side)) return false;
     if (isReconDeny(objective, side)) return reconDenyVp() > 0;
+    if (objective.eventValues?.length) return objective.eventValues.some(eventValue => getEventProgress(objective, eventValue, side) > 0);
     return objective.repeatable ? Number(getProgress(objective, side)) > 0 : Boolean(getProgress(objective, side));
   }).length;
   const retainedTrainingCount = currentHotSpot().id === "tigress" && Number(currentHotSpotStep()?.sequence) === 1 && state.tigressPhase === "recon" && side === "defender"
@@ -970,7 +1049,9 @@ function renderControlState() {
   $("#derived-track-title").textContent = track ? (resolved?.displayName || track.name) : (resolved?.variant?.displayName || "Track pending");
   const setupSummary = $("#hotspot-setup-summary");
   const selected = sideById(state.selectedSide[currentHotSpot().id]);
-  if (setupSummary) setupSummary.textContent = [currentHotSpot().name, resolved?.displayName || track?.name || currentHotSpotStep()?.label || "Track pending", selected?.name || "Military side", "Scale " + state.scale].join(" · ");
+  if (setupSummary) setupSummary.textContent = currentHotSpot().id === "game-worlds"
+    ? hotSpotSetupSummaryParts(resolved?.variant || track).join(" · ")
+    : [currentHotSpot().name, resolved?.displayName || track?.name || currentHotSpotStep()?.label || "Track pending", selected?.name || "Military side", "Scale " + state.scale].join(" · ");
   Array.from(document.querySelectorAll(".scale-button")).forEach(button => {
     const active = Number(button.dataset.scale) === state.scale;
     const unavailable = Boolean(fixedScale) && Number(button.dataset.scale) !== fixedScale;
@@ -994,13 +1075,24 @@ function renderGladiatorGenerator(generator) {
   const experience = generator.experienceLevels.map(row => '<tr><td>' + esc(row[0]) + '</td><td>' + esc(row[1]) + '</td></tr>').join("");
   return '<article class="opfor-card gladiator-generator"><div class="opfor-card-head"><div><span class="panel-kicker">TAKING ONE FOR THE TEAM</span><h3>Gladiator Generator</h3><p>Use this procedure when a non-player duelist is needed.</p></div></div>' +
     '<p class="campaign-state-note">' + esc(generator.note) + '</p>' +
-    '<div class="opfor-force-grid"><div><span>Class adjustments</span><ul>' + adjustments + '</ul></div><div><span>Experience Rating</span><div class="shared-rule-table-wrap"><table class="shared-rule-table"><thead><tr><th scope="col">Adjusted 2D6</th><th scope="col">Experience</th></tr></thead><tbody>' + experience + '</tbody></table></div></div></div>' +
+    '<div class="opfor-force-grid"><div><span>Class adjustments</span><ul>' + adjustments + '</ul><small>' + esc(generator.experienceFootnote) + '</small></div><div><span>Experience Rating</span><div class="shared-rule-table-wrap"><table class="shared-rule-table"><thead><tr><th scope="col">Adjusted 2D6</th><th scope="col">Experience</th></tr></thead><tbody>' + experience + '</tbody></table></div></div></div>' +
     '<div class="gladiator-tables">' +
       renderGeneratorTable("Gladiator Skills", generator.skillLevels) +
       renderGeneratorTable("Number of Edge Abilities", generator.edgeCounts) +
       renderGeneratorTable("Gladiator Faction", generator.factions) +
       renderGeneratorTable("Gladiator Edge Ability", generator.edgeAbilities) +
-    '</div><p class="opfor-rule">After determining the faction, use the matching era/faction Random Assignment Table to determine the ’Mech. Reroll Edge results that are not appropriate for the unit.</p><div class="reference-citation">Source: Draconis Reach p. 131</div></article>';
+    '</div><p class="opfor-rule">' + esc(generator.edgeProcedure) + '</p><p class="opfor-rule">After determining the faction, use the matching Dobless Information Services BattleMech RAT: Draconis Combine or Federated Suns p. 182; Republic of the Sphere or Mercenary p. 183. Open class uses the appropriate Assault RAT. Generate one ’Mech only.</p><p class="campaign-state-note"><strong>Taking One for the Team:</strong> the generated duelist risks no Support Points, receives half combat pay rounded down, and may use the printed successful-track purchase option.</p><div class="reference-citation">Source: Draconis Reach pp. 39, 131, 182–183</div></article>';
+}
+
+function renderGameWorldTeamGenerator(generator) {
+  const selectedFaction = state.gameWorldGeneratedFactions[gameWorldGeneratedFactionKey()] || "";
+  const choices = ["Republic of the Sphere", "Draconis Combine", "Mercenary", "Federated Suns"];
+  const selector = '<label class="opfor-type-control"><span>Resolved Gladiator Faction</span><select data-game-world-faction><option value="">Choose the 2D6 faction result</option>' + choices.map(faction => '<option value="' + esc(faction) + '"' + (selectedFaction === faction ? " selected" : "") + '>' + esc(faction) + '</option>').join("") + '</select></label>';
+  const rat = selectedFaction ? GAME_WORLDS_DOBLESS_RATS[selectedFaction] : null;
+  const factionReference = rat
+    ? '<div class="opfor-result"><div class="opfor-result-label">Retained faction</div><output>' + esc(selectedFaction) + '</output><span>BattleMechs ' + esc(rat.battleMechs) + ' · vehicles ' + esc(rat.vehicles) + '</span></div><p class="opfor-rule"><strong>Printed procedure reference:</strong> ' + esc(rat.standardComposition) + '.</p><p class="opfor-rule"><strong>Approved provisional alternative:</strong> manually construct the opponent within the Scale ' + esc(String(state.scale)) + ' BV/PV limit and select or roll eligible units using the cited Dobless RATs. Vehicle RAT references do not independently authorize vehicles for the duel. No roster, balance, skill, composition, or category eligibility is generated here.</p>'
+    : '<p class="campaign-state-note">Roll on the printed Gladiator Faction table, retain that result, then select it here. Republic results are not rerolled or replaced.</p>';
+  return '<article class="opfor-card"><div class="opfor-card-head"><div><span class="panel-kicker">TAKING ONE FOR THE TEAM · TEAM DUEL</span><h3>Generated opposing team</h3><p>Manual faction-RAT construction · Scale ' + esc(String(state.scale)) + '</p></div></div>' + selector + renderGeneratorTable("Gladiator Faction", generator.factions) + factionReference + renderProvisionalRules([GAME_WORLDS_TEAM_GENERATION_PROVISIONAL_RULE]) + '<p class="opfor-rule">The generated team risks no Support Points, receives half combat pay rounded down, and may use the printed successful-track purchase option.</p><div class="reference-citation">Source: Draconis Reach pp. 39, 129, 131, 182–186 onward</div></article>';
 }
 
 function renderOpFor() {
@@ -1021,7 +1113,10 @@ function renderOpFor() {
       container.innerHTML = "";
       return;
     }
-    container.innerHTML = renderGladiatorGenerator(resolvedHotSpotStep()?.variant?.gladiatorGenerator);
+    const generator = resolvedHotSpotStep()?.variant?.gladiatorGenerator;
+    container.innerHTML = hotSpot.id === "game-worlds" && gameWorldMode() === "team"
+      ? renderGameWorldTeamGenerator(generator)
+      : renderGladiatorGenerator(generator);
     return;
   }
   if (!state.takingOneForTeam) {
@@ -1085,7 +1180,9 @@ function renderHotSpotSetup() {
   }).join("");
   $("#hot-spot-side-select").value = selected?.id || "";
   const setupSummary = $("#hotspot-setup-summary");
-  if (setupSummary) setupSummary.textContent = [hotSpot.name, resolved?.displayName || currentTrack()?.name || step?.label || "Track pending", selected?.name || "Military side", "Scale " + state.scale].join(" · ");
+  if (setupSummary) setupSummary.textContent = hotSpot.id === "game-worlds"
+    ? hotSpotSetupSummaryParts(resolved?.variant || currentTrack()).join(" · ")
+    : [hotSpot.name, resolved?.displayName || currentTrack()?.name || step?.label || "Track pending", selected?.name || "Military side", "Scale " + state.scale].join(" · ");
 
   const winnerControls = [];
   for (const sequence of step?.requires || []) {
@@ -1144,7 +1241,8 @@ function renderHotSpotSetup() {
   if (sideControl) sideControl.style.display = hotSpot.hideSideSelector ? "none" : "";
   const scaleChoice = $("#scale-choice");
   if (scaleChoice) {
-    scaleChoice.style.display = hotSpot.hideScaleSelector ? "none" : "";
+    const hideScaleSelector = hotSpot.id === "game-worlds" ? gameWorldMode() !== "team" : hotSpot.hideScaleSelector;
+    scaleChoice.style.display = hideScaleSelector ? "none" : "";
     const scaleNote = $("#scale-restriction-note");
     scaleNote.textContent = hotSpot.fixedScaleNote || "";
     scaleNote.hidden = !hotSpot.fixedScaleNote;
@@ -1153,8 +1251,8 @@ function renderHotSpotSetup() {
   const piracyScenario = hotSpot.id === "act-of-piracy" ? actOfPiracyScenario() : null;
   takingToggle.style.display = sourceTableMode && !piracyScenario?.militiaRequired ? "none" : "";
   if (hotSpot.opforMode === "gladiator") {
-    takingToggle.querySelector("strong").textContent = "Use the Gladiator Generator";
-    takingToggle.querySelector("small").textContent = "Show the source procedure for creating a non-player duelist.";
+    takingToggle.querySelector("strong").textContent = gameWorldMode() === "team" ? "Generate the opposing team" : "Use the Gladiator Generator";
+    takingToggle.querySelector("small").textContent = gameWorldMode() === "team" ? "Show the standard Scale-based opposing-team procedure." : "Show the source procedure for creating a non-player duelist.";
   } else if (hotSpot.id === "act-of-piracy") {
     takingToggle.querySelector("strong").textContent = "Generate the local Militia Garrison";
     takingToggle.querySelector("small").textContent = "Show the attacked system’s required Militia Garrison configuration from the source tables.";
@@ -1283,6 +1381,18 @@ function hotSpotSetupSummaryParts(referenceTrack) {
   const selected = sideById(state.selectedSide[currentHotSpot().id]);
   const resolved = resolvedHotSpotStep();
   const parts = [currentHotSpot().name, resolved?.displayName || currentTrack()?.name || currentHotSpotStep()?.label || "Track pending", selected?.name || "Military side", "Scale " + state.scale];
+  if (currentHotSpot().id === "game-worlds") {
+    const mode = gameWorldMode();
+    return [
+      currentHotSpot().name,
+      resolved?.displayName || "Game World Duel",
+      selected?.name || "Duelist side",
+      mode === "team" ? "Team Duel · Scale " + state.scale : "Solo Duel · campaign Scale 1",
+      gameWorldClass() === "unresolved class" ? "Class unresolved" : gameWorldClass(),
+      battlefieldSelectionSummary(referenceTrack),
+      state.takingOneForTeam ? "Taking One for the Team enabled" : "Player-controlled opponent"
+    ];
+  }
   if (currentHotSpot().id === "act-of-piracy") {
     const scenario = actOfPiracyScenario();
     parts.push("Protected: " + (scenario.protectedSystem?.name || "unresolved"));
@@ -1302,6 +1412,7 @@ function displayObjective(objective, variant) {
 }
 
 function objectiveVpText(display) {
+  if (display.eventValues?.length) return display.eventValues.map(eventValue => eventValue.vp + " VP " + eventValue.label).join(" / ");
   const vp = display.vpOptions ? display.vpOptions.join(" / ") : display.vp;
   return vp + " VP" + (display.repeatable ? " each" : "");
 }
@@ -1840,6 +1951,13 @@ function objectiveControl(objective, side, display = objective) {
     : protectionCaptureOverride() && side === "attacker"
       ? '<span class="adjusted-vp">Automatically credited by final-turn Mobile HQ capture; manual progress remains recorded below.</span>'
       : "";
+  if (display.eventValues?.length) {
+    const controls = display.eventValues.map(eventValue => {
+      const progress = getEventProgress(objective, eventValue, side);
+      return '<div class="event-counter"><span>' + esc(eventValue.label) + ' · ' + esc(String(eventValue.vp)) + ' VP</span><div class="counter-control"><button type="button" class="counter-button" data-action="event-decrement" data-objective="' + esc(objective.id) + '" data-event="' + esc(eventValue.id) + '" data-side="' + side + '" aria-label="Decrease ' + esc(eventValue.label) + '"' + (progress <= 0 ? ' disabled' : '') + '>−</button><output>' + progress + '</output><button type="button" class="counter-button" data-action="event-increment" data-objective="' + esc(objective.id) + '" data-event="' + esc(eventValue.id) + '" data-side="' + side + '" aria-label="Increase ' + esc(eventValue.label) + '">+</button></div></div>';
+    }).join("");
+    return '<div class="event-counter-group">' + controls + '</div>' + adjusted;
+  }
   if (objective.repeatable) {
     const atIndividualMaximum = Number(progress) >= (objective.maxCount ?? Infinity);
     const atCombinedMaximum = objective.combinedGroup && Number.isFinite(objective.combinedMax) && combinedObjectiveProgress(objective) >= objective.combinedMax;
@@ -1886,7 +2004,7 @@ function renderTracker() {
     const calculatedDeny = isReconDeny(objective);
     const objectiveText = display.text;
     const denyVp = calculatedDeny ? objectiveEarnedVp(objective, "defender", display) : 0;
-    const vpLabel = calculatedDeny ? "Projected: " + denyVp + " VP" : (display.vpOptions ? display.vpOptions.join(" / ") + " VP (select value)" : display.vp + " VP" + (display.repeatable ? " each" : ""));
+    const vpLabel = calculatedDeny ? "Projected: " + denyVp + " VP" : display.eventValues?.length ? display.eventValues.map(eventValue => eventValue.vp + " VP " + eventValue.label).join(" / ") : (display.vpOptions ? display.vpOptions.join(" / ") + " VP (select value)" : display.vp + " VP" + (display.repeatable ? " each" : ""));
     const extractionNote = pascagoulaObjectiveSuppressed(objective, "defender") ? '<div class="calculated-vp-note">Defender VP is currently suppressed until at least one Ryu is extracted.</div>' : "";
     const denyDeadline = currentHotSpot().id === "tigress" && Number(currentHotSpotStep()?.sequence) === 1 ? "Recon Turn 8" : "Turn 8";
     const projectionNote = (calculatedDeny ? '<div class="calculated-vp-note">Projected Deny VP follows the printed Deny schedule as the Attacker completes objectives. Remaining Deny points are awarded at the end of ' + denyDeadline + '.' + (daharGibberishApplies("defender") ? " Dahar Complication 7 deducts 20 VP once from the earned Deny objective." : "") + '</div>' : "") + extractionNote;
@@ -1913,6 +2031,16 @@ function renderScore() {
   $("#defender-score").textContent = defender.toLocaleString("en-US");
   $("#attacker-bar").style.width = (attacker / max * 100) + "%";
   $("#defender-bar").style.width = (defender / max * 100) + "%";
+  if (currentHotSpot().id === "game-worlds") {
+    const victory = currentObjectives().find(objective => objective.id === "duel-victory");
+    const attackerVictory = victory ? Boolean(getProgress(victory, "attacker")) : false;
+    const defenderVictory = victory ? Boolean(getProgress(victory, "defender")) : false;
+    const duelResult = evaluateGameWorldDuelVictory(attackerVictory, defenderVictory);
+    const outcome = { text: duelResult.text, className: duelResult.winner ? duelResult.winner + "-lead" : "tie" };
+    $("#score-difference").textContent = outcome.text;
+    $("#score-difference").className = "difference " + outcome.className;
+    return;
+  }
   $("#score-difference").textContent = protectionOutcome.attackerSuccessful && protectionCaptureOverride()
     ? "Platinum Sands successfully completes the track · Kanagawa Group does not"
     : attacker === defender ? (currentHotSpot().id === "act-of-piracy" ? "Tie · neither side successfully completes the track" : "Tie") : (attacker > defender ? "Attacker leads by " + (attacker - defender) : "Defender leads by " + (defender - attacker));
@@ -1930,7 +2058,9 @@ function renderAll() {
 }
 
 function resetTrack() {
-  const branch = state.hotSpotId === "pascagoula" && Number(state.trackSequence[state.hotSpotId]) === 2 ? "::" + (selectedWinner(1) || "unresolved") : "";
+  const branch = state.hotSpotId === "pascagoula" && Number(state.trackSequence[state.hotSpotId]) === 2
+    ? "::" + (selectedWinner(1) || "unresolved")
+    : gameWorldScoringContext();
   const base = state.hotSpotId + "::" + (state.trackSequence[state.hotSpotId] || "") + "::";
   const prefixes = state.hotSpotId === "tigress" && Number(state.trackSequence[state.hotSpotId]) === 1
     ? [base + "meeting-engagement::", base + "recon::"]
@@ -2270,6 +2400,11 @@ $("#taking-one-for-team").addEventListener("change", event => {
 });
 
 $("#opfor-display").addEventListener("change", event => {
+  if (event.target.dataset.gameWorldFaction !== undefined) {
+    state.gameWorldGeneratedFactions[gameWorldGeneratedFactionKey()] = event.target.value;
+    renderOpFor();
+    return;
+  }
   if (event.target.dataset.opforForceType) {
     state.opforForceTypes[currentHotSpot().id + "::" + event.target.dataset.opforForceType] = event.target.value;
     renderOpFor();
@@ -2291,7 +2426,17 @@ $("#winner-controls").addEventListener("change", event => {
     if (interactiveComplicationContracts.has(currentHotSpot().id)) clearComplicationSelections(currentHotSpot().id);
   }
   if (event.target.dataset.sourceRollId) state.sourceRollSelections[sourceRollKey(event.target.dataset.sourceRollSequence, event.target.dataset.sourceRollId)] = event.target.value;
-  if (event.target.dataset.selectionId) state.selectionValues[variantSelectionKey(event.target.dataset.selectionSequence, { id: event.target.dataset.selectionId })] = event.target.value;
+  if (event.target.dataset.selectionId) {
+    const selectionId = event.target.dataset.selectionId;
+    const sequence = event.target.dataset.selectionSequence;
+    if (currentHotSpot().id === "game-worlds" && selectionId === "duel-mode" && gameWorldMode(sequence) === "team") {
+      state.gameWorldTeamScales[gameWorldTeamScaleKey(sequence)] = state.scale;
+    }
+    state.selectionValues[variantSelectionKey(sequence, { id: selectionId })] = event.target.value;
+    if (currentHotSpot().id === "game-worlds" && selectionId === "duel-mode") {
+      state.scale = event.target.value === "team" ? (state.gameWorldTeamScales[gameWorldTeamScaleKey(sequence)] || 1) : 1;
+    }
+  }
   if (event.target.dataset.roleSequence) state.roleSelections[roleKey(event.target.dataset.roleSequence)] = event.target.value;
   renderAll();
 });
@@ -2300,6 +2445,11 @@ $("#scale-select").addEventListener("click", event => {
   const button = event.target.closest(".scale-button");
   if (!button || button.disabled) return;
   state.scale = Number(button.dataset.scale);
+  if (currentHotSpot().id === "game-worlds" && gameWorldMode() === "team") {
+    state.gameWorldTeamScales[gameWorldTeamScaleKey()] = state.scale;
+    renderAll();
+    return;
+  }
   if (currentHotSpot().id === "dahar-iv") {
     const mission = daharMissionState();
     mission.finalized = false;
@@ -2326,6 +2476,14 @@ $("#objective-body").addEventListener("click", event => {
   const objective = currentObjectives().find(item => item.id === button.dataset.objective);
   if (!objective) return;
   const side = button.dataset.side;
+  if (button.dataset.event) {
+    const eventValue = objective.eventValues?.find(item => item.id === button.dataset.event);
+    if (!eventValue) return;
+    const currentEvent = getEventProgress(objective, eventValue, side);
+    setEventProgress(objective, eventValue, side, currentEvent + (button.dataset.action === "event-increment" ? 1 : -1));
+    renderTracker();
+    return;
+  }
   const current = Number(getProgress(objective, side));
   setProgress(objective, side, current + (button.dataset.action === "increment" ? 1 : -1));
   if (currentHotSpot().id === "dahar-iv") daharMissionState().finalized = false;
@@ -2347,7 +2505,8 @@ $("#objective-body").addEventListener("change", event => {
     renderTracker();
     return;
   }
-  const objective = currentObjectives().find(item => item.id === input.dataset.objective);
+  const objectiveId = input.dataset.objective || input.dataset.vpObjective;
+  const objective = currentObjectives().find(item => item.id === objectiveId);
   if (!objective) return;
   const side = input.dataset.side || input.dataset.vpSide;
   if (input.dataset.action === "toggle") setProgress(objective, side, input.checked);

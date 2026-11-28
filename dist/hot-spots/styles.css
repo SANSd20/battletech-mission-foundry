@@ -133,6 +133,9 @@ button, select { cursor: pointer; }
 .opfor-card-meta > span { min-width: 0; overflow-wrap: anywhere; }
 .gladiator-tables { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; padding: 14px; }
 .gladiator-tables > div { min-width: 0; }
+.event-counter-group { display: grid; gap: 8px; min-width: 180px; }
+.event-counter { display: grid; gap: 5px; padding: 7px; border: 1px solid #d3dfda; background: #fff; }
+.event-counter > span { color: #53636b; font-size: 10px; font-weight: 750; }
 .opfor-card-meta strong { color: var(--ink); }
 .opfor-result { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding: 12px 13px; border-bottom: 1px solid #d3dfda; color: #53636b; font-size: 11px; }
 .opfor-result > span:last-child { flex: 1 1 180px; min-width: 0; }
@@ -393,6 +396,9 @@ body { background: color-mix(in srgb, var(--faction-color) 10%, #111821); color:
   .mode-button { text-align: left; }
   .mission-card-head, .reference-section, .tracker-panel, .source-panel, .general-card, .errata-panel { padding-left: 16px; padding-right: 16px; }
   .brief-grid { grid-template-columns: 1fr; }
+  .reference-objective-head, .reference-objective-subhead { align-items: flex-start; flex-direction: column; }
+  .reference-objective-head .vp-badge, .reference-objective-subhead .vp-badge { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+  .objective-reference-list p { overflow-wrap: anywhere; }
   .errata-note { margin-left: 16px; margin-right: 16px; }
   .reference-citation { padding-left: 16px; padding-right: 16px; }
   .section-heading { display: block; }
