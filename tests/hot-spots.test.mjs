@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { ACT_OF_PIRACY_COMMAND_COMPLICATIONS, ACT_OF_PIRACY_SYSTEMS, ACT_OF_PIRACY_TERRAIN_TABLES, adjustDaharEarnedVp, achernarInitialDefectors, ALTA_VISTA_COMMAND_COMPLICATIONS, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateGameWorldEventVp, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_MAPSHEET_TABLE, DAHAR_PROVISIONAL_RULES, DAHAR_TRACK_RESULTS, evaluateAltaVistaCampaign, evaluateGameWorldDuelVictory, evaluateProtectionPursuit, FACTION_COLORS, GAME_WORLDS_CARCASSONNE_MAPSHEETS, GAME_WORLDS_DOBLESS_RATS, GAME_WORLDS_PROVISIONAL_RULES, GAME_WORLDS_TEAM_GENERATION_PROVISIONAL_RULE, GAME_WORLDS_TYBALT_HIRES, GAME_WORLDS_TYBALT_MAPSHEETS, GAME_WORLDS_XHOSA_MAPSHEETS, gameWorldTeamLossThresholdMet, GENERAL_RULES, groupComplicationEffectEntries, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_MAPSHEET_TABLE, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LE_BLANC_TEMPORARY_HIRES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_MAPSHEET_TABLE, LUCERNE_PROVISIONAL_RULES, LUCERNE_TEMPORARY_HIRES, LUCERNE_TRACK_RESULTS, MALLORY_PROVISIONAL_RULES, MELCHER_BLACK_MARKET, MELCHER_COMMAND_COMPLICATIONS, MELCHER_GRASSLANDS_MAPSHEETS, MELCHER_TEMPORARY_HIRES, MISSION_OPFOR_OVERRIDES, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_COMMAND_COMPLICATIONS, NEW_IVAARSEN_LIGHT_URBAN_MAPSHEETS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PASCAGOULA_COMMAND_COMPLICATIONS, PASCAGOULA_MOUNTAINS_MAPSHEETS, PASCAGOULA_PROVISIONAL_RULES, PLAYER_VISIBLE_HOT_SPOT_IDS, PROTECTION_ATLANTIS_MAPSHEETS, PROTECTION_COMMAND_COMPLICATIONS, PROTECTION_PROVISIONAL_RULES, PROTECTION_STANDARD_MAPSHEETS, PROTECTION_TEMPORARY_HIRES, protectionPartisanSupport, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, resolveActOfPiracyScenario, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
+import { ACT_OF_PIRACY_COMMAND_COMPLICATIONS, ACT_OF_PIRACY_SYSTEMS, ACT_OF_PIRACY_TERRAIN_TABLES, adjustDaharEarnedVp, achernarInitialDefectors, ALTA_VISTA_COMMAND_COMPLICATIONS, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateGameWorldEventVp, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_MAPSHEET_TABLE, DAHAR_PROVISIONAL_RULES, DAHAR_TRACK_RESULTS, evaluateAltaVistaCampaign, evaluateGameWorldDuelVictory, evaluateProtectionPursuit, FACTION_COLORS, GAME_WORLDS_CARCASSONNE_MAPSHEETS, GAME_WORLDS_DOBLESS_RATS, GAME_WORLDS_PROVISIONAL_RULES, GAME_WORLDS_TEAM_GENERATION_PROVISIONAL_RULE, GAME_WORLDS_TYBALT_HIRES, GAME_WORLDS_TYBALT_MAPSHEETS, GAME_WORLDS_XHOSA_MAPSHEETS, gameWorldTeamLossThresholdMet, GENERAL_RULES, groupComplicationEffectEntries, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_MAPSHEET_TABLE, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LE_BLANC_TEMPORARY_HIRES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_MAPSHEET_TABLE, LUCERNE_PROVISIONAL_RULES, LUCERNE_TEMPORARY_HIRES, LUCERNE_TRACK_RESULTS, MALLORY_PROVISIONAL_RULES, MELCHER_BLACK_MARKET, MELCHER_COMMAND_COMPLICATIONS, MELCHER_GRASSLANDS_MAPSHEETS, MELCHER_TEMPORARY_HIRES, MISSION_OPFOR_OVERRIDES, NAMED_PILOT_HANDICAP_RULE, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_COMMAND_COMPLICATIONS, NEW_IVAARSEN_LIGHT_URBAN_MAPSHEETS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PASCAGOULA_COMMAND_COMPLICATIONS, PASCAGOULA_MOUNTAINS_MAPSHEETS, PASCAGOULA_PROVISIONAL_RULES, PLAYER_VISIBLE_HOT_SPOT_IDS, PROTECTION_ATLANTIS_MAPSHEETS, PROTECTION_COMMAND_COMPLICATIONS, PROTECTION_PROVISIONAL_RULES, PROTECTION_STANDARD_MAPSHEETS, PROTECTION_TEMPORARY_HIRES, protectionPartisanSupport, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, resolveActOfPiracyScenario, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
 import { evaluateXhosaTruckOutcome, SUN_PRAIRIE_COMMAND_COMPLICATIONS, SUN_PRAIRIE_MAPSHEET_TABLE, SUN_PRAIRIE_TACTICAL_SUPPORT, SUN_PRAIRIE_TEMPORARY_HIRES, TIGRESS_COMMAND_COMPLICATIONS, TIGRESS_HILLS_MAPSHEETS, TIGRESS_PROVISIONAL_RULES, TIGRESS_SUTERA_SUPPORT, TIGRESS_TEMPORARY_HIRES, TIGRESS_TRAINEE_SUPPORT, TIGRESS_WOODED_MAPSHEETS, XHOSA_COMMAND_COMPLICATIONS, XHOSA_LOGISTICS_SUPPORT, XHOSA_MAPSHEET_TABLE, XHOSA_PROVISIONAL_RULES, XHOSA_TEMPORARY_HIRES } from "../dist/hot-spots/data.mjs";
 
 const expected = ["Assault", "Breakthrough", "Defend", "Flank", "Meeting Engagement", "Objective Raid", "Pursuit", "Pushback", "Recon", "Retreat", "Strike"];
@@ -67,6 +67,42 @@ for (const table of Object.values(OPPOSING_FORCE_TABLES)) {
   }
 }
 assert.match(OPPOSING_FORCE_TABLES["raven-alliance"].scales["3"].rows[5].primary, /Charger C/);
+const opposingForceRow = (faction, scale, roll) => OPPOSING_FORCE_TABLES[faction].scales[String(scale)].rows.find(row => row.roll === roll);
+const correctedOpposingForceFields = [
+  ["mercenary-pirate", 1, "2", "support", "×2 H-8 Warrior | Hawk Moth II | ×2 Skulker C | ×2 Jump Infantry | ×2 Light Bombing"],
+  ["mercenary-pirate", 1, "3", "support", "×2 Vedette (Ultra) | Striker | Light Airstrike | ×2 Light Air Cover"],
+  ["mercenary-pirate", 1, "4", "support", "Striker | Patton (Ultra) | Vedette (Ultra) | Heavy Bombing | Light Bombing"],
+  ["mercenary-pirate", 2, "1−", "support", "×2 Saracen Mk II Veteran | J. Edgar (LPPC) Veteran | Maxim (BA Factory) Veteran | IS Standard BA Veteran | IS Standard BA Veteran | Sniper | Heavy Bombing | Light Bombing"],
+  ["mercenary-pirate", 3, "1−", "support", "×2 Condor (Ultra) Veteran | ×2 J. Edgar (Light PPC) Veteran | Maxim (BA Factory) Veteran | ×2 Skulker C Veteran | ×2 IS Standard BA Veteran | ×2 Jump Infantry Veteran | Long Tom | Sniper | ×4 Light Air Cover"],
+  ["mercenary-pirate", 3, "4", "primary", "HEL-4A Helios (4/5) | HUR-WO-R4O Huron Warrior (4/5) | PNT-13K Panther (4/5)"],
+  ["mercenary-pirate", 3, "4", "support", "×3 Manticore (XL) | Manticore (HPPC) | ×2 Patton (Ultra) | ×2 Striker | Maxim (Factory BA) | Skulker C | ×2 IS Standard BA | Jump Infantry | Heavy Bombing | ×2 Light Airstrike | ×2 Heavy Air Cover"],
+  ["mercenary-pirate", 3, "4", "alternate", "CN10-D Centurion (4/5) | CPLT-C2 Catapult (4/5) | ON2-M Orion (4/5) | MLN-1D Merlin (4/5)"],
+  ["mercenary-pirate", 3, "5", "support", "×2 Behemoth (Davion) | ×2 LRM Carrier | ×2 Saracen Mk II | ×3 Motorized Infantry | Sniper | ×2 Heavy Airstrike | Heavy Air Cover | Light Air Cover"],
+  ["mercenary-pirate", 3, "6+", "alternate", "FLS-10E Flashman (4/5) | SCP-2N Scorpion (3/4)"],
+  ["capellan", 1, "1−", "alternate", "STG-6G Stinger (3/4) | MEB-13 Ebony (3/4)"],
+  ["draconis-combine", 1, "1−", "primary", "RJN-301-F Fujin (3/4)"],
+  ["draconis-combine", 1, "2", "primary", "HM-1r Hitman (4/5) | SDR-9K Venom (4/5)"],
+  ["federated-suns", 1, "2", "support", "×2 Fox Armored Car | Skulker C | IS Standard BA | Light Bombing | Light Airstrike"],
+  ["federated-suns", 2, "4", "alternate", "BJ2-O Blackjack (4/5) | CN11-OD Centurion (4/5) | JVN-11B Javelin (4/5)"],
+  ["federated-suns", 2, "6+", "support", "Pilum (Arrow IV) Veteran | IS Standard BA Veteran | ×2 Medium | Emplacement Veteran | Pegasus (3058 Upgrade)"],
+  ["federated-suns", 3, "3", "alternate", "UCU-F4r Scarecrow (4/5) | RSN-2 Rattlesnake II (4/5) | LGN-2F Legionnaire (4/5) | HSN-10G Hellspawn (4/5)"],
+  ["federated-suns", 3, "4", "support", "×2 Manticore (HPPC) | ×2 Patton (XL) | ×2 Striker (Stealth) | J. Edgar Hover Tank (TAG) | Warrior H-7F Attack Helicopter | Pilum (Arrow IV) | ×2 Heavy Bombing | ×3 Light Air Cover"],
+  ["raven-alliance", 1, "3", "alternate", "Rifleman IIC 10 (4/5)"],
+  ["raven-alliance", 2, "4", "support", "×2 Manticore | ×2 Patton | Strafing | Heavy Airstrike | Heavy Air Cover | Light Air Cover"],
+  ["raven-alliance", 2, "5", "support", "×2 Vedette | ×2 Patton | ×2 Motorized Infantry | Heavy Bombing | ×2 Light Airstrike | ×2 Light Air Cover"],
+  ["raven-alliance", 3, "3", "support", "×2 Condor | ×2 Vedette | ×4 Vedette | Maxim (BA Factory) | ×2 IS Standard BA | Long Tom | ×2 Sniper | Light Bombing | ×2 Heavy Air Cover"],
+  ["raven-alliance", 3, "4", "support", "×2 Vedette | ×2 Patton | ×2 Vedette | ×4 Motorized Infantry | Long Tom | Heavy Bombing | Light Bombing | Heavy Air Cover | Light Air Cover"],
+  ["raven-alliance", 3, "5", "support", "×2 LRM Carrier C | ×2 Patton | ×2 SRM Carrier C | ×2 Motorized Infantry | Sniper | Heavy Airstrike | ×2 Heavy Air Cover | ×3 Light Air Cover"],
+  ["raven-alliance", 3, "6+", "support", "×2 LRM Carrier Veteran | ×2 Patton Veteran | ×2 Heavy Emplacement Veteran | ×3 Light Emplacement Veteran | Heavy Airstrike | ×2 Light Airstrike | ×2 Heavy Air Cover | Light Air Cover"]
+];
+for (const [faction, scale, roll, field, expectedValue] of correctedOpposingForceFields) {
+  assert.equal(opposingForceRow(faction, scale, roll)[field], expectedValue, `${faction} Scale ${scale} result ${roll} ${field} matches the November 27 correction`);
+}
+assert.equal(new Set(correctedOpposingForceFields.map(([faction, scale, roll]) => `${faction}:${scale}:${roll}`)).size, 23, "the twelve correction groups cover 23 exact opposing-force rows");
+assert.match(NAMED_PILOT_HANDICAP_RULE.text, /no additional BSP.*every 30 handicap BSP or part thereof.*Gunnery skill.*Alpha Strike Skill.*Piloting skill/is, "Named Pilot Handicap replaces added BSP with the corrected paired skill advances");
+assert.match(NAMED_PILOT_HANDICAP_RULE.text, /different units.*Gunnery or Alpha Strike Skill may be improved only once.*Piloting may be improved at most twice.*excess advances are lost/is, "Named Pilot Handicap includes the exact per-unit caps and distribution rule");
+assert.match(NAMED_PILOT_HANDICAP_RULE.text, /15-BSP handicap grants one of each.*31 BSP grants two of each/is, "Named Pilot Handicap retains the corrected examples");
+assert.equal(NAMED_PILOT_HANDICAP_RULE.ref, "Draconis Reach p. 186 · official errata");
 for (const track of TRACKS) {
   assert.ok(track.page >= 168 && track.page <= 175, track.name + " has a track page");
   assert.ok(track.setup.length >= 1, track.name + " has setup");
@@ -323,6 +359,12 @@ for (const term of ["hot-spot-select", "hot-spot-track-select", "hot-spot-side-s
 for (const term of ["option-toggle", "opfor-card", "opfor-force-grid"]) {
   assert.ok(css.includes(term), term + " OpFor styling is present");
 }
+const renderOpForSource = app.slice(app.indexOf("function renderOpFor()"), app.indexOf("function renderHotSpotSetup()"));
+const gladiatorGeneratorSource = app.slice(app.indexOf("function renderGladiatorGenerator"), app.indexOf("function renderOpFor()"));
+assert.match(renderOpForSource, /NAMED_PILOT_HANDICAP_RULE\.title[\s\S]*NAMED_PILOT_HANDICAP_RULE\.text[\s\S]*NAMED_PILOT_HANDICAP_RULE\.ref/, "generic generated-opposition cards display the corrected Named Pilot Handicap reference and provenance");
+assert.match(renderOpForSource, /opfor-note[^\n]*NAMED_PILOT_HANDICAP_RULE/, "Named Pilot Handicap uses confirmed reference styling rather than provisional amber styling");
+assert.doesNotMatch(gladiatorGeneratorSource, /NAMED_PILOT_HANDICAP_RULE/, "Game Worlds solo and team generators retain their replacement procedures without generic handicap mechanics");
+assert.doesNotMatch(app, /data-named-pilot-handicap|handicapBsp|calculateNamedPilotHandicap|pilotImprovementState/, "Named Pilot Handicap remains reference-only with no calculator or persistent pilot administration");
 assert.ok(app.includes("Number(completed) * getVp(display, side)"), "repeatable objective counters and scenario overrides feed the VP total");
 assert.ok(app.includes("const objectives = variant?.objectives || track.objectives"), "variant-specific objectives feed the live VP total");
 assert.ok(app.includes("const objectives = variant?.objectives || track?.objectives || []"), "variant-specific objectives render in the live tracker");
