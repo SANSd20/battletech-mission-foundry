@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { ACT_OF_PIRACY_COMMAND_COMPLICATIONS, ACT_OF_PIRACY_SYSTEMS, ACT_OF_PIRACY_TERRAIN_TABLES, adjustDaharEarnedVp, achernarInitialDefectors, ALTA_VISTA_COMMAND_COMPLICATIONS, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateGameWorldEventVp, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_MAPSHEET_TABLE, DAHAR_PROVISIONAL_RULES, DAHAR_TRACK_RESULTS, ERRATA_PROVENANCE, evaluateAltaVistaCampaign, evaluateGameWorldDuelVictory, evaluateProtectionPursuit, FACTION_COLORS, GAME_WORLDS_CARCASSONNE_MAPSHEETS, GAME_WORLDS_DOBLESS_RATS, GAME_WORLDS_PROVISIONAL_RULES, GAME_WORLDS_TYBALT_HIRES, GAME_WORLDS_TYBALT_MAPSHEETS, GAME_WORLDS_XHOSA_MAPSHEETS, gameWorldTeamLossThresholdMet, GENERAL_RULES, groupComplicationEffectEntries, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_MAPSHEET_TABLE, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LE_BLANC_TEMPORARY_HIRES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_MAPSHEET_TABLE, LUCERNE_PROVISIONAL_RULES, LUCERNE_TEMPORARY_HIRES, LUCERNE_TRACK_RESULTS, MALLORY_PROVISIONAL_RULES, MELCHER_BLACK_MARKET, MELCHER_COMMAND_COMPLICATIONS, MELCHER_GRASSLANDS_MAPSHEETS, MELCHER_TEMPORARY_HIRES, MISSION_OPFOR_OVERRIDES, NAMED_PILOT_HANDICAP_RULE, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_COMMAND_COMPLICATIONS, NEW_IVAARSEN_LIGHT_URBAN_MAPSHEETS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PASCAGOULA_COMMAND_COMPLICATIONS, PASCAGOULA_MOUNTAINS_MAPSHEETS, PASCAGOULA_PROVISIONAL_RULES, PLAYER_VISIBLE_HOT_SPOT_IDS, PROTECTION_ATLANTIS_MAPSHEETS, PROTECTION_COMMAND_COMPLICATIONS, PROTECTION_PROVISIONAL_RULES, PROTECTION_STANDARD_MAPSHEETS, PROTECTION_TEMPORARY_HIRES, protectionPartisanSupport, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, resolveActOfPiracyScenario, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
+import { ACT_OF_PIRACY_COMMAND_COMPLICATIONS, ACT_OF_PIRACY_SYSTEMS, ACT_OF_PIRACY_TERRAIN_TABLES, adjustDaharEarnedVp, achernarInitialDefectors, ALTA_VISTA_COMMAND_COMPLICATIONS, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateGameWorldEventVp, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_MAPSHEET_TABLE, DAHAR_PROVISIONAL_RULES, DAHAR_TRACK_RESULTS, ERRATA_PROVENANCE, evaluateAltaVistaCampaign, evaluateGameWorldDuelVictory, evaluateProtectionPursuit, FACTION_COLORS, GAME_WORLDS_CARCASSONNE_MAPSHEETS, GAME_WORLDS_DOBLESS_RATS, GAME_WORLDS_PROVISIONAL_RULES, GAME_WORLDS_TYBALT_HIRES, GAME_WORLDS_TYBALT_MAPSHEETS, GAME_WORLDS_XHOSA_MAPSHEETS, gameWorldTeamLossThresholdMet, GENERAL_RULES, groupComplicationEffectEntries, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_MAPSHEET_TABLE, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LE_BLANC_TEMPORARY_HIRES, LE_BLANC_TEMPORARY_HIRE_REFERENCE, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_MAPSHEET_TABLE, LUCERNE_PROVISIONAL_RULES, LUCERNE_TEMPORARY_HIRES, LUCERNE_TRACK_RESULTS, MALLORY_CONFIRMED_TRACK_FORCE_EXCEPTION, MALLORY_PROVISIONAL_RULES, MELCHER_BLACK_MARKET, MELCHER_COMMAND_COMPLICATIONS, MELCHER_GRASSLANDS_MAPSHEETS, MELCHER_TEMPORARY_HIRES, MISSION_OPFOR_OVERRIDES, NAMED_PILOT_HANDICAP_RULE, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_COMMAND_COMPLICATIONS, NEW_IVAARSEN_LIGHT_URBAN_MAPSHEETS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OBJECTIVE_RAID_PROVISIONAL_RULES, OPPOSING_FORCE_TABLES, PASCAGOULA_COMMAND_COMPLICATIONS, PASCAGOULA_MOUNTAINS_MAPSHEETS, PASCAGOULA_PROVISIONAL_RULES, PLAYER_VISIBLE_HOT_SPOT_IDS, PROTECTION_ATLANTIS_MAPSHEETS, PROTECTION_COMMAND_COMPLICATIONS, PROTECTION_PROVISIONAL_RULES, PROTECTION_STANDARD_MAPSHEETS, PROTECTION_TEMPORARY_HIRES, protectionPartisanSupport, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, resolveActOfPiracyScenario, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
 import { evaluateXhosaTruckOutcome, SUN_PRAIRIE_COMMAND_COMPLICATIONS, SUN_PRAIRIE_MAPSHEET_TABLE, SUN_PRAIRIE_TACTICAL_SUPPORT, SUN_PRAIRIE_TEMPORARY_HIRES, TIGRESS_COMMAND_COMPLICATIONS, TIGRESS_HILLS_MAPSHEETS, TIGRESS_PROVISIONAL_RULES, TIGRESS_SUTERA_SUPPORT, TIGRESS_TEMPORARY_HIRES, TIGRESS_TRAINEE_SUPPORT, TIGRESS_WOODED_MAPSHEETS, XHOSA_COMMAND_COMPLICATIONS, XHOSA_LOGISTICS_SUPPORT, XHOSA_MAPSHEET_TABLE, XHOSA_PROVISIONAL_RULES, XHOSA_TEMPORARY_HIRES } from "../dist/hot-spots/data.mjs";
 
 const expected = ["Assault", "Breakthrough", "Defend", "Flank", "Meeting Engagement", "Objective Raid", "Pursuit", "Pushback", "Recon", "Retreat", "Strike"];
@@ -21,7 +21,9 @@ assert.match(ERRATA_PROVENANCE.posts[38].status, /individual correction.*not inc
 assert.match(ERRATA_PROVENANCE.posts[39].status, /incorporated.*Mission Foundry/i);
 assert.match(ERRATA_PROVENANCE.posts[40].status, /Discord clarification.*not published master errata.*deferred/i);
 assert.match(ERRATA_PROVENANCE.posts[41].status, /Discord clarification.*not published master errata.*LINGO correction implemented/i);
-assert.deepEqual(ERRATA_PROVENANCE.malloryDiscordClarification, { displayedTime: "8:38 PM", calendarDate: null }, "Discord evidence records only the displayed time and does not invent a calendar date");
+assert.deepEqual(ERRATA_PROVENANCE.gameWorldsDiscordClarification, { authority: "NCKestrel", calendarDate: "27 November 2026", displayedTime: "8:13 PM", timeZone: null, forumReport: "https://www.battletech.com/forums/index.php?msg=2147404", response: "Reroll Republic. There's no rules for how to use the RATs to make a team." });
+assert.deepEqual(ERRATA_PROVENANCE.malloryIrrigationDiscordClarification, { authority: "MetalEd", calendarDate: "27 November 2026", displayedTime: "8:38 PM", timeZone: null, forumReport: "https://www.battletech.com/forums/index.php?msg=2147405", response: "Yes... it should." });
+assert.deepEqual(ERRATA_PROVENANCE.malloryTrackForceDiscordClarification, { authority: "MetalEd", calendarDate: "28 November 2026", displayedTime: "12:23 AM", timeZone: null, response: "The Track Force errata is meant to apply to general contract gameplay (more specifically, being up front that people can't abuse the system by contracting above their means). Per p136 in Attacking, Mallory's World has special force breakdowns that are different from the normal force construction for a track. Hence, no, you are not required to break contract for playing Mallory's World in the proscribed manner." });
 assert.match(SOURCES.pascagoula, /pp\. 103–107.*Pursuit p\. 172.*Mountains Terrain Table p\. 150.*Alpha Strike terrain p\. 154/);
 const trackForceRule = GENERAL_RULES.find(rule => rule.title === "Track Force");
 assert.match(trackForceRule.text, /lowest Contract Scale.*Both players use the same Track Scale.*two-thirds.*Temporary Hires.*not Battlefield Support.*escape clause.*break contract/is, "Track Force uses the November 27 official wording");
@@ -142,6 +144,14 @@ assert.equal(meetingEngagement.pageRef, "pp. 170–171");
 const pushback = TRACKS.find(track => track.id === "pushback");
 const retreat = TRACKS.find(track => track.id === "retreat");
 const strike = TRACKS.find(track => track.id === "strike");
+const flank = TRACKS.find(track => track.id === "flank");
+assert.match(flank.setup.join(" "), /two veteran Medium Emplacements per Scale.*up to 20 BSP each.*Attacker’s half.*Alpha Strike.*two Gun Trailer \(Ultra\).*30 CF bunkers/is, "Flank preserves emplacement alternatives, placement, the flat AS allocation, and the non-BSP procedure");
+assert.match(flank.scaleNotes.join(" "), /BattleTech.*2 at Scale 1.*4 at Scale 2.*6 at Scale 3.*Alpha Strike.*two Gun Trailer \(Ultra\) total.*every supported Scale/is, "Flank distinguishes BT scaling from the flat AS allocation at all three Scales");
+assert.doesNotMatch(flank.scaleNotes.join(" "), /^The number of Defender emplacements is two per Scale\.$/, "Flank no longer applies the BT multiplier as a shared system note");
+assert.deepEqual(flank.objectives.map(({ id, side, vp }) => [id, side, vp]), [
+  ["orders-attacker", "attacker", 50], ["orders-defender", "defender", 50], ["crush", "attacker", 150], ["ramming-speed", "attacker", 150],
+  ["cut-off-retreat", "attacker", 150], ["turn-the-tide", "defender", 150], ["fall-back-order", "defender", 150]
+], "Flank objectives and VP remain unchanged");
 assert.match(pushback.setup.join(" "), /Defender sets up first.*5 hexes \(AS: 10 inches\).*Scale 2\+.*10 hexes \/ 16 inches/i, "Pushback preserves setup order and Scale-dependent distances");
 assert.match(pushback.special.join(" "), /shared pool.*take turns selecting one unit at a time.*successfully completed the track chooses first/i, "Pushback preserves alternating salvage with the successful player choosing first");
 assert.match(pushback.special.join(" "), /neither side completed.*both completed all objectives.*each side gets its own destroyed or crippled units returned/i, "Pushback preserves both salvage exceptions");
@@ -166,6 +176,12 @@ assert.match(raid.setup.join(" "), /two Medium objective buildings/, "standard O
 assert.match(raid.setup.join(" "), /battlefield center/, "standard Objective Raid retains its center-area placement");
 assert.match(raid.special.join(" "), /Turn 12/, "standard Objective Raid retains its 12-turn limit");
 assert.match(raid.setup.join(" "), /indestructible/, "standard Objective Raid retains its building durability rule");
+assert.match(raid.special.join(" "), /Light\/SZ 1 carries 1.*Medium\/SZ 2 carries 2.*Heavy\/SZ 3 carries 3.*Assault\/SZ 4 carries 4/is, "Objective Raid preserves the printed weight-class and AS Size capacities");
+assert.match(raid.special.join(" "), /cargo tonnage divided by 5 tons, rounded down.*CT divided by 3, rounded down/is, "Objective Raid preserves both printed cargo-space formulas");
+assert.deepEqual(raid.provisionalRules, OBJECTIVE_RAID_PROVISIONAL_RULES);
+assert.match(OBJECTIVE_RAID_PROVISIONAL_RULES[0], /greater of the standard component capacity and the dedicated cargo-space capacity.*do not add/i, "Objective Raid retains the greater-of-two interpretation as a narrow provisional rule");
+assert.doesNotMatch(raid.special.join(" "), /Pending clarification|greater of|do not add/i, "Objective Raid keeps the printed formulas outside the provisional notice");
+assert.match(raid.special.join(" "), /one component per hand actuator.*subsequent Movement Phase.*Mechanized Infantry must dismount.*Infantry cannot carry.*asset vehicle can carry one component.*loses 1 MP.*reduce.*movement.*PSR.*does not drop components.*does not affect attacks/is, "Objective Raid preserves loading, transfer, asset, movement, jump, and attack procedures");
 const recon = TRACKS.find(track => track.id === "recon");
 assert.match(recon.setup.join(" "), /50 percent.*including assets.*occupy hexes fully within the half of the play area closest to the Attacker’s home edge/i, "Recon Defender deployment requires fully enclosed hexes in the Attacker-side half");
 const reconDeny = recon.objectives.find(objective => objective.id === "deny");
@@ -187,6 +203,7 @@ assert.match(pascagoulaVariant.setup.join(" "), /Mines #1.*Scales 2–3/);
 assert.match(pascagoulaVariant.setup.join(" "), /four Ryu Heavy Transport WiGEs/);
 assert.match(pascagoulaVariant.setup.join(" "), /Vedette Medium Tank BSP asset cards/);
 assert.doesNotMatch(pascagoulaVariant.setup.join(" "), /two Medium objective buildings|height 1|battlefield center|indestructible/);
+assert.deepEqual(pascagoulaVariant.provisionalRules, [...PASCAGOULA_PROVISIONAL_RULES, ...OBJECTIVE_RAID_PROVISIONAL_RULES], "Pascagoula keeps its own extraction interpretation and the inherited Objective Raid capacity interpretation");
 assert.match(pascagoulaVariant.scaleNotesByScale["1"].join(" "), /Mines #1/);
 assert.match(pascagoulaVariant.scaleNotesByScale["2"].join(" "), /Mines #1 and Mines #2.*Daimyo DMO-5K.*Dragon DRG-5Nr/);
 assert.match(pascagoulaVariant.scaleNotesByScale["3"].join(" "), /Mines #1 and Mines #2.*Daimyo DMO-5K.*Dragon DRG-5Nr.*Nova Cat T/);
@@ -282,6 +299,7 @@ assert.equal(leBlanc.tracks[0].trackId, "objective-raid", "Le Blanc Track 1 rema
 assert.equal(leBlanc.tracks[0].displayName, "Objective Raid · Wreck the Place");
 const leBlancVariant = leBlanc.tracks[0].variant;
 assert.equal(leBlancVariant.displayName, "Objective Raid · Wreck the Place");
+assert.deepEqual(leBlancVariant.provisionalRules, [], "Le Blanc’s Wreck the Place replacement does not show the inapplicable standard component-capacity ambiguity");
 assert.equal(leBlancVariant.objectiveOverrides["grab-stuff"].name, "Wreck the Place");
 assert.equal(leBlancVariant.objectiveOverrides["grab-stuff"].vp, 50);
 assert.match(leBlancVariant.objectiveOverrides["grab-stuff"].text, /Each medium objective building destroyed by the Attacker/);
@@ -326,6 +344,11 @@ assert.match(LE_BLANC_PARTISAN_PACKAGES.defender.join(" "), /2 × Scale MG Nest.
 assert.match(LE_BLANC_PARTISAN_PACKAGES.attacker.join(" "), /Motorized Conventional Infantry.*Galleon GAL-100/);
 assert.equal(LE_BLANC_PROVISIONAL_RULES.length, 2);
 assert.doesNotMatch(LE_BLANC_PROVISIONAL_RULES.join(" "), /LEBLANC-AMB|both Le Blanc tracks/i);
+assert.match(LE_BLANC_TEMPORARY_HIRE_REFERENCE, /below 2,000 BV per Scale or 80 PV per Scale.*resulting force below the Scale limit.*two-thirds.*next track.*Temporary Hires count.*Battlefield Support does not.*escape clause/is, "Le Blanc separates established general eligibility, availability, and corrected Track Force rules");
+assert.match(LE_BLANC_TEMPORARY_HIRE_REFERENCE, /BattleTech thresholds coincide.*Alpha Strike.*two-thirds of 100\/200\/300 PV.*no rounding rule is printed/is, "Le Blanc preserves the system-specific threshold distinction without inventing AS rounding");
+assert.match(LE_BLANC_PROVISIONAL_RULES[0], /subsequent-track hiring permission overrides the general Temporary Hire eligibility thresholds on p\. 29/i, "Le Blanc narrows the remaining ambiguity to subsequent-track eligibility");
+assert.doesNotMatch(LE_BLANC_PROVISIONAL_RULES[0], /availability, eligibility, force limits, costs, repairs, and replacement/i, "Le Blanc no longer marks established rules broadly provisional");
+for (const variant of [leBlancVariant, leBlanc.tracks[1].outcomes.yes.variant, leBlanc.tracks[1].outcomes.no.variant]) assert.equal(variant.temporaryHireNote, LE_BLANC_TEMPORARY_HIRE_REFERENCE, "every Le Blanc track displays the established Temporary Hire reference");
 for (const [rights, modifier] of [["independent", 0], ["liaison", 1], ["house", 2], ["integrated", 3]]) {
   assert.equal(resolveLeBlancComplications({ initial: 1 }, rights).modifier, modifier);
 }
@@ -1086,6 +1109,7 @@ assert.match(app, /table\?\.scales\[String\(Math\.min\(3, Math\.max\(1, state\.s
 assert.match(app, /renderGameWorldTeamGenerator[\s\S]*opforRollOptions\(\)[\s\S]*Choose the result rolled at the table/, "team generator supports a manual table roll without automated dice");
 assert.doesNotMatch(app, /Approved provisional alternative:|Republic results are not rerolled or replaced|Manual faction-RAT construction/, "superseded AMB-004 team construction is removed");
 assert.equal(GAME_WORLDS_PROVISIONAL_RULES.length, 3, "AMB-001 through AMB-003 remain and obsolete AMB-004 is absent");
+assert.match(gameWorlds.contractReference.purchaseOptions.join(" "), /NCKestrel’s Discord response from 27 November 2026.*8:13 PM.*Reroll Republic.*no rules for how to use the RATs to make a team.*time zone is not established.*forum post #40.*not published master errata/is, "Game Worlds records the accepted clarification date without changing its resolved rule");
 assert.match(app, /renderGladiatorGenerator[\s\S]*one ’Mech only/, "solo generation retains the printed one-Mech procedure and Dobless RAT reference");
 assert.match(html, /Game Worlds supporting sources:[\s\S]*MapPack: Alien Worlds[\s\S]*v7\.02 errata[\s\S]*Tactical Operations[\s\S]*forum post #40[\s\S]*not published master errata/is, "central Rules Sources records clarification and supplemental provenance");
 assert.match(app, /evaluateGameWorldDuelVictory/, "Game Worlds winner display uses Victory! rather than the VP lead");
@@ -1145,7 +1169,8 @@ for (const hexTrack of malloryPlayableTracks) {
   assert.match(hexTrack.variant.special.join(" "), /Command Complications: none/);
   assert.match(hexTrack.variant.special.join(" "), /do not receive the standard Combat Pay/);
   assert.match(hexTrack.variant.special.join(" "), /does not determine eligibility or award those benefits automatically/);
-  assert.deepEqual(hexTrack.variant.provisionalRules, [MALLORY_PROVISIONAL_RULES[3]], hexTrack.label + " displays the scenario-specific Track Force exception without changing standard tracks");
+  assert.match(hexTrack.variant.special.join(" "), /scenario-specific force construction and formation rules instead of ordinary Track Force construction.*not required to break their contracts.*do not impose.*two-thirds minimum.*individual formations.*Final Battle/is, hexTrack.label + " displays the confirmed Mallory Track Force exception as ordinary rules text");
+  assert.equal(hexTrack.variant.provisionalRules, undefined, hexTrack.label + " does not present the confirmed Mallory Track Force exception as amber provisional text");
 }
 const malloryRestricted = mallory.tracks.find(track => !track.trackId);
 assert.equal(malloryRestricted.label, "RSIS/FABL Research Facility · Hex 0507 · Non-playable");
@@ -1203,17 +1228,18 @@ assert.deepEqual(malloryTraining.sourceRefs, ["Draconis Reach pp. 135–139", "O
 assert.equal(mallory.source, "Draconis Reach pp. 132–142 · Official Loneliness Island Poster Map (2026)");
 assert.ok(mallory.contractReference, "Mallory exposes the collapsed campaign reference");
 assert.match(mallory.contractReference.summary.join(" "), /96 BattleTech BSP.*four formations.*five units.*at least one BattleMech.*15 BSP per command/i);
+assert.match(mallory.contractReference.summary.join(" "), /scenario-specific force construction.*not required to break their contracts.*ordinary per-track two-thirds minimum.*individual formations.*Final Battle/is, "Mallory Contract Reference includes the confirmed Track Force exception without amber treatment");
 assert.match(mallory.contractReference.progression.join(" "), /Strategic Reinforcement.*up to four.*BPWW Landing Zone adds one replacement/i);
 assert.match(mallory.contractReference.victory.join(" "), /ten map turns.*0 Warchest SP.*Biotech Research Centre.*Communication Array.*Training Simulators.*Landing Zone.*Final Battle/i);
 assert.deepEqual(mallory.contractReference.provisional, MALLORY_PROVISIONAL_RULES);
 assert.match(MALLORY_PROVISIONAL_RULES[0], /15 BSP per command.*15 unrestricted BSP per side.*not published Mallory errata/i);
 assert.match(MALLORY_PROVISIONAL_RULES[1], /Defender PV plus 25 percent.*no.*ordinary Scale 3 cap.*rounding.*BV to PV/i);
 assert.match(MALLORY_PROVISIONAL_RULES[2], /48 × 72 inches.*multiple formations participate on both sides.*single-formation.*36 × 48 inches.*one-sided/i);
-assert.match(MALLORY_PROVISIONAL_RULES[3], /individual formation engagements.*pp\. 135–136.*Final Battle.*p\. 141.*entire mercenary command.*unresolved.*No roster validation/i);
-assert.match(mallory.contractReference.progression.join(" "), /Irrigation Control clarification.*LINGO Landing Zone.*offsets the penalty directly.*MetalEd Discord clarification.*not published master errata/i);
+assert.match(MALLORY_PROVISIONAL_RULES[3], /initial contract-strength eligibility requirements.*entering the campaign.*unresolved.*Do not infer a blanket initial-command exemption.*No roster validation/i);
+assert.match(mallory.contractReference.progression.join(" "), /Irrigation Control clarification.*LINGO Landing Zone.*offsets the penalty directly.*27 November 2026.*8:38 PM.*time zone is not established.*not published master errata/i);
 assert.match(mallory.contractReference.progression.join(" "), /BPWW at 0601\/0614 permits purchases.*premium/i, "genuine BPWW Landing Zone rules remain unchanged");
 assert.match(mallory.contractReference.purchaseOptions.join(" "), /BattleMech purchases require a held BPWW hex.*10-percent premium/i, "genuine BPWW purchase rules remain unchanged");
-assert.match(mallory.contractReference.purchaseOptions.join(" "), /master errata revision 27 November 2026 at 16:33:26.*forum post #41.*Discord clarification.*not published master errata.*8:38 PM.*calendar date was not independently established/i, "Mallory records the current master and the narrower Discord-derived LINGO provenance without inventing a date");
+assert.match(mallory.contractReference.purchaseOptions.join(" "), /master errata revision 27 November 2026 at 16:33:26.*forum post #41.*Discord clarification from 27 November 2026.*8:38 PM.*MetalEd’s accepted Mallory Track Force clarification.*28 November 2026.*12:23 AM.*time zone is not established.*not published master errata/is, "Mallory records both accepted clarification dates without inventing a time zone");
 assert.match(malloryPlayableTracks[0].variant.special.join(" "), /Forced Withdrawal is not in effect.*shared voluntary-withdrawal rule on p\. 31.*no different objective-adjudication, damage, or repair consequence/i, "Mallory preserves its Forced Withdrawal exception without duplicating the shared withdrawal rule");
 assert.doesNotMatch(malloryPlayableTracks[0].variant.special.join(" "), /counts as destroyed only for opposing objective adjudication.*actual damage state/i, "Mallory does not duplicate the shared voluntary-withdrawal consequences");
 
@@ -1226,6 +1252,7 @@ assert.equal(malloryFinalBattle.disableTakingOneForTeam, true, "Final Battle exc
 assert.deepEqual(malloryFinalBattle.variant.objectives, TRACKS.find(track => track.id === "assault").objectives, "Final Battle preserves Assault objective VP");
 assert.match(malloryFinalBattle.variant.setupDetails.join(" "), /winner is the tactical Defender.*loser is the tactical Attacker|campaign winner is the tactical Defender.*campaign loser is the tactical Attacker/i);
 assert.match(malloryFinalBattle.variant.setupDetails.join(" "), /BattleTech uses the printed Defender BV plus 25 percent.*Alpha Strike interpretation: Defender PV plus 25 percent.*no.*ordinary Scale 3 force cap.*rounding.*convert BV to PV/i);
+assert.match(malloryFinalBattle.variant.setupDetails.join(" "), /scenario-specific force construction.*not required to break.*do not impose.*two-thirds minimum.*individual formations.*Final Battle/is, "Final Battle preserves the confirmed Mallory Track Force exception");
 assert.match(malloryFinalBattle.variant.setupDetails.join(" "), /Battle \/ 50 percent.*96 unrestricted BattleTech BSP.*15 unrestricted BSP.*City and Manufacturing Plant bonuses are additional/i);
 assert.match(malloryFinalBattle.variant.battlefieldRules.map(rule => rule.text).join(" "), /City Ruins and BattleTech.*long edge.*unconnected long edge.*Alpha Strike: use a 48 × 72-inch Urban battlefield.*approved provisional interpretation/i);
 assert.match(malloryFinalBattle.variant.special.join(" "), /Conquer pays 3,000 SP.*Hold the Field pays 6,000 SP.*do not alter.*VP/i);
@@ -1253,7 +1280,10 @@ assert.match(html, /Official master errata reviewed:[\s\S]*27 November 2026 at 1
 assert.match(html, /review of the current master does not mean every correction is implemented[\s\S]*Xhosa VII p\. 122.*remains outstanding/, "Rules Sources distinguishes master review from implementation completion");
 assert.match(html, /post #36.*unincorporated Dahar IV.*master-incorporated Xhosa VII.*outstanding[\s\S]*Post #38.*individual, unincorporated[\s\S]*Post #39.*in the master and implemented/is, "Rules Sources preserves the split forum-post authority classifications");
 assert.match(html, /Posts #40–#41 report Discord clarifications and are not published master errata.*Game Worlds Republic team-reroll clarification.*Mallory LINGO correction.*implemented/is, "Rules Sources distinguishes Discord clarification reports from published errata and implementation status");
-assert.match(html, /screenshot shows 8:38 PM.*calendar date was not independently established/i, "Rules Sources does not invent a Discord calendar date");
+assert.match(html, /Objective Raid capacity:.*weight-class\/Alpha Strike Size capacity.*dedicated cargo-space formulas.*provisionally uses the greater capacity.*AS:CE v7\.02 reconciliation remains pending/is, "Rules Sources distinguishes printed Objective Raid capacities from their provisional relationship and preserves the supporting-source dependency");
+assert.match(html, /Le Blanc Temporary Hires:.*general eligibility thresholds.*initial two-thirds availability trigger.*corrected minimum-force treatment.*provisionally unresolved.*subsequent-track hiring permission/is, "Rules Sources narrows the Le Blanc ambiguity around established rules");
+assert.match(html, /Mallory supporting source:.*Irrigation\/LINGO correction.*27 November 2026.*8:38 PM.*time zone is unknown.*MetalEd confirmed.*28 November 2026.*12:23 AM.*prescribed force breakdown.*not published master errata.*Initial command-strength eligibility remains.*provisional/is, "Rules Sources records both Mallory clarification dates and the remaining narrow ambiguity");
+assert.match(html, /Game Worlds supporting sources:.*NCKestrel’s accepted Discord clarification from 27 November 2026.*8:13 PM.*forum post #40.*not published master errata.*time zone is unknown/is, "Rules Sources records the Game Worlds clarification date without inventing a time zone");
 assert.match(html, /Amber text indicates a provisional rules interpretation pending official clarification/, "the centralized provisional legend remains present");
 assert.ok(html.includes('id="hot-spot-track-label"'), "the sequence selector has a location-specific label target");
 assert.ok(app.includes('hotSpot.trackSelectorLabel || "Track"'), "the shared selector uses player-facing Track terminology while preserving location-specific labels");
@@ -1649,9 +1679,10 @@ const gameWorldModeDetails = carcassonne.modeDetails;
 assert.match(gameWorldModeDetails.solo.setupDetails.join(" "), /one BattleMech versus one BattleMech.*Do not use normal Scale BV\/PV limits or Battlefield Support/i, "Game Worlds solo duels retain their explicit Track Force exception");
 assert.match(gameWorldModeDetails.team.setupDetails.join(" "), /use standard Scale and BV\/PV limits per team/i, "Game Worlds team duels retain ordinary Track Force applicability");
 assert.equal(mallory.fixedScale, 3, "Mallory remains fixed to Scale 3");
-assert.match(MALLORY_PROVISIONAL_RULES[3], /individual formation engagements.*Final Battle.*do not impose.*two-thirds minimum.*entire mercenary command.*unresolved/i, "Mallory AMB-005 remains the bounded Track Force exception");
+assert.match(MALLORY_CONFIRMED_TRACK_FORCE_EXCEPTION, /scenario-specific force construction.*not required to break.*ordinary per-track two-thirds minimum.*individual formations.*Final Battle/i, "Mallory’s tactical Track Force exception is confirmed non-provisional text");
+assert.match(MALLORY_PROVISIONAL_RULES[3], /initial contract-strength eligibility.*unresolved.*Do not infer a blanket initial-command exemption/i, "Mallory retains only the genuinely unresolved initial-command question");
 assert.match(dahar.tracks[0].variant.setupDetails.join(" "), /Temporary Hire: Dahar’s contract-specific eligibility threshold controls.*below two-thirds.*General p\. 29.*below the Scale limit/i, "Dahar retains its contract-specific Temporary Hire threshold alongside the general rule");
-assert.match(LE_BLANC_PROVISIONAL_RULES.join(" "), /Temporary Hire eligibility remains unresolved.*pp\. 29 and 89/i, "Le Blanc Temporary Hire eligibility remains deferred rather than overwritten");
+assert.match(LE_BLANC_PROVISIONAL_RULES.join(" "), /subsequent-track hiring permission overrides.*general Temporary Hire eligibility thresholds on p\. 29/i, "Le Blanc retains only the unresolved subsequent-track eligibility question");
 assert.match(app, /Campaign and track reference/, "shared campaign rules use an accurate heading instead of a p. 167-only label");
 assert.doesNotMatch(app, /data-contract-scale|contractScaleHistory|validateRoster|exerciseEscapeClause/i, "the shared references add no Contract Scale history, roster validation, or escape-clause automation");
 

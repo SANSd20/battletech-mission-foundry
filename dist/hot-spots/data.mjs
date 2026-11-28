@@ -26,7 +26,9 @@ export const ERRATA_PROVENANCE = Object.freeze({
     40: Object.freeze({ author: "SANSd20", posted: "27 November 2026, 21:19:25", status: "forum report citing a Discord clarification; not published master errata; implementation deferred" }),
     41: Object.freeze({ author: "SANSd20", posted: "27 November 2026, 21:43:53", status: "forum report citing a MetalEd Discord clarification; not published master errata; Mallory LINGO correction implemented" })
   }),
-  malloryDiscordClarification: Object.freeze({ displayedTime: "8:38 PM", calendarDate: null })
+  gameWorldsDiscordClarification: Object.freeze({ authority: "NCKestrel", calendarDate: "27 November 2026", displayedTime: "8:13 PM", timeZone: null, forumReport: "https://www.battletech.com/forums/index.php?msg=2147404", response: "Reroll Republic. There's no rules for how to use the RATs to make a team." }),
+  malloryIrrigationDiscordClarification: Object.freeze({ authority: "MetalEd", calendarDate: "27 November 2026", displayedTime: "8:38 PM", timeZone: null, forumReport: "https://www.battletech.com/forums/index.php?msg=2147405", response: "Yes... it should." }),
+  malloryTrackForceDiscordClarification: Object.freeze({ authority: "MetalEd", calendarDate: "28 November 2026", displayedTime: "12:23 AM", timeZone: null, response: "The Track Force errata is meant to apply to general contract gameplay (more specifically, being up front that people can't abuse the system by contracting above their means). Per p136 in Attacking, Mallory's World has special force breakdowns that are different from the normal force construction for a track. Hence, no, you are not required to break contract for playing Mallory's World in the proscribed manner." })
 });
 
 export function groupComplicationEffectEntries(entries = []) {
@@ -223,8 +225,14 @@ export const LE_BLANC_PARTISAN_PACKAGES = Object.freeze({
 });
 
 export const LE_BLANC_PROVISIONAL_RULES = Object.freeze([
-  "Temporary Hire eligibility remains unresolved. Consult pp. 29 and 89 for availability, eligibility, force limits, costs, repairs, and replacement.",
+  "Pending clarification, it remains unresolved whether Le Blanc’s subsequent-track hiring permission overrides the general Temporary Hire eligibility thresholds on p. 29.",
   "A modified 8+ produces exactly two secondary rolls with the same modifier. Ignore secondary 8+ results, apply duplicates once, do not reroll duplicates, and do not recurse."
+]);
+
+export const LE_BLANC_TEMPORARY_HIRE_REFERENCE = "General Temporary Hire eligibility on p. 29 requires a selected force below 2,000 BV per Scale or 80 PV per Scale, with the resulting force below the Scale limit. Le Blanc’s local hire first becomes available when a force cannot field at least two-thirds of the maximum permissible BV/PV for its next track; the player may then decide separately for each track whether to pay for participation. Under the corrected Track Force rule, Temporary Hires count toward the two-thirds minimum, Battlefield Support does not, and a still-ineligible force must use the applicable escape clause. BattleTech thresholds coincide; Alpha Strike’s Le Blanc trigger remains two-thirds of 100/200/300 PV and no rounding rule is printed. Eligibility and hiring administration remain outside the browser.";
+
+export const OBJECTIVE_RAID_PROVISIONAL_RULES = Object.freeze([
+  "Pending clarification, use the greater of the standard component capacity and the dedicated cargo-space capacity; do not add the two capacities together."
 ]);
 
 export function leBlancCommandModifier(rights = "liaison") {
@@ -770,7 +778,7 @@ export const TRACKS = [
       "Defender (Standard): deploy the entire force within hexes fully in the Defender’s half before Turn 1.",
       "Attacker (Raiders): at least one third of the force by number of units, rounding down and including assets, enters from the home edge during Turn 1. The remainder enters from a short edge during Turn 2. The Attacker may not select Minefield or Immobile BSP assets."
     ],
-    scaleNotes: ["The number of Defender emplacements is two per Scale."],
+    scaleNotes: ["BattleTech: the Defender receives two emplacements per Scale (2 at Scale 1, 4 at Scale 2, and 6 at Scale 3). Alpha Strike: the Defender receives two Gun Trailer (Ultra) total at every supported Scale."],
     objectives: [
       { id: "orders-attacker", name: "Orders", side: A, vp: 50, text: "At least half of the Attacker’s surviving units by number, including assets, are in the Defender’s half during any End Phase." },
       { id: "orders-defender", name: "Orders", side: D, vp: 50, text: "At least half of the Defender’s units by number, excluding assets, make an attack on an enemy unit for two consecutive turns." },
@@ -827,14 +835,15 @@ export const TRACKS = [
     special: [
       "Leg it!: the Attacker may not claim salvage.",
       "Raid: an Attacker ’Mech with at least one hand or infantry that ends its turn next to an objective building may grab objective components.",
-      "Capacity: a ’Mech or vehicle carries a maximum equal to its weight class / Alpha Strike SZ (Light 1, Medium 2, Heavy 3, Assault 4). Cargo space may increase this to cargo tonnage divided by 5 tons, rounded down (AS: CT divided by 3, rounded down).",
+      "Component capacity is based on weight class or Alpha Strike Size: Light/SZ 1 carries 1, Medium/SZ 2 carries 2, Heavy/SZ 3 carries 3, and Assault/SZ 4 carries 4. Units with dedicated cargo space calculate cargo capacity using cargo tonnage divided by 5 tons, rounded down (AS: CT divided by 3, rounded down).",
       "A standing ’Mech can grab and load one component per hand actuator onto itself or an adjacent ’Mech/vehicle per turn. A hand-actuator ’Mech can transfer one carried component to an adjacent unit at the end of a subsequent Movement Phase.",
       "Infantry can load one component onto an adjacent ’Mech or vehicle per turn; mechanized infantry must dismount and infantry cannot carry components. An asset vehicle can carry one component if assisted with loading and loses 1 MP while carrying it.",
       "Carrying reduces walking/cruising movement by 1 total (AS: MV by 2 inches). A ’Mech carrying a component and using jump movement makes a PSR to stay standing; failure does not drop components. Carrying does not affect attacks.",
       "Track End: after the end of any turn when at least one side has no units in play, or after the end of Turn 12 (Turn 10 in Alpha Strike).",
       "Salvage: the Attacker may not claim salvage. The Defender claims salvage if they successfully complete the track; otherwise all salvage returns to its owners.",
       "Source note: the printed track text does not state a component count per objective building; use the repeatable component counter for each component actually carried off."
-    ]
+    ],
+    provisionalRules: OBJECTIVE_RAID_PROVISIONAL_RULES
   },
   {
     id: "pursuit",
@@ -2186,7 +2195,8 @@ const gameWorldContractReference = {
     "Tybalt Hiring Hall Support Rating C charges 75 percent for repairs, OmniMech reconfiguration, and rearming. While at the hall and not under contract, maintenance costs 100 SP per month for up to six months; the period resets after three consecutive months of standard maintenance.",
     "Tybalt Mercenary Board: roll once per month. Regular Dispossessed costs the standard MechWarrior purchase cost; Veteran Dispossessed costs 500 SP and begins with 300 SP in Gunnery and 100 SP in Piloting; a Veteran with a BattleMech costs 50 SP per track and earns a 50 SP bonus after a successful track.",
     "If a named Tybalt mercenary was already hired, treat that result as a Veteran and roll on the Federated Suns RAT. If Le Lion d’Or was already hired, choose David Peretz, Frankie Amir, or a Veteran with a BattleMech and roll on the Federated Suns RAT.",
-    "Le Lion d’Or: the damaged Manatee-class DropShip requires 1,000 SP in repairs and 100 SP per month maintenance, after which it serves as transport and home base. These campaign services remain outside the tactical browser."
+    "Le Lion d’Or: the damaged Manatee-class DropShip requires 1,000 SP in repairs and 100 SP per month maintenance, after which it serves as transport and home base. These campaign services remain outside the tactical browser.",
+    "Republic team-generation clarification: NCKestrel’s Discord response from 27 November 2026, displayed at 8:13 PM, is: “Reroll Republic. There's no rules for how to use the RATs to make a team.” The time zone is not established. Forum post #40 reports the clarification; it is not published master errata."
   ]
 };
 
@@ -2287,7 +2297,7 @@ const pascagoulaTrack1Variant = {
   },
   commandComplications: PASCAGOULA_COMMAND_COMPLICATIONS,
   referenceTables: [pascagoulaTrack1Battlefield],
-  provisionalRules: PASCAGOULA_PROVISIONAL_RULES,
+  provisionalRules: Object.freeze([...PASCAGOULA_PROVISIONAL_RULES, ...OBJECTIVE_RAID_PROVISIONAL_RULES]),
   sourceRefs: [
     "Draconis Reach pp. 103–107",
     "Objective Raid p. 171",
@@ -2370,6 +2380,7 @@ function leBlancOverlay(trackId, existing = {}) {
     commandComplications: LE_BLANC_COMMAND_COMPLICATIONS,
     referenceTables: leBlancReferenceTables,
     temporaryHires: LE_BLANC_TEMPORARY_HIRES,
+    temporaryHireNote: LE_BLANC_TEMPORARY_HIRE_REFERENCE,
     sourceRefs: [
       "Draconis Reach pp. 86–89 (contracts 124704A–B)",
       base?.name + " " + pageRef,
@@ -2385,6 +2396,7 @@ function leBlancOverlay(trackId, existing = {}) {
 const leBlancTrack1Variant = leBlancOverlay("objective-raid", {
   displayName: "Objective Raid · Wreck the Place",
   summary: "An Objective Raid in which the Attacker destroys the Defender’s medium objective buildings.",
+  provisionalRules: [],
   setup: [
     "The Defender selects a short edge as their home edge; the Attacker gets the opposite short edge.",
     "The Defender designates two Medium objective buildings, height 1–4 levels (AS: 2–6 inches), within 4 hexes of the battlefield center, or 6 hexes at Scale 2+, in clear, rough, or wooded terrain or depth-0 water. If the center falls on a hex border, include every bordered hex. The objective buildings are destructible; apply the Wreck the Place durability rule below.",
@@ -3126,19 +3138,22 @@ export const MALLORY_PROVISIONAL_RULES = Object.freeze([
   "Approved provisional Alpha Strike conversion: the Scale 3 campaign pool is 15 BSP per command and the Final Battle allocation is 15 unrestricted BSP per side. The printed BattleTech values remain 96 BSP. This applies the Mercenary Command Scale Table on p. 36; it is not published Mallory errata.",
   "Approved provisional Alpha Strike Final Battle force size: the Defender uses all remaining campaign forces; the Attacker uses the losing command’s sponsoring-faction force at Defender PV plus 25 percent. Do not apply an ordinary Scale 3 cap, invent rounding, or convert BV to PV by purchase-price ratio.",
   "Approved provisional Alpha Strike battlefield: use 48 × 72 inches only when multiple formations participate on both sides in an ordinary engagement, and for the Final Battle. Ordinary single-formation engagements remain at the printed 36 × 48 inches; one-sided multiple formations do not trigger expansion.",
-  "Approved provisional Mallory Track Force exception: the Scale 3 campaign’s individual formation engagements use the scenario rules on pp. 135–136, and the Final Battle uses p. 141; do not impose the ordinary Scale 3 two-thirds minimum on those participants. Whether the entire mercenary command must continue to meet the general minimum remains unresolved and outside this tactical browser. No roster validation or automatic contract termination is performed."
+  "Pending clarification, whether a Mallory command must satisfy ordinary initial contract-strength eligibility requirements before entering the campaign remains unresolved. Do not infer a blanket initial-command exemption. No roster validation or automatic contract termination is performed."
 ]);
+
+export const MALLORY_CONFIRMED_TRACK_FORCE_EXCEPTION = "Mallory uses its scenario-specific force construction and formation rules instead of ordinary Track Force construction. Players are not required to break their contracts solely for following Mallory’s prescribed force breakdown. Do not impose the ordinary per-track two-thirds minimum on individual formations or invent a new minimum for the Final Battle.";
 
 const malloryContractReference = {
   summary: [
     "Raise the Dragon Banner is sponsored by the Draconis Combine. Raise the Sword and Sunburst is sponsored by the Federated Suns. The campaign is designed for two opposing commands at Scale 3; multiple players may share those two commands.",
     "Campaign capstone: begin after the commands reach Scale 3, or use Veteran Command (p. 19) for a stand-alone start. The campaign lasts up to ten map turns/five months and is expected to take five to ten play sessions.",
     "Each command distributes 96 BattleTech BSP among no more than four formations. A formation has no more than five units, includes at least one BattleMech, and receives at least 1 BSP. Approved provisional Alpha Strike pool: 15 BSP per command, minimum 1 BSP per formation.",
+    MALLORY_CONFIRMED_TRACK_FORCE_EXCEPTION,
     "Campaign record: Mallory’s World Mercenary Contract Record Sheet, p. 142. Strategic movement, ownership, Warchest accounting, formation changes, and roster administration remain outside this browser."
   ],
   progression: [
     "Landing Zones: BPWW at 0601/0614 permits purchases at a 1D6 × 10-percent premium and adds one replacement; Boshi-gumi at 0106/1110 costs 0 SP, adds 1D6 × 5 percent maintenance, and permits 4/5 recruitment; LINGO at 0512/0803 reduces city income by 1D6 × 10 percent.",
-    "Irrigation Control clarification: controlling hex 0303 increases city SP income by 50 percent. If a player selected a LINGO Landing Zone, this offsets the penalty directly. This LINGO correction is based on a MetalEd Discord clarification displayed at 8:38 PM; the supplied screenshot does not establish the calendar date, and the correction is not published master errata.",
+    "Irrigation Control clarification: controlling hex 0303 increases city SP income by 50 percent. If a player selected a LINGO Landing Zone, this offsets the penalty directly. This LINGO correction is based on a MetalEd Discord clarification from 27 November 2026, displayed at 8:38 PM; its time zone is not established, and the correction is not published master errata.",
     "Strategic Reinforcement: during Time Between Tracks, up to four chosen BattleMechs may be repaired as Battle / 100 percent replacements. Replacements arrive at the Landing Zone during the subsequent Time Between Tracks phase. A BPWW Landing Zone adds one replacement use.",
     "Location benefits: AgroMech facilities improve Support; Defensive Positions, cities, Yakuza bases, Training Simulators, the Biotech Centre, and Communication Array provide the printed payments or benefits; BPWW enables purchases; Shipping Port cancels one opposing BPWW hex and permits 6/6 recruitment. Administration remains reference-only.",
     "Purchases, recruitment, maintenance, repairs, training, strategic payments, and healing are resolved outside the browser. The current-track City, Manufacturing Plant, and Irrigation tactical benefits are configured manually in Setup."
@@ -3150,12 +3165,13 @@ const malloryContractReference = {
   ],
   purchaseOptions: [
     "BattleMech purchases require a held BPWW hex. Central BPWW facilities impose a 10-percent premium; BPWW Landing Zones use their rolled premium. Purchased units arrive at the Landing Zone under the printed formation rules.",
-    "Official sources: Hot Spots: Draconis Reach, First Printing, pp. 132–142; official Loneliness Island Poster Map (2026); official Draconis Reach master errata revision 27 November 2026 at 16:33:26, verified 27 November 2026. The Irrigation Control LINGO correction is implemented from forum post #41, which reports a MetalEd Discord clarification; it is not published master errata. The screenshot shows 8:38 PM, but its calendar date was not independently established."
+    "Official sources: Hot Spots: Draconis Reach, First Printing, pp. 132–142; official Loneliness Island Poster Map (2026); official Draconis Reach master errata revision 27 November 2026 at 16:33:26, verified 27 November 2026. The Irrigation Control LINGO correction is implemented from forum post #41, which reports a MetalEd Discord clarification from 27 November 2026 at a displayed 8:38 PM; it is not published master errata. MetalEd’s accepted Mallory Track Force clarification is dated 28 November 2026 at a displayed 12:23 AM; its time zone is not established and it is not published master errata."
   ],
   provisional: MALLORY_PROVISIONAL_RULES
 };
 
 const malloryCampaignTacticalRules = [
+  MALLORY_CONFIRMED_TRACK_FORCE_EXCEPTION,
   "Preserve the Island: no more than 21 BSP (Alpha Strike: 5 BSP) may be spent on Battlefield Support: Strikes choices in this combat track.",
   "Forced Withdrawal is not in effect. The shared voluntary-withdrawal rule on p. 31 still applies; Mallory adds no different objective-adjudication, damage, or repair consequence.",
   "Command Complications: none are used during the Loneliness Island campaign.",
@@ -3175,7 +3191,6 @@ const malloryVariant = (trackId, configuration) => {
     setupDetails: [...(baseTrack.setupDetails || []), ...configuration.setupDetails, ...malloryCampaignSetupDetails],
     objectives: baseTrack.objectives,
     special: [...baseTrack.special, ...(configuration.special || []), ...malloryCampaignTacticalRules],
-    provisionalRules: [MALLORY_PROVISIONAL_RULES[3]],
     sourceRefs: ["Draconis Reach pp. 135–139", "Official Loneliness Island Poster Map (2026)", configuration.trackReference, "Current Draconis Reach master errata"]
   };
 };
@@ -3375,6 +3390,7 @@ const malloryFinalBattleVariant = {
   scaleNotes: [],
   setupDetails: [
     ...(malloryFinalBattleAssault.setupDetails || []),
+    MALLORY_CONFIRMED_TRACK_FORCE_EXCEPTION,
     "Resolved roles: the strategic campaign winner is the tactical Defender and uses all remaining campaign forces. The strategic campaign loser is the tactical Attacker and controls an ilClan-era force from its sponsoring faction.",
     "Mandatory Attacker force: Federated Suns or Draconis Combine, matching the losing command. BattleTech uses the printed Defender BV plus 25 percent. Approved provisional Alpha Strike interpretation: Defender PV plus 25 percent. Do not apply an ordinary Scale 3 force cap, invent rounding, convert BV to PV, or construct the force automatically.",
     "Defender Contract Support: Battle / 50 percent. This explains repair and loss compensation; administration remains outside the browser.",
