@@ -3,6 +3,7 @@ export const SOURCES = {
   errata: "Hot Spots: Draconis Reach official master errata thread (revision reviewed 11 November 2026; forum rechecked 27 November 2026)",
   supersession: "Draconis Reach supersedes the supplied Hinterlands track text; Hinterlands track corrections are not applied to these records.",
   pascagoula: "Hot Spots: Draconis Reach, First Printing, pp. 103–107; Objective Raid p. 171; Pursuit p. 172; campaign withdrawal and exit rules p. 31; Mountains Terrain Table p. 150; Alpha Strike terrain p. 154; current Draconis Reach master errata",
+  mallory: "Hot Spots: Draconis Reach, First Printing, pp. 132–142; official Loneliness Island Poster Map (2026); current Draconis Reach master errata",
   militaryPalette: "BattleTech Faction Colors, palettes/military-ui.yaml, verified main e3cd8c9c9899b04aebd314a2a921ad3edd4092f1",
   opposingForces: "Hot Spots: Draconis Reach, First Printing, Opposing Force Tables pp. 186–201"
 };
@@ -3069,15 +3070,48 @@ const actOfPiracyContractReference = {
 };
 
 const malloryCampaignSetupDetails = [
-  "Battlefield size: normally use one mapsheet (Alpha Strike: 36 × 48 inches) for a battle between single formations. For a larger battle involving multiple formations on each side, add a second mapsheet rolled from the Savannah Terrain table on p. 151.",
+  "Battlefield size: an ordinary engagement uses one BattleTech mapsheet or a 36 × 48-inch Alpha Strike battlefield. Only when multiple formations participate on both sides, add a second BattleTech mapsheet rolled from the Savannah Terrain table on p. 151; the approved provisional Alpha Strike battlefield is 48 × 72 inches. Multiple formations on only one side do not trigger expansion.",
   "Strategic roles: the formation moving into the enemy-occupied hex initiates the engagement; the formation holding the attacked hex defends it. Select the initiating military side above for this engagement.",
   "Pre-battle withdrawal: if the defending formation has not yet moved this strategic map turn, it may withdraw one hex to the adjacent unoccupied hex closest to its base and abandon the attacked hex instead of fighting. The browser loads a tactical track only when the Defender does not take that option.",
   "Multiple engagements: a formation may attack, be attacked, or be counterattacked more than once during a strategic map turn. Units may therefore enter several tactical battles without time to repair between them. This browser does not track that carried damage."
 ];
 
+export const MALLORY_PROVISIONAL_RULES = Object.freeze([
+  "Approved provisional Alpha Strike conversion: the Scale 3 campaign pool is 15 BSP per command and the Final Battle allocation is 15 unrestricted BSP per side. The printed BattleTech values remain 96 BSP. This applies the Mercenary Command Scale Table on p. 36; it is not published Mallory errata.",
+  "Approved provisional Alpha Strike Final Battle force size: the Defender uses all remaining campaign forces; the Attacker uses the losing command’s sponsoring-faction force at Defender PV plus 25 percent. Do not apply an ordinary Scale 3 cap, invent rounding, or convert BV to PV by purchase-price ratio.",
+  "Approved provisional Alpha Strike battlefield: use 48 × 72 inches only when multiple formations participate on both sides in an ordinary engagement, and for the Final Battle. Ordinary single-formation engagements remain at the printed 36 × 48 inches; one-sided multiple formations do not trigger expansion.",
+  "Approved provisional Mallory Track Force exception: the Scale 3 campaign’s individual formation engagements use the scenario rules on pp. 135–136, and the Final Battle uses p. 141; do not impose the ordinary Scale 3 two-thirds minimum on those participants. Whether the entire mercenary command must continue to meet the general minimum remains unresolved and outside this tactical browser. No roster validation or automatic contract termination is performed."
+]);
+
+const malloryContractReference = {
+  summary: [
+    "Raise the Dragon Banner is sponsored by the Draconis Combine. Raise the Sword and Sunburst is sponsored by the Federated Suns. The campaign is designed for two opposing commands at Scale 3; multiple players may share those two commands.",
+    "Campaign capstone: begin after the commands reach Scale 3, or use Veteran Command (p. 19) for a stand-alone start. The campaign lasts up to ten map turns/five months and is expected to take five to ten play sessions.",
+    "Each command distributes 96 BattleTech BSP among no more than four formations. A formation has no more than five units, includes at least one BattleMech, and receives at least 1 BSP. Approved provisional Alpha Strike pool: 15 BSP per command, minimum 1 BSP per formation.",
+    "Campaign record: Mallory’s World Mercenary Contract Record Sheet, p. 142. Strategic movement, ownership, Warchest accounting, formation changes, and roster administration remain outside this browser."
+  ],
+  progression: [
+    "Landing Zones: BPWW at 0601/0614 permits purchases at a 1D6 × 10-percent premium and adds one replacement; Boshi-gumi at 0106/1110 costs 0 SP, adds 1D6 × 5 percent maintenance, and permits 4/5 recruitment; LINGO at 0512/0803 reduces city income by 1D6 × 10 percent.",
+    "Irrigation Control clarification: controlling hex 0303 increases city SP income by 50 percent. If a player selected a LINGO Landing Zone, this offsets the penalty directly. This LINGO correction is based on a MetalEd Discord clarification displayed at 8:38 PM; the supplied screenshot does not establish the calendar date, and the correction is not published master errata.",
+    "Strategic Reinforcement: during Time Between Tracks, up to four chosen BattleMechs may be repaired as Battle / 100 percent replacements. Replacements arrive at the Landing Zone during the subsequent Time Between Tracks phase. A BPWW Landing Zone adds one replacement use.",
+    "Location benefits: AgroMech facilities improve Support; Defensive Positions, cities, Yakuza bases, Training Simulators, the Biotech Centre, and Communication Array provide the printed payments or benefits; BPWW enables purchases; Shipping Port cancels one opposing BPWW hex and permits 6/6 recruitment. Administration remains reference-only.",
+    "Purchases, recruitment, maintenance, repairs, training, strategic payments, and healing are resolved outside the browser. The current-track City, Manufacturing Plant, and Irrigation tactical benefits are configured manually in Setup."
+  ],
+  victory: [
+    "The conquest phase ends after ten map turns/five months, when one side reaches 0 Warchest SP, when one side holds the Biotech Research Centre, Communication Array, and Training Simulators for two complete map turns, or when the opponent’s Landing Zone is captured.",
+    "After a campaign-ending condition, manually select Final Battle. The resolved campaign winner defends its headquarters with all remaining forces; the loser controls the mandatory sponsoring-faction assault force. The browser does not determine campaign victory or construct either force.",
+    "Final Battle Combat Pay incorporates official errata: Conquer pays 3,000 SP and Hold the Field pays 6,000 SP. Assault VP values remain unchanged."
+  ],
+  purchaseOptions: [
+    "BattleMech purchases require a held BPWW hex. Central BPWW facilities impose a 10-percent premium; BPWW Landing Zones use their rolled premium. Purchased units arrive at the Landing Zone under the printed formation rules.",
+    "Official sources: Hot Spots: Draconis Reach, First Printing, pp. 132–142; official Loneliness Island Poster Map (2026); official Draconis Reach master errata revision reviewed 11 November 2026 and rechecked 27 November 2026. Forum posts #38–#39 were verified separately on 27 November 2026 but have not been incorporated into the dated master list."
+  ],
+  provisional: MALLORY_PROVISIONAL_RULES
+};
+
 const malloryCampaignTacticalRules = [
   "Preserve the Island: no more than 21 BSP (Alpha Strike: 5 BSP) may be spent on Battlefield Support: Strikes choices in this combat track.",
-  "Forced Withdrawal is not in effect. A unit may voluntarily retreat through its own home edge; remove it from combat and from the track’s unit totals. Damage suffered before retreat still requires repair normally.",
+  "Forced Withdrawal is not in effect. A unit may voluntarily retreat through its own home edge; remove it from combat and from the track’s unit totals. It counts as destroyed only for opposing objective adjudication, remains otherwise in its actual damage state, and still requires ordinary applicable repairs.",
   "Command Complications: none are used during the Loneliness Island campaign.",
   "Combat Pay: players do not receive the standard Combat Pay for successfully completing these tactical tracks. The employers instead pay for claimed strategic hexes; this browser shows relevant payments as reference information only.",
   "Campaign bookkeeping boundary: hex ownership, payments, purchases, repairs, strategic movement, and campaign victory remain source-reference information. This tactical browser does not determine eligibility or award those benefits automatically."
@@ -3095,14 +3129,18 @@ const malloryVariant = (trackId, configuration) => {
     setupDetails: [...(baseTrack.setupDetails || []), ...configuration.setupDetails, ...malloryCampaignSetupDetails],
     objectives: baseTrack.objectives,
     special: [...baseTrack.special, ...(configuration.special || []), ...malloryCampaignTacticalRules],
-    sourceRefs: ["Draconis Reach pp. 135–139", configuration.trackReference, "Current Draconis Reach master errata"]
+    provisionalRules: [MALLORY_PROVISIONAL_RULES[3]],
+    sourceRefs: ["Draconis Reach pp. 135–139", "Official Loneliness Island Poster Map (2026)", configuration.trackReference, "Current Draconis Reach master errata"]
   };
 };
 
 const malloryRoleChoice = {
   roleChoice: true,
+  roleChoiceRequired: true,
   roleChoiceLabel: "Strategic attacking formation",
-  roleChoiceHint: "Choose the contract side whose formation moved into the enemy-occupied hex. It uses the tactical Attacker role; the side holding the hex uses Defender."
+  roleChoicePlaceholder: "Select strategic attacker…",
+  roleChoiceHint: "Choose the contract side whose formation moved into the enemy-occupied hex. It uses the tactical Attacker role; the side holding the hex uses Defender.",
+  roleChoicePendingInstruction: "Select the strategic attacking formation to assign deployment, tactical roles, support, and objective columns."
 };
 
 const malloryHexTrack = (sequence, label, trackId, variant, extra = {}) => fixedHotSpotTrack(
@@ -3172,7 +3210,7 @@ const malloryIrrigationVariant = malloryVariant("pushback", {
   ],
   special: [
     "Ownership-dependent tactical benefit: in one battle per strategic map turn, the eligible controlling player may designate 10 contiguous hexes as Depth 1 water. In Alpha Strike, place one river 3 inches wide and 12 inches long. Single rubble counters from Map Pack: City may mark water. Do not apply unless control and once-per-turn eligibility are established.",
-    "Ownership-dependent campaign benefit: controlling Irrigation Control increases SP received from cities by 50 percent and directly offsets the penalty from choosing a BPWW Landing Zone. Reference only."
+    "Ownership-dependent campaign benefit: controlling Irrigation Control increases SP received from cities by 50 percent. If a player selected a LINGO Landing Zone, this offsets the penalty directly. This correction is based on a MetalEd Discord clarification and is reference-only; no income is calculated automatically."
   ],
   trackReference: "Pushback p. 173"
 });
@@ -3279,6 +3317,37 @@ const malloryTrainingVariant = malloryVariant("pushback", {
   ],
   trackReference: "Pushback p. 173"
 });
+
+const malloryFinalBattleAssault = TRACKS.find(track => track.id === "assault");
+const malloryFinalBattleVariant = {
+  page: 141,
+  pageRef: "p. 141",
+  displayName: "Final Battle · Assault",
+  type: "Loneliness Island Final Battle",
+  summary: "The resolved campaign winner defends its headquarters against the losing command’s mandatory sponsoring-faction assault force.",
+  setup: [...malloryFinalBattleAssault.setup],
+  scaleNotes: [],
+  setupDetails: [
+    ...(malloryFinalBattleAssault.setupDetails || []),
+    "Resolved roles: the strategic campaign winner is the tactical Defender and uses all remaining campaign forces. The strategic campaign loser is the tactical Attacker and controls an ilClan-era force from its sponsoring faction.",
+    "Mandatory Attacker force: Federated Suns or Draconis Combine, matching the losing command. BattleTech uses the printed Defender BV plus 25 percent. Approved provisional Alpha Strike interpretation: Defender PV plus 25 percent. Do not apply an ordinary Scale 3 force cap, invent rounding, convert BV to PV, or construct the force automatically.",
+    "Defender Contract Support: Battle / 50 percent. This explains repair and loss compensation; administration remains outside the browser.",
+    "Battlefield Support: each side receives 96 unrestricted BattleTech BSP. Approved provisional Alpha Strike allocation: 15 unrestricted BSP per side. The ordinary Preserve the Island Strikes cap does not apply. Eligible City and Manufacturing Plant bonuses are additional."
+  ],
+  battlefieldRules: [
+    { text: "Final Battle terrain: Urban. The Defender arranges all buildings on its half of the battlefield toward its home edge." },
+    { text: "BattleTech mapsheets: City Ruins and BattleTech from Map Pack: Savannah, connected along a long edge. The Defender arranges building tokens on paved areas as its base; its home edge is the unconnected long edge of City Ruins." },
+    { text: "Alpha Strike: use a 48 × 72-inch Urban battlefield. The Defender arranges buildings on their own half toward their home edge. This dimension is an approved provisional interpretation; do not add unprinted terrain-piece counts or convert the BattleTech building tokens directly." }
+  ],
+  objectives: malloryFinalBattleAssault.objectives,
+  special: [
+    ...malloryFinalBattleAssault.special,
+    "Final Battle Combat Pay: Conquer pays 3,000 SP and Hold the Field pays 6,000 SP, incorporating current official errata. These payment changes do not alter the standard Assault objective VP values.",
+    "Final Battle outcome: resolve tactical objective VP normally. The browser does not recalculate the already-resolved strategic campaign winner or administer campaign payments."
+  ],
+  provisionalRules: MALLORY_PROVISIONAL_RULES,
+  sourceRefs: ["Draconis Reach p. 141", "Assault p. 168", "Current Draconis Reach master errata"]
+};
 
 const malloryRestrictedFacility = {
   nonPlayable: true,
@@ -3909,7 +3978,7 @@ export const HOT_SPOTS = [
     name: "Mallory’s World",
     region: "Loneliness Island",
     terrain: "Savannah / Urban",
-    source: "Draconis Reach pp. 132–141",
+    source: "Draconis Reach pp. 132–142 · Official Loneliness Island Poster Map (2026)",
     trackSelectorLabel: "Strategic Hex Type",
     fixedScale: 3,
     fixedScaleNote: "Mallory's World is designed and balanced for Scale 3. See Veteran Command (p. 19) for starting directly at this Scale.",
@@ -3918,6 +3987,7 @@ export const HOT_SPOTS = [
       factionSide("dragon-banner", "Raise the Dragon Banner", "Draconis Combine"),
       factionSide("sword-sunburst", "Raise the Sword and Sunburst", "Federated Suns")
     ],
+    contractReference: malloryContractReference,
     tracks: [
       malloryHexTrack(1, "Empty Hexes", "recon", malloryEmptyVariant),
       malloryHexTrack(2, "Operating Base / Landing Zone", "retreat", malloryOperatingBaseVariant),
@@ -3942,11 +4012,25 @@ export const HOT_SPOTS = [
         attacker: null,
         defender: null,
         variant: malloryRestrictedFacility
-      }
+      },
+      fixedHotSpotTrack(15, "assault", "sword-sunburst", "dragon-banner", {
+        label: "Final Battle · Campaign-ending Assault",
+        variant: malloryFinalBattleVariant,
+        roleChoice: true,
+        roleChoiceRequired: true,
+        reverseRoles: true,
+        roleChoicePlainLabels: true,
+        roleChoiceLabel: "Resolved strategic campaign winner",
+        roleChoicePlaceholder: "Select campaign winner…",
+        roleChoiceHint: "Choose the command that won the strategic conquest phase. It becomes the Final Battle Defender; the losing command becomes Attacker.",
+        roleChoicePendingInstruction: "Select the resolved strategic campaign winner to assign the Final Battle Defender, Attacker, objectives, and mandatory opposing force.",
+        disableTakingOneForTeam: true,
+        finalBattle: true
+      })
     ]
   }
 ];
 
-export const PLAYER_VISIBLE_HOT_SPOT_IDS = Object.freeze(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress", "xhosa-vii", "act-of-piracy", "game-worlds"]);
+export const PLAYER_VISIBLE_HOT_SPOT_IDS = Object.freeze(["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress", "xhosa-vii", "act-of-piracy", "game-worlds", "mallorys-world"]);
 
 

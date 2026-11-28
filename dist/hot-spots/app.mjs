@@ -1,4 +1,4 @@
-import { ACT_OF_PIRACY_SYSTEMS, adjustDaharEarnedVp, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_PROVISIONAL_RULES, evaluateAltaVistaCampaign, evaluateGameWorldDuelVictory, evaluateProtectionPursuit, evaluateXhosaTruckOutcome, FACTION_COLORS, GAME_WORLDS_DOBLESS_RATS, GAME_WORLDS_TEAM_GENERATION_PROVISIONAL_RULE, GENERAL_RULES, groupComplicationEffectEntries, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_PROVISIONAL_RULES, MISSION_OPFOR_OVERRIDES, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PASCAGOULA_PROVISIONAL_RULES, PLAYER_VISIBLE_HOT_SPOT_IDS, protectionPartisanSupport, RECON_DENY_ATTACKER_OBJECTIVE_IDS, resolveActOfPiracyScenario, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=game-worlds-supplement";
+import { ACT_OF_PIRACY_SYSTEMS, adjustDaharEarnedVp, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_PROVISIONAL_RULES, evaluateAltaVistaCampaign, evaluateGameWorldDuelVictory, evaluateProtectionPursuit, evaluateXhosaTruckOutcome, FACTION_COLORS, GAME_WORLDS_DOBLESS_RATS, GAME_WORLDS_TEAM_GENERATION_PROVISIONAL_RULE, GENERAL_RULES, groupComplicationEffectEntries, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_PROVISIONAL_RULES, MALLORY_PROVISIONAL_RULES, MISSION_OPFOR_OVERRIDES, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PASCAGOULA_PROVISIONAL_RULES, PLAYER_VISIBLE_HOT_SPOT_IDS, protectionPartisanSupport, RECON_DENY_ATTACKER_OBJECTIVE_IDS, resolveActOfPiracyScenario, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "./data.mjs?v=game-worlds-supplement";
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -236,6 +236,10 @@ function generatedOpForConfiguration() {
       faction: scenario.militiaFaction,
       choices: []
     };
+  }
+  if (hotSpot.id === "mallorys-world") {
+    const opposing = hotSpot.sides.find(side => side.id !== selected?.id) || null;
+    return { side: opposing, faction: opposing?.faction, choices: [] };
   }
   if (!simplifiedContracts.has(hotSpot.id)) return { side: selected, faction: selected?.faction, choices: [] };
   const opposing = hotSpot.sides.find(side => side.id !== selected?.id) || null;
@@ -1099,6 +1103,10 @@ function renderOpFor() {
   const container = $("#opfor-display");
   if (!container) return;
   const hotSpot = currentHotSpot();
+  if (resolvedHotSpotStep()?.disableTakingOneForTeam) {
+    container.innerHTML = "";
+    return;
+  }
   const piracyScenario = hotSpot.id === "act-of-piracy" ? actOfPiracyScenario() : null;
   if (hotSpot.opforMode === "source-table" && hotSpot.id !== "act-of-piracy") {
     container.innerHTML = "";
@@ -1196,9 +1204,9 @@ function renderHotSpotSetup() {
   if (resolved?.roleChoice) {
     const selectedRole = state.roleSelections[roleKey(step.sequence)] || (resolved.roleChoiceRequired ? "" : hotSpot.sides[0]?.id);
     const roleSuffix = step.reverseRoles ? " as strategic attacker (Pursuit Defender)" : " as strategic attacker (tactical Attacker)";
-    const placeholder = resolved.roleChoiceRequired ? '<option value="">Select Attacker…</option>' : "";
+    const placeholder = resolved.roleChoiceRequired ? (step.roleChoicePlaceholder ? '<option value="">' + esc(step.roleChoicePlaceholder) + '</option>' : '<option value="">Select Attacker…</option>') : "";
     const options = hotSpot.sides.map(side => '<option value="' + esc(side.id) + '"' + (selectedRole === side.id ? " selected" : "") + '>' + esc(side.name) + (resolved.roleChoicePlainLabels ? "" : roleSuffix) + "</option>").join("");
-    const hint = resolved.rolePending ? (resolved.variant?.roleChoicePendingInstruction || "Select the Attacker to display objectives.") : (step.roleChoiceHint || "The other side is assigned Defender.");
+    const hint = resolved.rolePending ? (resolved.roleChoicePendingInstruction || resolved.variant?.roleChoicePendingInstruction || "Select the Attacker to display objectives.") : (step.roleChoiceHint || "The other side is assigned Defender.");
     winnerControls.push('<div class="control-group"><label for="role-choice">' + esc(step.roleChoiceLabel || "Choose the Attacker") + '</label><select id="role-choice" data-role-sequence="' + step.sequence + '">' + placeholder + options + '</select><span class="control-hint">' + esc(hint) + '</span></div>');
   }
   if (step?.results?.length) {
@@ -1249,13 +1257,16 @@ function renderHotSpotSetup() {
   }
   const takingToggle = $("#taking-one-for-team").closest("label");
   const piracyScenario = hotSpot.id === "act-of-piracy" ? actOfPiracyScenario() : null;
-  takingToggle.style.display = sourceTableMode && !piracyScenario?.militiaRequired ? "none" : "";
+  takingToggle.style.display = resolved?.disableTakingOneForTeam || (sourceTableMode && !piracyScenario?.militiaRequired) ? "none" : "";
   if (hotSpot.opforMode === "gladiator") {
     takingToggle.querySelector("strong").textContent = gameWorldMode() === "team" ? "Generate the opposing team" : "Use the Gladiator Generator";
     takingToggle.querySelector("small").textContent = gameWorldMode() === "team" ? "Show the standard Scale-based opposing-team procedure." : "Show the source procedure for creating a non-player duelist.";
   } else if (hotSpot.id === "act-of-piracy") {
     takingToggle.querySelector("strong").textContent = "Generate the local Militia Garrison";
     takingToggle.querySelector("small").textContent = "Show the attacked system’s required Militia Garrison configuration from the source tables.";
+  } else if (hotSpot.id === "mallorys-world") {
+    takingToggle.querySelector("strong").textContent = "Taking one for the team";
+    takingToggle.querySelector("small").textContent = "Show a generated force for the opposing strategic command. Final Battle uses its mandatory sponsoring-faction force instead.";
   } else {
     takingToggle.querySelector("strong").textContent = "Taking one for the team";
     takingToggle.querySelector("small").textContent = "Show a generated opposing force using the selected military side and Force Scale.";
@@ -1331,7 +1342,9 @@ function scaleNotesFor(track, scale) {
 }
 
 function isBattlefieldConfigurationText(text) {
-  return /^(?:At Scale .*mapsheets|Battlefield size:|Dahar mapsheets:|BattleTech mapsheets:|Alpha Strike(?: terrain)?:|Standard Protection mapsheet table:|Atlantis City option|Atlantis City mapsheet table:|Official mapsheet table|Result \d)/i.test(String(text || ""));
+  const value = String(text || "");
+  if (currentHotSpot().id === "mallorys-world" && /^(?:Terrain:|Alpha Strike terrain adjustment:)/i.test(value)) return true;
+  return /^(?:At Scale .*mapsheets|Battlefield size:|Dahar mapsheets:|BattleTech mapsheets:|Alpha Strike(?: terrain)?:|Final Battle terrain:|Standard Protection mapsheet table:|Atlantis City option|Atlantis City mapsheet table:|Official mapsheet table|Result \d)/i.test(value);
 }
 
 function isBattlefieldConfigurationTable(table) {
@@ -1356,6 +1369,15 @@ function battlefieldSelectionSummary(referenceTrack) {
   if (currentHotSpot().id === "act-of-piracy") {
     const scenario = actOfPiracyScenario();
     return scenario.attackedSystem ? scenario.attackedSystem.name + " · " + scenario.attackedSystem.terrain : "Attacked system unresolved";
+  }
+  if (currentHotSpot().id === "mallorys-world") {
+    if (resolvedHotSpotStep()?.finalBattle) return "Final Battle · Urban · BT two mapsheets · AS 48 × 72 inches (provisional)";
+    const terrain = (referenceTrack.setupDetails || []).find(item => /^Terrain:/i.test(item));
+    const footprint = malloryBattlefieldMode() === "multiple-both"
+      ? "BT two mapsheets · AS 48 × 72 inches (provisional)"
+      : "BT one mapsheet · AS 36 × 48 inches";
+    const terrainName = terrain ? terrain.replace(/^Terrain:\s*/i, "").split(".")[0] : currentHotSpot().terrain + " battlefield";
+    return terrainName + " · " + footprint;
   }
   const { tables } = battlefieldConfigurationParts(referenceTrack);
   let summary = tables[0]?.title || currentHotSpot().terrain + " battlefield";
@@ -1402,6 +1424,11 @@ function hotSpotSetupSummaryParts(referenceTrack) {
     parts.push(appliedComplicationSummary());
   } else {
     parts.push(battlefieldSelectionSummary(referenceTrack));
+  }
+  if (currentHotSpot().id === "mallorys-world") {
+    const active = malloryActiveBenefits();
+    parts.push(active.length ? active.length + " tactical benefit" + (active.length === 1 ? "" : "s") + " configured" : "No island-wide tactical benefits configured");
+    parts.push(resolved?.rolePending ? "Strategic role unresolved" : "Strategic roles assigned");
   }
   return parts;
 }
@@ -1641,6 +1668,108 @@ function renderBattlefieldTable(table) {
   return renderGeneratorTable("", table);
 }
 
+function malloryBattlefieldMode() {
+  if (currentHotSpot().id !== "mallorys-world") return "single";
+  if (resolvedHotSpotStep()?.finalBattle) return "final";
+  return state.tacticalInputs[tacticalInputKey("mallory-battlefield-mode")] || "single";
+}
+
+function renderMalloryBattlefieldInputs() {
+  if (currentHotSpot().id !== "mallorys-world" || !currentTrack()) return "";
+  if (resolvedHotSpotStep()?.finalBattle) {
+    return '<div class="mallory-battlefield-resolution setup-input-grid"><strong>Resolved Final Battle footprint</strong><span>BattleTech: City Ruins and BattleTech mapsheets joined along a long edge.</span><span>Alpha Strike: 48 × 72 inches · Urban.</span>' + renderProvisionalRules([MALLORY_PROVISIONAL_RULES[2]]) + '</div>';
+  }
+  const mode = malloryBattlefieldMode();
+  const expanded = mode === "multiple-both";
+  const resolution = expanded
+    ? "BattleTech: add the second Savannah mapsheet · Alpha Strike: 48 × 72 inches"
+    : "BattleTech: one mapsheet · Alpha Strike: 36 × 48 inches";
+  return '<div class="mallory-battlefield-resolution setup-input-grid"><label><span>Participating formations</span><select data-mallory-configuration="battlefield-mode"><option value="single"' + (mode === "single" ? " selected" : "") + '>Single formation on each side</option><option value="multiple-one-side"' + (mode === "multiple-one-side" ? " selected" : "") + '>Multiple formations on one side only</option><option value="multiple-both"' + (expanded ? " selected" : "") + '>Multiple formations on both sides</option></select><small>The battlefield expands only when multiple formations participate on both sides.</small></label><p class="setup-configuration-summary">' + esc(resolution) + '</p>' + (expanded ? renderProvisionalRules([MALLORY_PROVISIONAL_RULES[2]]) : "") + '</div>';
+}
+
+function malloryBenefitValue(name, fallback = "") {
+  return state.tacticalInputs[tacticalInputKey("mallory-" + name)] ?? fallback;
+}
+
+function malloryControllerOptions(selected) {
+  return '<option value="">Not available for this engagement</option>' + currentHotSpot().sides.map(side => '<option value="' + esc(side.id) + '"' + (selected === side.id ? " selected" : "") + '>' + esc(side.name) + '</option>').join("");
+}
+
+function malloryTacticalRole(sideId) {
+  const resolved = resolvedHotSpotStep();
+  if (!sideId || resolved?.rolePending) return "tactical role pending";
+  if (resolved?.attacker === sideId) return "tactical Attacker";
+  if (resolved?.defender === sideId) return "tactical Defender";
+  return "current command";
+}
+
+function malloryActiveBenefits() {
+  if (currentHotSpot().id !== "mallorys-world") return [];
+  const finalBattle = Boolean(resolvedHotSpotStep()?.finalBattle);
+  const cityController = malloryBenefitValue("city-controller");
+  const cityCount = cityController ? Math.min(2, Math.max(1, Number(malloryBenefitValue("city-count", 1)) || 1)) : 0;
+  const manufacturingController = malloryBenefitValue("manufacturing-controller");
+  const irrigationController = finalBattle ? "" : malloryBenefitValue("irrigation-controller");
+  const benefits = [];
+  if (cityController) benefits.push({
+    id: "city",
+    controller: cityController,
+    title: cityCount + " controlled cit" + (cityCount === 1 ? "y" : "ies"),
+    details: [
+      "BattleTech: " + (21 * cityCount) + " additional BSP, restricted to Infantry BSP units (21 per controlled city).",
+      "Alpha Strike: " + (2 * cityCount) + " Mechanized Hover Platoons (Flamer) (two per controlled city)."
+    ]
+  });
+  if (manufacturingController) benefits.push({
+    id: "manufacturing",
+    controller: manufacturingController,
+    title: "Manufacturing Plant held",
+    details: [
+      "BattleTech: 24 additional BSP restricted to vehicles or emplacements.",
+      "Alpha Strike: two Flatbed Trucks (SRM) and two Medium Emplacements."
+    ]
+  });
+  if (irrigationController) benefits.push({
+    id: "irrigation",
+    controller: irrigationController,
+    title: "Irrigation Control available",
+    details: [
+      "BattleTech: designate ten contiguous hexes as Depth 1 water.",
+      "Alpha Strike: place one river 3 inches wide and 12 inches long.",
+      "Manual eligibility: this benefit may be used in one battle per map turn; the browser does not track prior use."
+    ]
+  });
+  return benefits;
+}
+
+function renderMallorySetupInputs() {
+  if (currentHotSpot().id !== "mallorys-world" || !currentTrack()) return "";
+  const finalBattle = Boolean(resolvedHotSpotStep()?.finalBattle);
+  const cityController = malloryBenefitValue("city-controller");
+  const cityCount = String(malloryBenefitValue("city-count", 1));
+  const manufacturingController = malloryBenefitValue("manufacturing-controller");
+  const irrigationController = malloryBenefitValue("irrigation-controller");
+  const controllerField = (name, label, selected, note) => '<label><span>' + esc(label) + '</span><select data-mallory-benefit="' + esc(name) + '">' + malloryControllerOptions(selected) + '</select><small>' + esc(note) + '</small></label>';
+  const irrigation = finalBattle ? "" : controllerField("irrigation-controller", "Irrigation Control benefit", irrigationController, "Select the controlling command only if the one-battle-per-map-turn benefit is still available for this engagement.");
+  return '<section class="setup-configuration-card mallory-benefit-configuration"><div class="panel-kicker">ISLAND-WIDE TACTICAL BENEFITS</div><p class="reference-copy">Record only benefits already established by strategic ownership for this engagement. These choices do not track ownership, map turns, or campaign history.</p><div class="setup-input-grid">' +
+    controllerField("city-controller", "City benefit controller", cityController, "Each controlled city grants its restricted support package in every engagement.") +
+    '<label><span>Controlled city hexes</span><select data-mallory-benefit="city-count"' + (cityController ? "" : " disabled") + '><option value="1"' + (cityCount === "1" ? " selected" : "") + '>1 city</option><option value="2"' + (cityCount === "2" ? " selected" : "") + '>2 cities</option></select><small>No benefit is applied until a controller is selected.</small></label>' +
+    controllerField("manufacturing-controller", "Manufacturing Plant benefit", manufacturingController, "The restricted vehicle/emplacement package applies in each engagement while held.") +
+    irrigation +
+    '</div></section>';
+}
+
+function renderMalloryTacticalBenefits() {
+  if (currentHotSpot().id !== "mallorys-world") return "";
+  const benefits = malloryActiveBenefits();
+  if (!benefits.length) return "";
+  const cards = benefits.map(benefit => {
+    const controller = sideById(benefit.controller);
+    return '<article class="active-complication-extra" data-mallory-benefit="' + esc(benefit.id) + '"><strong>' + esc(benefit.title) + '</strong><span>Controlling command: ' + esc(controller?.name || "Unresolved") + ' · ' + esc(malloryTacticalRole(benefit.controller)) + '</span><ul class="rule-list">' + benefit.details.map(detail => '<li>' + esc(detail) + '</li>').join("") + '</ul></article>';
+  }).join("");
+  return '<div class="reference-section tactical-support-section"><div class="panel-kicker">ACTIVE ISLAND-WIDE TACTICAL BENEFITS</div><p class="reference-copy">Applied only from the manual resolved inputs in Setup. Benefits remain assigned to their controlling command after tactical role resolution.</p><div class="active-complication-grid">' + cards + '</div></div>';
+}
+
 function renderSetupConfiguration(referenceTrack) {
   const battlefieldContainer = $("#battlefield-configuration");
   const complicationContainer = $("#complication-configuration");
@@ -1659,8 +1788,8 @@ function renderSetupConfiguration(referenceTrack) {
     .filter(rule => typeof rule === "string" || variantConditionMatches(sequence, rule.whenSelection))
     .map(rule => typeof rule === "string" ? rule : rule.text);
   const provisional = provisionalRules.length ? '<div class="complication-provisional">' + renderProvisionalRules(provisionalRules) + '</div>' : "";
-  battlefieldContainer.innerHTML = '<section class="setup-configuration-card battlefield-configuration-card"><div class="panel-kicker">BATTLEFIELD CONFIGURATION</div><p class="setup-configuration-summary">' + esc(battlefieldSelectionSummary(referenceTrack)) + ' · Scale ' + esc(String(state.scale)) + '</p>' + procedure + tableMarkup + provisional + '</section>';
-  complicationContainer.innerHTML = renderNewIvaarsenSetupInputs() + renderCommandComplicationsSetup(referenceTrack.commandComplications);
+  battlefieldContainer.innerHTML = '<section class="setup-configuration-card battlefield-configuration-card"><div class="panel-kicker">BATTLEFIELD CONFIGURATION</div><p class="setup-configuration-summary">' + esc(battlefieldSelectionSummary(referenceTrack)) + ' · Scale ' + esc(String(state.scale)) + '</p>' + procedure + renderMalloryBattlefieldInputs() + tableMarkup + provisional + '</section>';
+  complicationContainer.innerHTML = renderNewIvaarsenSetupInputs() + renderMallorySetupInputs() + renderCommandComplicationsSetup(referenceTrack.commandComplications);
 
   const setupSummary = $("#hotspot-setup-summary");
   const selected = sideById(state.selectedSide[currentHotSpot().id]);
@@ -1756,6 +1885,7 @@ function renderNewIvaarsenTacticalReference() {
 function renderCurrentTrackInputs() {
   const hotSpot = currentHotSpot();
   const step = currentHotSpotStep();
+  if (hotSpot.id === "mallorys-world") return renderMalloryTacticalBenefits();
   if (hotSpot.id === "act-of-piracy") {
     const scenario = actOfPiracyScenario();
     if (!scenario.attackedSystem) {
@@ -1998,7 +2128,7 @@ function renderTracker() {
   const tigressRetainedRow = track && currentHotSpot().id === "tigress" && Number(currentHotSpotStep()?.sequence) === 1 && state.tigressPhase === "recon"
     ? '<tr class="prerequisite-row tigress-retained-row"><th scope="row"><div class="objective-title">Retained training result</div><div class="objective-rule">Legion Trainers retain VP earned during the training phase. A completed Legion Trainers training objective satisfies their Track 1 objective-completion prerequisite; they do not also need a Recon objective. Trainee-earned VP controlled by the Roughriders player does not carry forward.</div><div class="objective-vp">Separate contribution derived from the preserved Meeting Engagement objective record.</div></th><td class="attacker-col"><span class="not-applicable" aria-label="Not applicable">—</span></td><td class="defender-col"><div class="calculated-vp"><strong>' + tigressRetainedTrainingVp() + ' VP</strong><span>' + tigressCompletedTrainingObjectiveCount() + ' completed training objective' + (tigressCompletedTrainingObjectiveCount() === 1 ? '' : 's') + '</span></div></td></tr>'
     : "";
-  const pendingRoleRow = '<tr><th scope="row" colspan="3" class="pending-track">' + esc(resolved?.variant?.roleChoicePendingInstruction || "Select the Attacker to display objectives.") + '</th></tr>';
+  const pendingRoleRow = '<tr><th scope="row" colspan="3" class="pending-track">' + esc(resolved?.roleChoicePendingInstruction || resolved?.variant?.roleChoicePendingInstruction || "Select the Attacker to display objectives.") + '</th></tr>';
   $("#objective-body").innerHTML = track ? (resolved?.rolePending ? pendingRoleRow : extractionRow + protectionCaptureRow + tigressRetainedRow + displayedObjectives.map(objective => {
     const display = displayObjective(objective, variant);
     const calculatedDeny = isReconDeny(objective);
@@ -2328,6 +2458,18 @@ $("#mission-reference").addEventListener("change", event => {
 });
 
 $("#hotspot-setup").addEventListener("change", event => {
+  const malloryConfiguration = event.target.closest("[data-mallory-configuration]");
+  if (malloryConfiguration) {
+    state.tacticalInputs[tacticalInputKey("mallory-" + malloryConfiguration.dataset.malloryConfiguration)] = malloryConfiguration.value;
+    renderAll();
+    return;
+  }
+  const malloryBenefit = event.target.closest("[data-mallory-benefit]");
+  if (malloryBenefit) {
+    state.tacticalInputs[tacticalInputKey("mallory-" + malloryBenefit.dataset.malloryBenefit)] = malloryBenefit.value;
+    renderAll();
+    return;
+  }
   const newIvaarsenInputControl = event.target.closest("[data-new-ivaarsen-input]");
   if (newIvaarsenInputControl) {
     const name = newIvaarsenInputControl.dataset.newIvaarsenInput;

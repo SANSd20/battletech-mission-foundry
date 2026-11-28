@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { ACT_OF_PIRACY_COMMAND_COMPLICATIONS, ACT_OF_PIRACY_SYSTEMS, ACT_OF_PIRACY_TERRAIN_TABLES, adjustDaharEarnedVp, achernarInitialDefectors, ALTA_VISTA_COMMAND_COMPLICATIONS, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateGameWorldEventVp, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_MAPSHEET_TABLE, DAHAR_PROVISIONAL_RULES, DAHAR_TRACK_RESULTS, evaluateAltaVistaCampaign, evaluateGameWorldDuelVictory, evaluateProtectionPursuit, FACTION_COLORS, GAME_WORLDS_CARCASSONNE_MAPSHEETS, GAME_WORLDS_DOBLESS_RATS, GAME_WORLDS_PROVISIONAL_RULES, GAME_WORLDS_TEAM_GENERATION_PROVISIONAL_RULE, GAME_WORLDS_TYBALT_HIRES, GAME_WORLDS_TYBALT_MAPSHEETS, GAME_WORLDS_XHOSA_MAPSHEETS, gameWorldTeamLossThresholdMet, GENERAL_RULES, groupComplicationEffectEntries, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_MAPSHEET_TABLE, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LE_BLANC_TEMPORARY_HIRES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_MAPSHEET_TABLE, LUCERNE_PROVISIONAL_RULES, LUCERNE_TEMPORARY_HIRES, LUCERNE_TRACK_RESULTS, MELCHER_BLACK_MARKET, MELCHER_COMMAND_COMPLICATIONS, MELCHER_GRASSLANDS_MAPSHEETS, MELCHER_TEMPORARY_HIRES, MISSION_OPFOR_OVERRIDES, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_COMMAND_COMPLICATIONS, NEW_IVAARSEN_LIGHT_URBAN_MAPSHEETS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PASCAGOULA_COMMAND_COMPLICATIONS, PASCAGOULA_MOUNTAINS_MAPSHEETS, PASCAGOULA_PROVISIONAL_RULES, PLAYER_VISIBLE_HOT_SPOT_IDS, PROTECTION_ATLANTIS_MAPSHEETS, PROTECTION_COMMAND_COMPLICATIONS, PROTECTION_PROVISIONAL_RULES, PROTECTION_STANDARD_MAPSHEETS, PROTECTION_TEMPORARY_HIRES, protectionPartisanSupport, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, resolveActOfPiracyScenario, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
+import { ACT_OF_PIRACY_COMMAND_COMPLICATIONS, ACT_OF_PIRACY_SYSTEMS, ACT_OF_PIRACY_TERRAIN_TABLES, adjustDaharEarnedVp, achernarInitialDefectors, ALTA_VISTA_COMMAND_COMPLICATIONS, ALTA_VISTA_MUTUAL_WITHDRAWAL_CLARIFICATION, ALTA_VISTA_PROVISIONAL_RULES, calculateAchernarVictory, calculateGameWorldEventVp, calculateReconDenyVp, DAHAR_COMMAND_COMPLICATIONS, DAHAR_INDUSTRIALMECH_TABLE, DAHAR_MAPSHEET_TABLE, DAHAR_PROVISIONAL_RULES, DAHAR_TRACK_RESULTS, evaluateAltaVistaCampaign, evaluateGameWorldDuelVictory, evaluateProtectionPursuit, FACTION_COLORS, GAME_WORLDS_CARCASSONNE_MAPSHEETS, GAME_WORLDS_DOBLESS_RATS, GAME_WORLDS_PROVISIONAL_RULES, GAME_WORLDS_TEAM_GENERATION_PROVISIONAL_RULE, GAME_WORLDS_TYBALT_HIRES, GAME_WORLDS_TYBALT_MAPSHEETS, GAME_WORLDS_XHOSA_MAPSHEETS, gameWorldTeamLossThresholdMet, GENERAL_RULES, groupComplicationEffectEntries, HOT_SPOTS, LE_BLANC_COMMAND_COMPLICATIONS, LE_BLANC_MAPSHEET_TABLE, LE_BLANC_PARTISAN_PACKAGES, LE_BLANC_PROVISIONAL_RULES, LE_BLANC_TEMPORARY_HIRES, LUCERNE_COMMAND_COMPLICATIONS, LUCERNE_MAPSHEET_TABLE, LUCERNE_PROVISIONAL_RULES, LUCERNE_TEMPORARY_HIRES, LUCERNE_TRACK_RESULTS, MALLORY_PROVISIONAL_RULES, MELCHER_BLACK_MARKET, MELCHER_COMMAND_COMPLICATIONS, MELCHER_GRASSLANDS_MAPSHEETS, MELCHER_TEMPORARY_HIRES, MISSION_OPFOR_OVERRIDES, NEW_IVAARSEN_CHARACTERS, NEW_IVAARSEN_COMMAND_COMPLICATIONS, NEW_IVAARSEN_LIGHT_URBAN_MAPSHEETS, NEW_IVAARSEN_RYUKEN_SUPPORT, normalizeAchernarCampaignState, normalizeAltaVistaCampaignState, OPPOSING_FORCE_TABLES, PASCAGOULA_COMMAND_COMPLICATIONS, PASCAGOULA_MOUNTAINS_MAPSHEETS, PASCAGOULA_PROVISIONAL_RULES, PLAYER_VISIBLE_HOT_SPOT_IDS, PROTECTION_ATLANTIS_MAPSHEETS, PROTECTION_COMMAND_COMPLICATIONS, PROTECTION_PROVISIONAL_RULES, PROTECTION_STANDARD_MAPSHEETS, PROTECTION_TEMPORARY_HIRES, protectionPartisanSupport, RECON_DENY_ATTACKER_OBJECTIVE_IDS, RECON_DENY_VP_SCHEDULE, resolveActOfPiracyScenario, resolveDaharComplications, resolveLeBlancComplications, resolveLucerneComplications, SOURCES, SPECIAL_TRACKS, TRACKS } from "../dist/hot-spots/data.mjs";
 import { evaluateXhosaTruckOutcome, SUN_PRAIRIE_COMMAND_COMPLICATIONS, SUN_PRAIRIE_MAPSHEET_TABLE, SUN_PRAIRIE_TACTICAL_SUPPORT, SUN_PRAIRIE_TEMPORARY_HIRES, TIGRESS_COMMAND_COMPLICATIONS, TIGRESS_HILLS_MAPSHEETS, TIGRESS_PROVISIONAL_RULES, TIGRESS_SUTERA_SUPPORT, TIGRESS_TEMPORARY_HIRES, TIGRESS_TRAINEE_SUPPORT, TIGRESS_WOODED_MAPSHEETS, XHOSA_COMMAND_COMPLICATIONS, XHOSA_LOGISTICS_SUPPORT, XHOSA_MAPSHEET_TABLE, XHOSA_PROVISIONAL_RULES, XHOSA_TEMPORARY_HIRES } from "../dist/hot-spots/data.mjs";
 
 const expected = ["Assault", "Breakthrough", "Defend", "Flank", "Meeting Engagement", "Objective Raid", "Pursuit", "Pushback", "Recon", "Retreat", "Strike"];
@@ -1023,7 +1023,7 @@ assert.deepEqual(mallory.sides.map(side => [side.id, side.faction]), [
   ["dragon-banner", "Draconis Combine"],
   ["sword-sunburst", "Federated Suns"]
 ]);
-const malloryPlayableTracks = mallory.tracks.filter(track => track.trackId);
+const malloryPlayableTracks = mallory.tracks.filter(track => track.trackId && !track.finalBattle);
 assert.equal(malloryPlayableTracks.length, 13, "Mallory’s World exposes all 13 playable strategic hex types");
 assert.deepEqual([
   protection.tracks[0].trackId,
@@ -1051,9 +1051,11 @@ for (const hexTrack of malloryPlayableTracks) {
   const standardTrack = TRACKS.find(track => track.id === hexTrack.trackId);
   assert.ok(standardTrack, hexTrack.label + " resolves to an existing standard track");
   assert.equal(hexTrack.roleChoice, true, hexTrack.label + " lets the user identify the strategic attacking formation");
+  assert.equal(hexTrack.roleChoiceRequired, true, hexTrack.label + " requires an explicit strategic attacking formation");
   assert.deepEqual(hexTrack.variant.objectives, standardTrack.objectives, hexTrack.label + " preserves the standard objective and VP schedule");
-  assert.match(hexTrack.variant.setupDetails.join(" "), /Battlefield size: normally use one mapsheet/);
-  assert.match(hexTrack.variant.setupDetails.join(" "), /multiple formations on each side.*second mapsheet.*Savannah Terrain table/i);
+  assert.match(hexTrack.variant.setupDetails.join(" "), /Battlefield size: an ordinary engagement uses one BattleTech mapsheet/);
+  assert.match(hexTrack.variant.setupDetails.join(" "), /multiple formations participate on both sides.*second BattleTech mapsheet.*Savannah Terrain table/i);
+  assert.match(hexTrack.variant.setupDetails.join(" "), /36 × 48-inch Alpha Strike battlefield.*48 × 72 inches.*one side do not trigger expansion/i);
   assert.match(hexTrack.variant.setupDetails.join(" "), /Pre-battle withdrawal: if the defending formation has not yet moved/);
   assert.match(hexTrack.variant.setupDetails.join(" "), /without time to repair/);
   assert.match(hexTrack.variant.special.join(" "), /21 BSP.*Alpha Strike: 5 BSP/);
@@ -1061,6 +1063,7 @@ for (const hexTrack of malloryPlayableTracks) {
   assert.match(hexTrack.variant.special.join(" "), /Command Complications: none/);
   assert.match(hexTrack.variant.special.join(" "), /do not receive the standard Combat Pay/);
   assert.match(hexTrack.variant.special.join(" "), /does not determine eligibility or award those benefits automatically/);
+  assert.deepEqual(hexTrack.variant.provisionalRules, [MALLORY_PROVISIONAL_RULES[3]], hexTrack.label + " displays the scenario-specific Track Force exception without changing standard tracks");
 }
 const malloryRestricted = mallory.tracks.find(track => !track.trackId);
 assert.equal(malloryRestricted.label, "RSIS/FABL Research Facility · Hex 0507 · Non-playable");
@@ -1074,10 +1077,12 @@ assert.match(malloryDefensive.setupDetails.join(" "), /Defensive Garrison.*withi
 const malloryIrrigation = mallory.tracks.find(track => track.label === "Irrigation Control").variant;
 assert.match(malloryIrrigation.setupDetails.join(" "), /Wide River.*large building token/i);
 assert.match(malloryIrrigation.special.join(" "), /10 contiguous hexes as Depth 1 water/);
-assert.deepEqual(malloryIrrigation.sourceRefs, ["Draconis Reach pp. 135–139", "Pushback p. 173", "Current Draconis Reach master errata"]);
+assert.match(malloryIrrigation.special.join(" "), /LINGO Landing Zone.*offsets the penalty directly.*MetalEd Discord clarification/i);
+assert.doesNotMatch(malloryIrrigation.special.join(" "), /offsets the penalty from choosing a BPWW Landing Zone/i);
+assert.deepEqual(malloryIrrigation.sourceRefs, ["Draconis Reach pp. 135–139", "Official Loneliness Island Poster Map (2026)", "Pushback p. 173", "Current Draconis Reach master errata"]);
 const malloryBpww = mallory.tracks.find(track => track.label === "BPWW Facilities").variant;
 assert.match(malloryBpww.setupDetails.join(" "), /Large Lakes #1.*dock facility/i);
-assert.deepEqual(malloryBpww.sourceRefs, ["Draconis Reach pp. 135–139", "Meeting Engagement pp. 170–171", "Current Draconis Reach master errata"]);
+assert.deepEqual(malloryBpww.sourceRefs, ["Draconis Reach pp. 135–139", "Official Loneliness Island Poster Map (2026)", "Meeting Engagement pp. 170–171", "Current Draconis Reach master errata"]);
 const malloryCity = mallory.tracks.find(track => track.label === "City Hexes");
 assert.equal(malloryCity.reverseRoles, true, "City Pursuit reverses the strategic attacker into the tactical Defender role");
 assert.match(malloryCity.variant.setupDetails.join(" "), /Plaza.*Roundabout/);
@@ -1099,20 +1104,70 @@ assert.deepEqual(malloryOperatingBase.setupDetails.slice(0, standardRetreat.setu
 assert.doesNotMatch([...malloryOperatingBase.setup, ...malloryOperatingBase.scaleNotes, ...malloryOperatingBase.setupDetails].join(" "), /At Scale 1.*mapsheets.*Scale 3|two mapsheets.*four mapsheets/i, "Mallory Operating Base does not display standard Retreat battlefield dimensions");
 assert.match(malloryOperatingBase.setup.join(" "), /opposite short edge/i, "Mallory Operating Base retains standard home-edge setup");
 assert.match(malloryOperatingBase.setup.join(" "), /Attacker[’']s edge/i, "Mallory Operating Base retains standard entry setup");
-assert.deepEqual(malloryOperatingBase.sourceRefs, ["Draconis Reach pp. 135–139", "Retreat pp. 174–175", "Current Draconis Reach master errata"]);
+assert.deepEqual(malloryOperatingBase.sourceRefs, ["Draconis Reach pp. 135–139", "Official Loneliness Island Poster Map (2026)", "Retreat pp. 174–175", "Current Draconis Reach master errata"]);
 const malloryManufacturing = mallory.tracks.find(track => track.label === "Manufacturing Plant").variant;
 assert.match(malloryManufacturing.setupDetails.join(" "), /HPG Heliport/);
 assert.match(malloryManufacturing.special.join(" "), /additional 24 BSP.*vehicles or emplacements/);
 assert.match(mallory.tracks.find(track => track.label === "Communication Array").variant.setupDetails.join(" "), /HPG Offices/);
 const malloryBiotech = mallory.tracks.find(track => track.label === "Biotech Research Centre").variant;
 assert.match(malloryBiotech.setupDetails.join(" "), /CityTech.*six large building tokens/i);
-assert.deepEqual(malloryBiotech.sourceRefs, ["Draconis Reach pp. 135–139", "Breakthrough pp. 168–169", "Current Draconis Reach master errata"]);
+assert.deepEqual(malloryBiotech.sourceRefs, ["Draconis Reach pp. 135–139", "Official Loneliness Island Poster Map (2026)", "Breakthrough pp. 168–169", "Current Draconis Reach master errata"]);
 const malloryShipping = mallory.tracks.find(track => track.label === "Shipping Port").variant;
 assert.match(malloryShipping.setupDetails.join(" "), /River Delta\/Drainage Basin #1.*resemble a port/i);
-assert.deepEqual(malloryShipping.sourceRefs, ["Draconis Reach pp. 135–139", "Flank pp. 170–171", "Current Draconis Reach master errata"]);
+assert.deepEqual(malloryShipping.sourceRefs, ["Draconis Reach pp. 135–139", "Official Loneliness Island Poster Map (2026)", "Flank pp. 170–171", "Current Draconis Reach master errata"]);
 const malloryTraining = mallory.tracks.find(track => track.label === "Training Simulators").variant;
 assert.match(malloryTraining.setupDetails.join(" "), /Park District/);
-assert.deepEqual(malloryTraining.sourceRefs, ["Draconis Reach pp. 135–139", "Pushback p. 173", "Current Draconis Reach master errata"]);
+assert.deepEqual(malloryTraining.sourceRefs, ["Draconis Reach pp. 135–139", "Official Loneliness Island Poster Map (2026)", "Pushback p. 173", "Current Draconis Reach master errata"]);
+assert.equal(mallory.source, "Draconis Reach pp. 132–142 · Official Loneliness Island Poster Map (2026)");
+assert.ok(mallory.contractReference, "Mallory exposes the collapsed campaign reference");
+assert.match(mallory.contractReference.summary.join(" "), /96 BattleTech BSP.*four formations.*five units.*at least one BattleMech.*15 BSP per command/i);
+assert.match(mallory.contractReference.progression.join(" "), /Strategic Reinforcement.*up to four.*BPWW Landing Zone adds one replacement/i);
+assert.match(mallory.contractReference.victory.join(" "), /ten map turns.*0 Warchest SP.*Biotech Research Centre.*Communication Array.*Training Simulators.*Landing Zone.*Final Battle/i);
+assert.deepEqual(mallory.contractReference.provisional, MALLORY_PROVISIONAL_RULES);
+assert.match(MALLORY_PROVISIONAL_RULES[0], /15 BSP per command.*15 unrestricted BSP per side.*not published Mallory errata/i);
+assert.match(MALLORY_PROVISIONAL_RULES[1], /Defender PV plus 25 percent.*no.*ordinary Scale 3 cap.*rounding.*BV to PV/i);
+assert.match(MALLORY_PROVISIONAL_RULES[2], /48 × 72 inches.*multiple formations participate on both sides.*single-formation.*36 × 48 inches.*one-sided/i);
+assert.match(MALLORY_PROVISIONAL_RULES[3], /individual formation engagements.*pp\. 135–136.*Final Battle.*p\. 141.*entire mercenary command.*unresolved.*No roster validation/i);
+assert.match(mallory.contractReference.progression.join(" "), /Irrigation Control clarification.*LINGO Landing Zone.*offsets the penalty directly.*MetalEd Discord clarification.*not published master errata/i);
+assert.match(mallory.contractReference.progression.join(" "), /BPWW at 0601\/0614 permits purchases.*premium/i, "genuine BPWW Landing Zone rules remain unchanged");
+assert.match(mallory.contractReference.purchaseOptions.join(" "), /BattleMech purchases require a held BPWW hex.*10-percent premium/i, "genuine BPWW purchase rules remain unchanged");
+assert.match(mallory.contractReference.purchaseOptions.join(" "), /Forum posts #38–#39.*27 November 2026.*not been incorporated.*master list/i);
+assert.match(malloryPlayableTracks[0].variant.special.join(" "), /counts as destroyed only for opposing objective adjudication.*actual damage state.*repairs/i);
+
+const malloryFinalBattle = mallory.tracks.find(track => track.finalBattle);
+assert.ok(malloryFinalBattle, "Mallory exposes the manually selected Final Battle branch");
+assert.equal(malloryFinalBattle.trackId, "assault");
+assert.equal(malloryFinalBattle.roleChoiceRequired, true);
+assert.equal(malloryFinalBattle.reverseRoles, true, "campaign winner resolves to the tactical Defender");
+assert.equal(malloryFinalBattle.disableTakingOneForTeam, true, "Final Battle excludes optional generated opposition");
+assert.deepEqual(malloryFinalBattle.variant.objectives, TRACKS.find(track => track.id === "assault").objectives, "Final Battle preserves Assault objective VP");
+assert.match(malloryFinalBattle.variant.setupDetails.join(" "), /winner is the tactical Defender.*loser is the tactical Attacker|campaign winner is the tactical Defender.*campaign loser is the tactical Attacker/i);
+assert.match(malloryFinalBattle.variant.setupDetails.join(" "), /BattleTech uses the printed Defender BV plus 25 percent.*Alpha Strike interpretation: Defender PV plus 25 percent.*no.*ordinary Scale 3 force cap.*rounding.*convert BV to PV/i);
+assert.match(malloryFinalBattle.variant.setupDetails.join(" "), /Battle \/ 50 percent.*96 unrestricted BattleTech BSP.*15 unrestricted BSP.*City and Manufacturing Plant bonuses are additional/i);
+assert.match(malloryFinalBattle.variant.battlefieldRules.map(rule => rule.text).join(" "), /City Ruins and BattleTech.*long edge.*unconnected long edge.*Alpha Strike: use a 48 × 72-inch Urban battlefield.*approved provisional interpretation/i);
+assert.match(malloryFinalBattle.variant.special.join(" "), /Conquer pays 3,000 SP.*Hold the Field pays 6,000 SP.*do not alter.*VP/i);
+assert.deepEqual(malloryFinalBattle.variant.provisionalRules, MALLORY_PROVISIONAL_RULES);
+
+assert.match(app, /hotSpot\.id === "mallorys-world"[\s\S]*hotSpot\.sides\.find\(side => side\.id !== selected\?\.id\)[\s\S]*faction: opposing\?\.faction/, "Mallory T1FTT uses the opposing strategic command and faction");
+assert.match(app, /resolvedHotSpotStep\(\)\?\.disableTakingOneForTeam[\s\S]*container\.innerHTML = ""/, "Final Battle suppresses generated-opposition output");
+assert.match(app, /takingToggle\.style\.display = resolved\?\.disableTakingOneForTeam/, "Final Battle suppresses the T1FTT control");
+assert.match(app, /function malloryActiveBenefits\(\)[\s\S]*malloryBenefitValue\("city-controller"\)[\s\S]*malloryBenefitValue\("manufacturing-controller"\)[\s\S]*malloryBenefitValue\("irrigation-controller"\)/, "Mallory resolves all three island-wide tactical benefits from current-track inputs");
+assert.match(app, /21 \* cityCount[\s\S]*2 \* cityCount/, "each controlled city multiplies only its printed BT and AS support packages");
+assert.match(app, /finalBattle \? "" : malloryBenefitValue\("irrigation-controller"\)/, "Irrigation is unavailable in Final Battle without source authority");
+assert.match(app, /Controlling command:[\s\S]*malloryTacticalRole/, "benefits display their controlling command and resolved tactical role");
+assert.match(app, /These choices do not track ownership, map turns, or campaign history/, "Mallory benefit inputs do not create strategic administration");
+assert.match(app, /currentHotSpot\(\)\.id === "mallorys-world" && \/\^\(\?:Terrain:\|Alpha Strike terrain adjustment:/, "Mallory location battlefield details move into Setup");
+assert.match(app, /Final Battle · Urban · BT two mapsheets · AS 48 × 72 inches \(provisional\)/, "Final Battle has a specific collapsed battlefield summary");
+assert.match(app, /data-mallory-configuration="battlefield-mode"[\s\S]*Single formation on each side[\s\S]*Multiple formations on one side only[\s\S]*Multiple formations on both sides/, "ordinary Mallory engagements provide explicit formation-dependent battlefield configuration");
+assert.match(app, /malloryBattlefieldMode\(\) === "multiple-both"[\s\S]*BT two mapsheets · AS 48 × 72 inches \(provisional\)[\s\S]*BT one mapsheet · AS 36 × 48 inches/, "only multiple formations on both sides expand the collapsed battlefield summary");
+assert.match(app, /const expanded = mode === "multiple-both"[\s\S]*multiple-one-side[\s\S]*battlefield expands only when multiple formations participate on both sides/i, "one-sided multiple formations retain the ordinary footprint");
+assert.match(app, /Resolved Final Battle footprint[\s\S]*City Ruins and BattleTech mapsheets[\s\S]*48 × 72 inches/, "Final Battle Setup presents both BT and provisional AS footprints");
+assert.match(app, /No island-wide tactical benefits configured/, "collapsed Setup reports benefit configuration without auto-awarding it");
+const resetTrackMalloryBody = app.match(/function resetTrack\(\) \{([\s\S]*?)\n\}/)?.[1] || "";
+assert.doesNotMatch(resetTrackMalloryBody, /mallory-/, "Reset Objectives preserves Mallory Setup inputs");
+assert.match(app, /tacticalInputKey\("mallory-battlefield-mode"\)/, "Mallory battlefield configuration is stored with current-track tactical inputs");
+assert.match(html, /Posts #38–#41.*not been represented as incorporated.*dated master list/, "Rules Sources distinguishes later forum posts from the November 11 master revision");
+assert.match(html, /Irrigation\/LINGO correction.*MetalEd Discord clarification.*not published master errata/, "Rules Sources distinguishes the resolved Discord clarification from official errata");
 assert.ok(html.includes('id="hot-spot-track-label"'), "the sequence selector has a location-specific label target");
 assert.ok(app.includes('hotSpot.trackSelectorLabel || "Track"'), "the shared selector uses player-facing Track terminology while preserving location-specific labels");
 assert.ok(app.includes("if (hotSpot.fixedScale) state.scale = hotSpot.fixedScale"), "Mallory’s World applies its fixed Scale before each render");
@@ -1445,7 +1500,7 @@ assert.match(app, /\$\("#hotspot-setup"\)\.addEventListener\("change"/, "complic
 assert.doesNotMatch(renderOpForBody, /data-complication-choice/, "generated OpFor rendering remains separate from complication selection");
 assert.ok(css.includes("setup-configuration-card") && css.includes("complication-selection-status"), "battlefield and complication setup remain responsive and visibly grouped");
 
-assert.deepEqual(PLAYER_VISIBLE_HOT_SPOT_IDS, ["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress", "xhosa-vii", "act-of-piracy", "game-worlds"], "only completed and verified contracts are player-visible in source order");
+assert.deepEqual(PLAYER_VISIBLE_HOT_SPOT_IDS, ["achernar", "alta-vista", "dahar-iv", "le-blanc", "lucerne", "melcher", "new-ivaarsen", "pascagoula", "protection", "sun-prairie", "tigress", "xhosa-vii", "act-of-piracy", "game-worlds", "mallorys-world"], "all verified contracts are player-visible in source order");
 assert.equal(PLAYER_VISIBLE_HOT_SPOT_IDS.every(id => HOT_SPOTS.some(hotSpot => hotSpot.id === id)), true, "every visible contract retains its source data");
 assert.match(app, /PLAYER_VISIBLE_HOT_SPOT_IDS\.map\(id => HOT_SPOTS\.find/, "player-facing locations preserve the centralized source order");
 assert.equal(HOT_SPOTS.some(hotSpot => hotSpot.id === "new-ivaarsen"), true, "New Ivaarsen contract data is available to the verified-location filter");
